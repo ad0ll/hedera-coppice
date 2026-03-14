@@ -7,7 +7,7 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 ## Architecture
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
-- **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger.
+- **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger, purchase/allocate API.
 - **frontend/**: React + Vite + Tailwind CSS. MetaMask wallet integration, ethers.js v6.
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
@@ -19,13 +19,29 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Claims are signed by claimIssuerSigningKey (random wallet), added by wallet owner
 - Token starts paused after deployment — must call unpause()
 - HCS messages must be <1KB per chunk
+- Always verify contracts on HashScan after deploying
+- Only the deployer (token agent) can mint CPC tokens — purchase flow uses backend API
 
 ## Key Files
 
 - Implementation plan: docs/plans/2026-03-13-coppice-green-bonds.md
-- Design plan: /Users/adoll/.claude/plans/sorted-honking-newell.md
+- Low-hanging fruit plan: docs/plans/2026-03-14-low-hanging-fruit.md
+- Frontend rebuild plan: docs/plans/2026-03-14-frontend-rebuild.md
+- Audit docs: docs/audit-*.md
 - Reference fixture: reference/deploy-full-suite.fixture.ts
 - Accounts & keys: .env
+- Provider singleton: frontend/src/lib/provider.ts
+- Purchase/allocate API: middleware/src/purchase-api.ts
+
+## Deployed Contracts & Topics
+
+- Token (CPC): 0x17e19B53981370a904d0003Ba2D336837a43cbf0
+- IdentityRegistry: 0x03ecdB8673d65b81752AC14dAaCa797D846c1B31
+- ModularCompliance: 0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf
+- ClaimIssuer: 0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A
+- Audit HCS Topic: 0.0.8214934
+- Impact HCS Topic: 0.0.8214935
+- eUSD Token (HTS): 0.0.8214937
 
 ## Demo Wallets
 
@@ -44,15 +60,18 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 cd contracts && npx hardhat compile
 cd contracts && npx hardhat test
 cd contracts && npx hardhat run scripts/deploy.ts --network hederaTestnet
+cd contracts && npx hardhat run scripts/verify-contracts.ts --network hederaTestnet
 
 # Middleware
 cd middleware && npx tsx src/hcs-setup.ts
 cd middleware && npx tsx src/hts-setup.ts
+cd middleware && npm run event-logger
+cd middleware && npm run purchase-api
 
 # Frontend
 cd frontend && npm run dev
 
-# E2E
+# E2E (requires frontend + purchase-api running)
 cd e2e && npx playwright test
 ```
 
@@ -64,12 +83,10 @@ cd e2e && npx playwright test
 - Prefer functional components over class components
 - Use `bun/pnpm run lint` to check for linting errors after you're done
 
-
 ### Typescript standards
 
 - Do not use `any` unless explicitly instructed otherwise
 - Do not type cast unless explicitly instructed otherwise. If you must typecast, any usage must have a clear and convincing comment explaining why
-- Avoid type casting as a solution to type errors unless it's absolutely necessary or explicitly instructed otherwise
 - Avoid type casting as a solution to type errors unless it's absolutely necessary or explicitly instructed otherwise
 - Avoid using @ts-expect-error, @ts-ignore, or @ts-nocheck unless absolutely necessary or explicitly instructed otherwise. Fix things instead
 - Never do hot imports in code function bodies
