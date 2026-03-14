@@ -26,6 +26,10 @@ export function IssuerDashboard() {
 
   useEffect(() => {
     paused().then(setIsPaused).catch(() => {});
+    const interval = setInterval(() => {
+      paused().then(setIsPaused).catch(() => {});
+    }, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   async function handleMint() {

@@ -9,8 +9,13 @@ export function BondDetails() {
   const [isPaused, setIsPaused] = useState<boolean | null>(null);
 
   useEffect(() => {
-    totalSupply().then((s) => setSupply(Number(ethers.formatEther(s)).toLocaleString("en-US")));
-    paused().then(setIsPaused);
+    function refresh() {
+      totalSupply().then((s) => setSupply(Number(ethers.formatEther(s)).toLocaleString("en-US")));
+      paused().then(setIsPaused);
+    }
+    refresh();
+    const interval = setInterval(refresh, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
