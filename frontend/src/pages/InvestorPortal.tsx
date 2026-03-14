@@ -24,9 +24,9 @@ export function InvestorPortal() {
 
     async function loadBalances() {
       const cpc = await balanceOf(account!);
-      setCpcBalance(Number(ethers.formatEther(cpc)).toLocaleString());
+      setCpcBalance(Number(ethers.formatEther(cpc)).toLocaleString("en-US"));
       const eusd = await getEusdBalance(account!);
-      setEusdBalance(eusd.toLocaleString(undefined, { minimumFractionDigits: 2 }));
+      setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
     }
 
     loadBalances();

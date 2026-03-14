@@ -14,9 +14,9 @@ const EVENT_BADGES: Record<string, string> = {
 function formatTimestamp(ts: number | string): string {
   if (typeof ts === "string") {
     const secs = parseFloat(ts);
-    return new Date(secs * 1000).toLocaleTimeString();
+    return new Date(secs * 1000).toLocaleTimeString("en-US");
   }
-  return new Date(ts).toLocaleTimeString();
+  return new Date(ts).toLocaleTimeString("en-US");
 }
 
 export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | "impact" }) {
@@ -56,7 +56,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
             <button
               key={type}
               onClick={() => setFilter(type)}
-              className={`text-xs px-2.5 py-1 rounded-md transition-colors ${
+              className={`text-xs px-3 py-2 min-h-[44px] min-w-[44px] rounded-md transition-colors ${
                 filter === type
                   ? "bg-surface-3 text-white border border-border/50"
                   : "text-text-muted hover:text-white hover:bg-surface-3/50"

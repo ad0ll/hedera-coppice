@@ -122,7 +122,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           <span className="text-xs text-text-muted">{passCount}/{checks.length} checks</span>
         )}
       </div>
-      <div className="px-6 py-4 space-y-1">
+      <div className="px-6 py-4 space-y-1" aria-live="polite" aria-atomic="true">
         {checks.map((check, i) => (
           <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
             <div className="flex items-center gap-3">

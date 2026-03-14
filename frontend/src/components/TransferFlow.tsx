@@ -113,7 +113,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
       {amount && enabled && !running && steps.length === 0 && (
         <p className="text-xs text-text-muted">
-          Cost: <span className="text-white font-mono">{Number(amount).toLocaleString()}</span> eUSD (1:1 exchange rate)
+          Cost: <span className="text-white font-mono">{Number(amount).toLocaleString("en-US")}</span> eUSD (1:1 exchange rate)
         </p>
       )}
 

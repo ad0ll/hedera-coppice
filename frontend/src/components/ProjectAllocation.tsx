@@ -52,7 +52,7 @@ export function ProjectAllocation() {
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-text-muted">{category}</span>
                     <span className="text-white font-mono">
-                      ${total.toLocaleString()} ({pct.toFixed(0)}%)
+                      ${total.toLocaleString("en-US")} ({pct.toFixed(0)}%)
                     </span>
                   </div>
                   <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
@@ -75,7 +75,7 @@ export function ProjectAllocation() {
                   <span className="text-xs text-text-muted ml-2">{a.category}</span>
                 </div>
                 <span className="font-mono text-bond-green">
-                  ${a.amount.toLocaleString()}
+                  ${a.amount.toLocaleString("en-US")}
                 </span>
               </div>
             ))}

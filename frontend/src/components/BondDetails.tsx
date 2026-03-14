@@ -9,7 +9,7 @@ export function BondDetails() {
   const [isPaused, setIsPaused] = useState<boolean | null>(null);
 
   useEffect(() => {
-    totalSupply().then((s) => setSupply(Number(ethers.formatEther(s)).toLocaleString()));
+    totalSupply().then((s) => setSupply(Number(ethers.formatEther(s)).toLocaleString("en-US")));
     paused().then(setIsPaused);
   }, []);
 
@@ -25,7 +25,7 @@ export function BondDetails() {
             </svg>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-white">{BOND_DETAILS.name}</h2>
+            <h1 className="text-lg font-semibold text-white">{BOND_DETAILS.name}</h1>
             <p className="text-xs text-text-muted">{BOND_DETAILS.issuer}</p>
           </div>
         </div>

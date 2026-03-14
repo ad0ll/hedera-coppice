@@ -22,7 +22,18 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /mobile\.spec\.ts/,
       use: { browserName: "chromium" },
+    },
+    {
+      name: "mobile",
+      testMatch: /mobile\.spec\.ts/,
+      use: {
+        browserName: "chromium",
+        viewport: { width: 390, height: 844 },
+        isMobile: true,
+        hasTouch: true,
+      },
     },
   ],
 });

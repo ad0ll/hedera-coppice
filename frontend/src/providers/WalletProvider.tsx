@@ -42,7 +42,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(async () => {
     const ethereum = (window as any).ethereum;
     if (!ethereum) {
-      alert("Please install MetaMask to use this application.");
+      console.error("MetaMask not detected. Please install MetaMask to use this application.");
       return;
     }
 

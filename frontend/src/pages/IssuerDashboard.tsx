@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
 import { useToken } from "../hooks/useToken";
@@ -24,9 +24,9 @@ export function IssuerDashboard() {
   const [proceedsAmount, setProceedsAmount] = useState("");
   const [proceedsStatus, setProceedsStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  useState(() => {
+  useEffect(() => {
     paused().then(setIsPaused).catch(() => {});
-  });
+  }, []);
 
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
@@ -77,7 +77,7 @@ export function IssuerDashboard() {
     if (!project || !proceedsAmount) return;
     setProceedsStatus(null);
     try {
-      setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString()} to ${project} (HCS submission requires middleware)` });
+      setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (HCS submission requires middleware)` });
       setProject("");
       setProceedsAmount("");
     } catch (err: any) {
@@ -93,7 +93,7 @@ export function IssuerDashboard() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-white mb-2">Issuer Dashboard</h2>
+        <h1 className="text-xl font-semibold text-white mb-2">Issuer Dashboard</h1>
         <p className="text-text-muted text-sm">Connect your issuer wallet to manage the bond.</p>
       </div>
     );
@@ -103,7 +103,7 @@ export function IssuerDashboard() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-white">Issuer Dashboard</h2>
+      <h1 className="text-2xl font-semibold text-white">Issuer Dashboard</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mint Section */}

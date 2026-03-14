@@ -9,7 +9,7 @@ export function ComplianceMonitor() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold text-white">Compliance Monitor</h2>
+      <h1 className="text-2xl font-semibold text-white">Compliance Monitor</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-surface-2 border border-border rounded-xl p-5 card-glow">
