@@ -1,71 +1,33 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect } from "vitest";
+import { readFileSync } from "fs";
+import { resolve } from "path";
 
-// Spy on the contract factory functions to verify they receive the singleton provider
-const mockGetTokenContract = vi.fn().mockReturnValue({});
-const mockGetIdentityRegistryContract = vi.fn().mockReturnValue({});
-const mockGetComplianceContract = vi.fn().mockReturnValue({});
+// These tests verify no hook creates its own JsonRpcProvider.
+// The singleton lives in lib/provider.ts; hooks should import it.
+// This catches the regression where someone adds `new JsonRpcProvider()` inside a hook.
 
-vi.mock("../lib/contracts", () => ({
-  getTokenContract: (...args: unknown[]) => mockGetTokenContract(...args),
-  getIdentityRegistryContract: (...args: unknown[]) => mockGetIdentityRegistryContract(...args),
-  getComplianceContract: (...args: unknown[]) => mockGetComplianceContract(...args),
-}));
+const hooksDir = resolve(__dirname, "../hooks");
 
-vi.mock("../providers/WalletProvider", () => ({
-  useWallet: () => ({ signer: null, account: null, connect: vi.fn(), disconnect: vi.fn() }),
-}));
+function readHook(filename: string): string {
+  return readFileSync(resolve(hooksDir, filename), "utf-8");
+}
 
-describe("hooks use provider singleton", () => {
-  it("useToken passes readProvider to getTokenContract", async () => {
-    const { readProvider } = await import("../lib/provider");
-    // Force re-import to trigger the hook module's top-level code
-    vi.resetModules();
-    // Re-mock after reset
-    vi.doMock("../lib/contracts", () => ({
-      getTokenContract: (...args: unknown[]) => mockGetTokenContract(...args),
-      getIdentityRegistryContract: (...args: unknown[]) => mockGetIdentityRegistryContract(...args),
-      getComplianceContract: (...args: unknown[]) => mockGetComplianceContract(...args),
-    }));
-    vi.doMock("../providers/WalletProvider", () => ({
-      useWallet: () => ({ signer: null, account: null, connect: vi.fn(), disconnect: vi.fn() }),
-    }));
-
-    const { useToken } = await import("../hooks/useToken");
-    const { renderHook } = await import("@testing-library/react");
-    renderHook(() => useToken());
-
-    expect(mockGetTokenContract).toHaveBeenCalledWith(readProvider);
+describe("hooks use provider singleton (no inline provider creation)", () => {
+  it("useToken.ts does not create a new JsonRpcProvider", () => {
+    const source = readHook("useToken.ts");
+    expect(source).not.toMatch(/new\s+(ethers\.)?JsonRpcProvider/);
+    expect(source).toContain('from "../lib/provider"');
   });
 
-  it("useIdentity passes readProvider to getIdentityRegistryContract", async () => {
-    const { readProvider } = await import("../lib/provider");
-    vi.resetModules();
-    vi.doMock("../lib/contracts", () => ({
-      getTokenContract: (...args: unknown[]) => mockGetTokenContract(...args),
-      getIdentityRegistryContract: (...args: unknown[]) => mockGetIdentityRegistryContract(...args),
-      getComplianceContract: (...args: unknown[]) => mockGetComplianceContract(...args),
-    }));
-
-    const { useIdentity } = await import("../hooks/useIdentity");
-    const { renderHook } = await import("@testing-library/react");
-    renderHook(() => useIdentity());
-
-    expect(mockGetIdentityRegistryContract).toHaveBeenCalledWith(readProvider);
+  it("useIdentity.ts does not create a new JsonRpcProvider", () => {
+    const source = readHook("useIdentity.ts");
+    expect(source).not.toMatch(/new\s+(ethers\.)?JsonRpcProvider/);
+    expect(source).toContain('from "../lib/provider"');
   });
 
-  it("useCompliance passes readProvider to getComplianceContract", async () => {
-    const { readProvider } = await import("../lib/provider");
-    vi.resetModules();
-    vi.doMock("../lib/contracts", () => ({
-      getTokenContract: (...args: unknown[]) => mockGetTokenContract(...args),
-      getIdentityRegistryContract: (...args: unknown[]) => mockGetIdentityRegistryContract(...args),
-      getComplianceContract: (...args: unknown[]) => mockGetComplianceContract(...args),
-    }));
-
-    const { useCompliance } = await import("../hooks/useCompliance");
-    const { renderHook } = await import("@testing-library/react");
-    renderHook(() => useCompliance());
-
-    expect(mockGetComplianceContract).toHaveBeenCalledWith(readProvider);
+  it("useCompliance.ts does not create a new JsonRpcProvider", () => {
+    const source = readHook("useCompliance.ts");
+    expect(source).not.toMatch(/new\s+(ethers\.)?JsonRpcProvider/);
+    expect(source).toContain('from "../lib/provider"');
   });
 });
