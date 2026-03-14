@@ -34,7 +34,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       ];
       setChecks([...results]);
 
-      // Check 1: Registration
       const registered = await isRegistered(account!);
       results[0] = {
         label: "Identity Registered",
@@ -53,7 +52,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         return;
       }
 
-      // Check 2: Verified (has required claims)
       const verified = await isVerified(account!);
       results[1] = {
         label: "KYC / AML / Accredited",
@@ -62,9 +60,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       };
       setChecks([...results]);
 
-      // Check 3: Country
       const country = await getCountry(account!);
-      const RESTRICTED_COUNTRIES = [156]; // CN
+      const RESTRICTED_COUNTRIES = [156];
       const countryNames: Record<number, string> = { 276: "Germany", 250: "France", 156: "China", 840: "United States" };
       const isRestricted = RESTRICTED_COUNTRIES.includes(country);
       results[2] = {
@@ -76,7 +73,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       };
       setChecks([...results]);
 
-      // Check 4: Compliance canTransfer
       const transferAllowed = await canTransfer(
         ethers.ZeroAddress,
         account!,
@@ -99,38 +95,50 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
   if (!account) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Compliance Status</h3>
+      <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
+        <h3 className="text-lg font-semibold text-white mb-3">Compliance Status</h3>
         <p className="text-text-muted text-sm">Connect your wallet to check compliance status.</p>
       </div>
     );
   }
 
+  const allDone = checks.length > 0 && checks.every((c) => c.status !== "loading");
+  const passCount = checks.filter((c) => c.status === "pass").length;
+
   return (
-    <div className="bg-surface-2 border border-border rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="bg-surface-2 border border-border rounded-xl overflow-hidden card-glow">
+      <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between ${
+        allDone && eligible ? "bg-gradient-to-r from-bond-green/8 to-transparent" : allDone ? "bg-gradient-to-r from-bond-red/8 to-transparent" : ""
+      }`}>
         <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
-        {checks.length > 0 && checks.every((c) => c.status !== "loading") && (
+        {allDone && (
           <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-            eligible ? "bg-bond-green/20 text-bond-green" : "bg-bond-red/20 text-bond-red"
+            eligible ? "bg-bond-green/15 text-bond-green" : "bg-bond-red/15 text-bond-red"
           }`}>
             {eligible ? "Eligible to Invest" : "Not Eligible"}
           </span>
         )}
+        {!allDone && checks.length > 0 && (
+          <span className="text-xs text-text-muted">{passCount}/{checks.length} checks</span>
+        )}
       </div>
-      <div className="space-y-3">
+      <div className="px-6 py-4 space-y-1">
         {checks.map((check, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
+          <div key={i} className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
             <div className="flex items-center gap-3">
-              <span className="text-lg">
+              <div className="w-5 h-5 flex items-center justify-center">
                 {check.status === "loading" ? (
-                  <span className="inline-block w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
+                  <span className="inline-block w-4 h-4 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" />
                 ) : check.status === "pass" ? (
-                  <span className="text-bond-green">&#10003;</span>
+                  <svg className="w-5 h-5 text-bond-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
                 ) : (
-                  <span className="text-bond-red">&#10007;</span>
+                  <svg className="w-5 h-5 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 )}
-              </span>
+              </div>
               <span className="text-sm text-white">{check.label}</span>
             </div>
             {check.detail && (

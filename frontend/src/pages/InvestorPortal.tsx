@@ -45,22 +45,21 @@ export function InvestorPortal() {
         </div>
 
         <div className="space-y-6">
-          {/* Portfolio */}
-          <div className="bg-surface-2 border border-border rounded-xl p-6">
+          <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
             <h3 className="text-lg font-semibold text-white mb-4">Portfolio</h3>
             {!account ? (
               <p className="text-sm text-text-muted">Connect wallet to view portfolio.</p>
             ) : (
-              <div className="space-y-4">
-                <div className="bg-surface-3 rounded-lg p-4">
-                  <p className="text-xs text-text-muted uppercase tracking-wider mb-1">CPC Balance</p>
-                  <p className="text-2xl font-mono text-white">{cpcBalance}</p>
-                  <p className="text-xs text-text-muted">Coppice Green Bond</p>
+              <div className="space-y-3">
+                <div className="bg-surface-3/70 rounded-lg p-4 border border-border/30">
+                  <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">CPC Balance</p>
+                  <p className="text-2xl font-mono font-semibold text-white">{cpcBalance}</p>
+                  <p className="text-xs text-text-muted mt-1">Coppice Green Bond</p>
                 </div>
-                <div className="bg-surface-3 rounded-lg p-4">
-                  <p className="text-xs text-text-muted uppercase tracking-wider mb-1">eUSD Balance</p>
-                  <p className="text-2xl font-mono text-bond-green">{eusdBalance}</p>
-                  <p className="text-xs text-text-muted">Coppice USD (HTS)</p>
+                <div className="bg-surface-3/70 rounded-lg p-4 border border-border/30">
+                  <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">eUSD Balance</p>
+                  <p className="text-2xl font-mono font-semibold text-bond-green">{eusdBalance}</p>
+                  <p className="text-xs text-text-muted mt-1">Coppice USD (HTS)</p>
                 </div>
               </div>
             )}

@@ -14,31 +14,43 @@ export function BondDetails() {
   }, []);
 
   return (
-    <div className="bg-surface-2 border border-border rounded-xl p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-white">{BOND_DETAILS.name}</h2>
+    <div className="bg-surface-2 border border-border rounded-xl overflow-hidden card-glow">
+      <div className="bg-gradient-to-r from-bond-green/8 to-transparent px-6 py-4 border-b border-border/50 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-lg bg-bond-green/15 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" className="w-5 h-5 text-bond-green" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" />
+              <path d="M2 17l10 5 10-5" />
+              <path d="M2 12l10 5 10-5" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-white">{BOND_DETAILS.name}</h2>
+            <p className="text-xs text-text-muted">{BOND_DETAILS.issuer}</p>
+          </div>
+        </div>
         {isPaused !== null && (
-          <span className={`text-xs px-2 py-1 rounded-full ${isPaused ? "bg-bond-red/20 text-bond-red" : "bg-bond-green/20 text-bond-green"}`}>
+          <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isPaused ? "bg-bond-red/15 text-bond-red" : "bg-bond-green/15 text-bond-green"}`}>
             {isPaused ? "Paused" : "Active"}
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-6 py-5">
         <div>
-          <p className="text-xs text-text-muted uppercase tracking-wider">Symbol</p>
-          <p className="text-lg font-mono text-white">{BOND_DETAILS.symbol}</p>
+          <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">Symbol</p>
+          <p className="text-lg font-mono font-semibold text-white">{BOND_DETAILS.symbol}</p>
         </div>
         <div>
-          <p className="text-xs text-text-muted uppercase tracking-wider">Coupon Rate</p>
-          <p className="text-lg font-mono text-bond-green">{BOND_DETAILS.couponRate}</p>
+          <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">Coupon Rate</p>
+          <p className="text-lg font-mono font-semibold text-bond-green">{BOND_DETAILS.couponRate}</p>
         </div>
         <div>
-          <p className="text-xs text-text-muted uppercase tracking-wider">Maturity</p>
-          <p className="text-lg font-mono text-white">{BOND_DETAILS.maturity}</p>
+          <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">Maturity</p>
+          <p className="text-lg font-mono font-semibold text-white">{BOND_DETAILS.maturity}</p>
         </div>
         <div>
-          <p className="text-xs text-text-muted uppercase tracking-wider">Total Supply</p>
-          <p className="text-lg font-mono text-white">{supply} CPC</p>
+          <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">Total Supply</p>
+          <p className="text-lg font-mono font-semibold text-white">{supply} <span className="text-xs text-text-muted font-normal">CPC</span></p>
         </div>
       </div>
     </div>

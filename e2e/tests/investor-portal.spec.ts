@@ -10,7 +10,7 @@ test.describe("Investor Portal", () => {
   test("should display bond details", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByText("Coppice Green Bond")).toBeVisible();
-    await expect(page.getByText("CPC", { exact: true })).toBeVisible();
+    await expect(page.getByText("Symbol").locator("..").getByText("CPC")).toBeVisible();
     await expect(page.getByText("4.25%")).toBeVisible();
   });
 
@@ -58,7 +58,7 @@ test.describe("Investor Portal", () => {
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    await expect(page.getByText("Portfolio")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole("heading", { name: "Portfolio" })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText("CPC Balance")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("eUSD Balance")).toBeVisible({ timeout: 15000 });
   });

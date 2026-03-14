@@ -37,7 +37,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
     setSteps([...newSteps]);
 
     try {
-      // Step 1: Identity verification
       const verified = await isVerified(account);
       if (!verified) {
         newSteps[0] = { label: "Identity verification", status: "error", detail: "Identity not verified" };
@@ -49,7 +48,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[1] = { ...newSteps[1], status: "active" };
       setSteps([...newSteps]);
 
-      // Step 2: Compliance check
       const allowed = await canTransfer(ethers.ZeroAddress, account, parsedAmount);
       if (!allowed) {
         newSteps[1] = { label: "Compliance check", status: "error", detail: "Transfer blocked by compliance" };
@@ -61,13 +59,11 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[2] = { ...newSteps[2], status: "active" };
       setSteps([...newSteps]);
 
-      // Step 3: eUSD payment (simulated for demo — in production would be HTS transfer)
       await new Promise((r) => setTimeout(r, 1500));
       newSteps[2] = { label: "eUSD payment processed", status: "success" };
       newSteps[3] = { ...newSteps[3], status: "active" };
       setSteps([...newSteps]);
 
-      // Step 4: Mint bond tokens
       await mint(account, parsedAmount);
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);
@@ -88,28 +84,28 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   }
 
   return (
-    <div className="bg-surface-2 border border-border rounded-xl p-6">
+    <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
       <h3 className="text-lg font-semibold text-white mb-4">Purchase Bond Tokens</h3>
 
       {!enabled && (
-        <p className="text-sm text-bond-red/80 mb-4">
-          You must pass all compliance checks before purchasing.
+        <p className="text-sm text-text-muted mb-4">
+          You <span className="text-bond-red">must pass all compliance checks</span> before purchasing.
         </p>
       )}
 
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-4">
         <input
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount (CPC)"
           disabled={!enabled || running}
-          className="flex-1 bg-surface-3 border border-border rounded-lg px-4 py-2 text-white text-sm placeholder:text-text-muted focus:outline-none focus:border-bond-green/50 disabled:opacity-50"
+          className="flex-1 bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-text-muted/60 focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20 disabled:opacity-40 transition-colors"
         />
         <button
           onClick={handlePurchase}
           disabled={!enabled || running || !amount}
-          className="bg-bond-green text-black px-6 py-2 rounded-lg text-sm font-semibold hover:bg-bond-green/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-bond-green text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(34,197,94,0.15)]"
         >
           {running ? "Processing..." : "Purchase"}
         </button>
@@ -117,25 +113,35 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
       {amount && enabled && !running && steps.length === 0 && (
         <p className="text-xs text-text-muted">
-          Cost: {Number(amount).toLocaleString()} eUSD (1:1 exchange rate)
+          Cost: <span className="text-white font-mono">{Number(amount).toLocaleString()}</span> eUSD (1:1 exchange rate)
         </p>
       )}
 
       {steps.length > 0 && (
-        <div className="space-y-3 mt-4">
+        <div className="space-y-1 mt-4 bg-surface-3/50 rounded-lg p-4">
           {steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <span className="w-6 text-center">
-                {step.status === "pending" && <span className="text-text-muted/50">&#9679;</span>}
-                {step.status === "active" && (
-                  <span className="inline-block w-4 h-4 border-2 border-bond-amber border-t-transparent rounded-full animate-spin" />
+            <div key={i} className="flex items-center gap-3 py-1.5">
+              <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                {step.status === "pending" && (
+                  <div className="w-2 h-2 rounded-full bg-text-muted/30" />
                 )}
-                {step.status === "success" && <span className="text-bond-green">&#10003;</span>}
-                {step.status === "error" && <span className="text-bond-red">&#10007;</span>}
-              </span>
-              <div>
+                {step.status === "active" && (
+                  <span className="inline-block w-4 h-4 border-2 border-bond-amber/40 border-t-bond-amber rounded-full animate-spin" />
+                )}
+                {step.status === "success" && (
+                  <svg className="w-5 h-5 text-bond-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {step.status === "error" && (
+                  <svg className="w-5 h-5 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0">
                 <span className={`text-sm ${
-                  step.status === "pending" ? "text-text-muted/50" :
+                  step.status === "pending" ? "text-text-muted/40" :
                   step.status === "error" ? "text-bond-red" :
                   "text-white"
                 }`}>

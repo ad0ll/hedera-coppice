@@ -58,8 +58,24 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 - **Plan said:** Separate tasks for scaffold, hooks, InvestorPortal, IssuerDashboard, ComplianceMonitor
 - **Actual:** Built all five tasks in a single batch since they share dependencies and the frontend needed to compile as a whole.
 
-## Task 13: Design Polish
-- **Skipped for now.** The institutional dark theme was applied during component creation. Will revisit if time permits.
+## Task 13: Design Polish (Completed)
+- **Plan said:** Use Impeccable /audit + /polish skills for spacing, alignment, consistency
+- **Actual:** Manual polish pass covering all pages and components:
+  - Replaced page title from "frontend" to "Coppice — Green Bond Tokenization"
+  - Created custom SVG favicon (leaf/tree motif matching Coppice brand)
+  - Enhanced color palette: deeper surface tones (#0a0c10, #12151f, #1c2030), softer text-muted
+  - Added `.card-glow` hover effect (subtle green border glow on card hover)
+  - Added custom scrollbar styling and pulse animation for live indicators
+  - Nav: added Coppice logo SVG, green accent for active tab, glassmorphism backdrop
+  - Added footer with "ERC-3643 Compliant Green Bonds on Hedera" and "Hedera Testnet (Chain 296)"
+  - BondDetails: gradient header with icon, issuer name subtitle, refined label typography
+  - ComplianceStatus: SVG check/X icons, gradient header reflecting pass/fail state, progress counter
+  - TransferFlow: subtle background container for step progress, refined disabled states
+  - IssuerDashboard: shield icon for empty state, consistent input styling, status indicators with pulse dots
+  - ComplianceMonitor: stats cards with icon badges (checkmark, warning triangle, list), refined spacing
+  - AuditEventFeed: separated header/filters/content with border dividers, refined badge styling
+  - All input fields: consistent focus ring (green/20), improved placeholder opacity
+  - Fixed E2E test selector for "CPC" text (strict mode violation from new CPC `<span>` in total supply)
 
 ## Task 14: Playwright E2E Tests
 
@@ -79,4 +95,5 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 ## Overall Status
 - **Total Tests:** 50 (32 Hardhat + 18 Playwright)
 - **All passing**
-- **Git commits:** 6 total on main branch
+- **Git commits:** 7 on main branch (+ design polish pending commit)
+- **All plan tasks (1-15) completed**, including Task 13 design polish

@@ -2,12 +2,57 @@
 
 @theme {
   --color-bond-green: #22c55e;
+  --color-bond-green-dim: #16a34a;
   --color-bond-red: #ef4444;
   --color-bond-amber: #f59e0b;
-  --color-surface: #0f1117;
-  --color-surface-2: #1a1d2e;
-  --color-surface-3: #242738;
-  --color-border: #2e3348;
+  --color-surface: #0a0c10;
+  --color-surface-2: #12151f;
+  --color-surface-3: #1c2030;
+  --color-border: #262b3d;
   --color-text: #e2e8f0;
-  --color-text-muted: #94a3b8;
+  --color-text-muted: #8892a8;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-surface);
+}
+
+/* Subtle glow for card hover */
+.card-glow {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card-glow:hover {
+  border-color: rgba(34, 197, 94, 0.15);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.04);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Pulse animation for live indicators */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
 }
