@@ -20,3 +20,6 @@ e2e/playwright-report/
 screenshots/
 
 base_details.md
+
+# Worktrees
+.worktrees/
