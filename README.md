@@ -90,6 +90,15 @@ npx tsx src/event-logger.ts &
 cd ../frontend && npm run dev
 ```
 
+### Deploy Frontend to Vercel
+
+```bash
+cd frontend
+npx vercel --prod
+```
+
+Environment variables are in `frontend/.env` — these are public testnet contract addresses, safe to include in the build. The `vercel.json` handles SPA routing.
+
 ## Project Structure
 
 ```
@@ -167,6 +176,14 @@ Tests cover:
 | ModularCompliance | `0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf` |
 | ClaimIssuer | `0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A` |
 | TREXFactory | `0x78A20A45aA6Bb35f516fFf5dcE26f25C86e03d7f` |
+
+## HCS Topics & HTS Tokens
+
+| Resource | ID |
+|----------|----|
+| Audit Trail (HCS) | `0.0.8214934` |
+| Impact Tracking (HCS) | `0.0.8214935` |
+| eUSD Stablecoin (HTS) | `0.0.8214937` |
 
 ## Compliance Modules
 
