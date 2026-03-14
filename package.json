@@ -1,0 +1,13 @@
+{
+  "name": "coppice",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ERC-3643 compliant green bond tokenization on Hedera",
+  "license": "GPL-3.0",
+  "workspaces": [
+    "contracts",
+    "middleware",
+    "frontend",
+    "e2e"
+  ]
+}

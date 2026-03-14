@@ -1,0 +1,15 @@
+node_modules/
+.env
+dist/
+
+# Hardhat
+contracts/artifacts/
+contracts/cache/
+contracts/typechain-types/
+
+# Frontend
+frontend/dist/
+
+# Misc
+.DS_Store
+*.log
