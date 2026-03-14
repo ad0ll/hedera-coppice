@@ -18,3 +18,5 @@ e2e/playwright-report/
 .DS_Store
 *.log
 screenshots/
+
+base_details.md

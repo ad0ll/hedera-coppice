@@ -41,14 +41,15 @@ export function IssuerDashboard() {
     }
   }
 
-  async function handleFreeze() {
+  async function handleFreeze(action: "freeze" | "unfreeze") {
     if (!freezeAddr) return;
+    setFreezeAction(action);
     setFreezeStatus(null);
     try {
-      await setAddressFrozen(freezeAddr, freezeAction === "freeze");
+      await setAddressFrozen(freezeAddr, action === "freeze");
       setFreezeStatus({
         type: "success",
-        msg: `${freezeAction === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
+        msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
       });
     } catch (err: any) {
       setFreezeStatus({ type: "error", msg: err.reason || err.message?.slice(0, 80) || "Failed" });
@@ -132,12 +133,12 @@ export function IssuerDashboard() {
             <input type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
               placeholder="Wallet address (0x...)" className={inputClass} />
             <div className="flex gap-2">
-              <button onClick={() => { setFreezeAction("freeze"); handleFreeze(); }}
+              <button onClick={() => handleFreeze("freeze")}
                 disabled={loading || !freezeAddr}
                 className="flex-1 bg-bond-red/15 text-bond-red border border-bond-red/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-red/25 disabled:opacity-40 transition-colors">
                 Freeze
               </button>
-              <button onClick={() => { setFreezeAction("unfreeze"); handleFreeze(); }}
+              <button onClick={() => handleFreeze("unfreeze")}
                 disabled={loading || !freezeAddr}
                 className="flex-1 bg-bond-green/15 text-bond-green border border-bond-green/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/25 disabled:opacity-40 transition-colors">
                 Unfreeze
