@@ -1,10 +1,9 @@
 import { useCallback } from "react";
 import { ethers } from "ethers";
 import { getIdentityRegistryContract } from "../lib/contracts";
-import { JSON_RPC_URL } from "../lib/constants";
+import { readProvider } from "../lib/provider";
 
 export function useIdentity() {
-  const readProvider = new ethers.JsonRpcProvider(JSON_RPC_URL);
   const readContract = getIdentityRegistryContract(readProvider);
 
   const isVerified = useCallback(async (address: string): Promise<boolean> => {

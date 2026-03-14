@@ -1,14 +1,12 @@
 import { useState, useCallback } from "react";
-import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
 import { getTokenContract } from "../lib/contracts";
-import { JSON_RPC_URL } from "../lib/constants";
+import { readProvider } from "../lib/provider";
 
 export function useToken() {
   const { signer } = useWallet();
   const [loading, setLoading] = useState(false);
 
-  const readProvider = new ethers.JsonRpcProvider(JSON_RPC_URL);
   const readContract = getTokenContract(readProvider);
 
   const balanceOf = useCallback(async (address: string): Promise<bigint> => {
