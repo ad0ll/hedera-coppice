@@ -10,6 +10,11 @@ contracts/typechain-types/
 # Frontend
 frontend/dist/
 
+# E2E
+e2e/test-results/
+e2e/playwright-report/
+
 # Misc
 .DS_Store
 *.log
+screenshots/
