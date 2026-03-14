@@ -120,9 +120,10 @@ test.describe("Write Operations (Testnet)", () => {
     expect(pausedFinal).toBe(false);
   });
 
-  test("should show Alice purchase flow with real compliance checks", async ({ page }) => {
-    // This test walks through the investor purchase flow as Alice
-    // The compliance checks hit real testnet contracts
+  test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
+    // Tests the full investor portal: 4 compliance checks + TransferFlow UI
+    // Note: The mint step requires agent role, so we verify the flow reaches
+    // the correct steps (identity + compliance pass) and the UI is functional.
     const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
 
     await injectWalletMock(page, ALICE_KEY);
@@ -131,14 +132,49 @@ test.describe("Write Operations (Testnet)", () => {
 
     // Wait for all 4 compliance checks to pass
     await expect(page.getByText("Eligible to Invest")).toBeVisible({ timeout: 30000 });
-
-    // Verify each check passed
     await expect(page.getByText("ONCHAINID linked")).toBeVisible();
     await expect(page.getByText("All claims verified")).toBeVisible();
     await expect(page.getByText("Germany - Approved")).toBeVisible();
     await expect(page.getByText("Transfer permitted")).toBeVisible();
 
-    // Alice should see her CPC balance (she got 10 from the mint test)
+    // Alice should see her portfolio with CPC and eUSD balances
     await expect(page.getByText("CPC Balance")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("eUSD Balance")).toBeVisible();
+
+    // Purchase flow: enter amount and click Purchase
+    await page.getByPlaceholder("Amount (CPC)").fill("5");
+    await page.getByRole("button", { name: "Purchase" }).click();
+
+    // First two steps should pass (real contract calls)
+    await expect(page.getByText("Identity verified")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Compliance verified")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("eUSD payment processed")).toBeVisible({ timeout: 15000 });
+  });
+
+  test("should load and filter HCS audit events", async ({ page }) => {
+    // The compliance monitor should display real HCS events and support filtering
+    await page.goto("/monitor");
+
+    // Wait for events to load from mirror node
+    await expect(page.getByText(/\d+ events/)).toBeVisible({ timeout: 15000 });
+
+    // Verify stats cards show non-zero values
+    const totalText = await page.locator('.text-3xl').first().textContent();
+    expect(parseInt(totalText || "0")).toBeGreaterThan(0);
+
+    // Verify filter buttons appear for event types
+    await expect(page.getByRole("button", { name: "ALL", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "MINT", exact: true })).toBeVisible();
+
+    // Click a filter and verify the list updates
+    await page.getByRole("button", { name: "MINT", exact: true }).click();
+    // All visible event badges should be MINT
+    const badges = page.locator('span:has-text("MINT")');
+    await expect(badges.first()).toBeVisible();
+
+    // Click ALL to reset
+    await page.getByRole("button", { name: "ALL", exact: true }).click();
+    const allEventsText = await page.getByText(/\d+ events/).textContent();
+    expect(parseInt(allEventsText?.match(/\d+/)?.[0] || "0")).toBeGreaterThan(0);
   });
 });
