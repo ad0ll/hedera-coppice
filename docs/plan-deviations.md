@@ -35,13 +35,13 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 
 ### No Significant Deviations
 - Event logger created as planned, listening for Transfer/Paused/Unpaused/AddressFrozen events
-- JSON payloads kept under 1KB using abbreviated addresses
-- Uses ethers.js v6 event listener pattern
+- JSON payloads kept under 1KB using abbreviated addresses (TODO: Is this necessary to keep under 1kb? That sounds like it isn't user friendly)
+- Uses ethers.js v6 event listener pattern (TODO: WIll have to update to use Viem like the rest of the project)
 
 ## Tasks 8-12: Frontend (Combined into one batch)
 
 ### Tailwind CSS v4 + PostCSS Instead of Vite Plugin
-- **Plan said:** "Install + configure Tailwind CSS"
+- **Plan said:** "Install + configure Tailwind CSS" (TODO Yes, using tailwind + postcss is fine, but we will want to review the code to make sure it's efficient and that we have css/prestyled components where we need them. Impreccable should be able to help, just give it requirements for appearance)
 - **Actual:** Vite 8 (scaffolded by create-vite) was incompatible with @tailwindcss/vite plugin (requires Vite 5-7). Used PostCSS approach instead (@tailwindcss/postcss).
 - **Impact:** No functional difference, just a different integration method.
 
@@ -51,7 +51,7 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 
 ### IssuerDashboard Proceeds Allocation
 - **Plan said:** "Submit JSON to HCS impact topic"
-- **Actual:** Browser cannot submit HCS messages directly (requires Hedera SDK private key signing). The allocation form shows a success message noting that HCS submission requires the middleware. In production, this would call a backend API that submits to HCS.
+- **Actual:** Browser cannot submit HCS messages directly (requires Hedera SDK private key signing). The allocation form shows a success message noting that HCS submission requires the middleware. In production, this would call a backend API that submits to HCS. (TODO: Can't we mock a wallet for this? That's what we do when a project implements metamask in other projects)
 - **Impact:** The UI is fully functional; HCS integration for proceeds would need the event-logger middleware to handle submissions.
 
 ### Combined Tasks 8-12
@@ -60,7 +60,7 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 
 ## Task 13: Design Polish (Completed)
 - **Plan said:** Use Impeccable /audit + /polish skills for spacing, alignment, consistency
-- **Actual:** Manual polish pass covering all pages and components:
+- **Actual:** Manual polish pass covering all pages and components: (TODO: Did you use the impeccable skills? You should have. Research impeccable to make sure you know how to use it)
   - Replaced page title from "frontend" to "Coppice — Green Bond Tokenization"
   - Created custom SVG favicon (leaf/tree motif matching Coppice brand)
   - Enhanced color palette: deeper surface tones (#0a0c10, #12151f, #1c2030), softer text-muted
@@ -92,7 +92,7 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 - README created (see below)
 - Vercel deployment and pitch deck are user-driven tasks
 
-## Overall Status
+## Overall Status (TODO: This doesn't tell me about overall coverage or any games)
 - **Total Tests:** 50 (32 Hardhat + 18 Playwright)
 - **All passing**
 - **Git commits:** 7 on main branch (+ design polish pending commit)
