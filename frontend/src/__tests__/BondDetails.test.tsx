@@ -76,4 +76,22 @@ describe("BondDetails", () => {
     });
     expect(screen.getByText("Paused")).toBeInTheDocument();
   });
+
+  it("cleans up interval on unmount", async () => {
+    let unmount: () => void;
+    await act(async () => {
+      const result = render(<BondDetails />);
+      unmount = result.unmount;
+    });
+    expect(mockTotalSupply).toHaveBeenCalledTimes(1);
+
+    unmount!();
+
+    const callCount = mockTotalSupply.mock.calls.length;
+    await act(async () => {
+      vi.advanceTimersByTime(20000);
+    });
+    // No additional calls after unmount
+    expect(mockTotalSupply).toHaveBeenCalledTimes(callCount);
+  });
 });
