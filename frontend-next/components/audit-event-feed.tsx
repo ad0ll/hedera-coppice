@@ -35,8 +35,8 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
         <h3 className="text-lg font-semibold text-white mb-4">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
-        <div className="flex items-center gap-3 text-text-muted text-sm">
-          <span className="inline-block w-4 h-4 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" />
+        <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
+          <span className="inline-block w-4 h-4 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" aria-hidden="true" />
           Loading events from HCS...
         </div>
       </div>

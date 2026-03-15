@@ -104,7 +104,7 @@ export default function IssuerDashboard() {
     return (
       <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-surface-3 flex items-center justify-center">
-          <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
           </svg>
         </div>
@@ -117,7 +117,7 @@ export default function IssuerDashboard() {
   if (isCheckingAgent) {
     return (
       <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
-        <span className="inline-block w-6 h-6 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" />
+        <span className="inline-block w-6 h-6 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" role="status" aria-label="Checking authorization" />
         <p className="text-text-muted text-sm mt-4">Checking authorization...</p>
       </div>
     );
@@ -127,7 +127,7 @@ export default function IssuerDashboard() {
     return (
       <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-bond-red/10 flex items-center justify-center">
-          <svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+          <svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
           </svg>
         </div>
@@ -148,10 +148,12 @@ export default function IssuerDashboard() {
         <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
           <h3 className="text-lg font-semibold text-white mb-4">Mint Tokens</h3>
           <div className="space-y-3">
-            <input type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
+            <label className="sr-only" htmlFor="mint-to">Recipient address</label>
+            <input id="mint-to" type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
               placeholder="Recipient address (0x...)" className={inputClass} />
-            <input type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
-              placeholder="Amount (CPC)" className={inputClass} />
+            <label className="sr-only" htmlFor="mint-amount">Mint amount</label>
+            <input id="mint-amount" type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
+              placeholder="Amount (CPC)" min="0" className={inputClass} />
             <button onClick={handleMint} disabled={loading || !mintTo || !mintAmount}
               className="w-full bg-bond-green text-black py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/90 disabled:opacity-40 transition-all shadow-[0_0_12px_rgba(34,197,94,0.1)]">
               {loading ? "Minting..." : "Mint"}
@@ -168,7 +170,8 @@ export default function IssuerDashboard() {
         <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
           <h3 className="text-lg font-semibold text-white mb-4">Freeze / Unfreeze Wallet</h3>
           <div className="space-y-3">
-            <input type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
+            <label className="sr-only" htmlFor="freeze-addr">Wallet address to freeze/unfreeze</label>
+            <input id="freeze-addr" type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
               placeholder="Wallet address (0x...)" className={inputClass} />
             <div className="flex gap-2">
               <button onClick={() => handleFreeze("freeze")}
@@ -219,17 +222,20 @@ export default function IssuerDashboard() {
         <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
           <h3 className="text-lg font-semibold text-white mb-4">Allocate Proceeds</h3>
           <div className="space-y-3">
-            <input type="text" value={project} onChange={(e) => setProject(e.target.value)}
+            <label className="sr-only" htmlFor="project-name">Project name</label>
+            <input id="project-name" type="text" value={project} onChange={(e) => setProject(e.target.value)}
               placeholder="Project name" className={inputClass} />
-            <select value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
+            <label className="sr-only" htmlFor="project-category">Category</label>
+            <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
               <option>Renewable Energy</option>
               <option>Energy Efficiency</option>
               <option>Clean Transportation</option>
               <option>Sustainable Water</option>
               <option>Green Buildings</option>
             </select>
-            <input type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
-              placeholder="Amount (USD)" className={inputClass} />
+            <label className="sr-only" htmlFor="proceeds-amount">Amount in USD</label>
+            <input id="proceeds-amount" type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
+              placeholder="Amount (USD)" min="0" className={inputClass} />
             <button onClick={handleAllocateProceeds} disabled={!project || !proceedsAmount}
               className="w-full bg-bond-amber/15 text-bond-amber border border-bond-amber/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-amber/25 disabled:opacity-40 transition-colors">
               Allocate to HCS

@@ -112,11 +112,14 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       )}
 
       <div className="flex gap-3 mb-4">
+        <label className="sr-only" htmlFor="purchase-amount">Purchase amount in CPC</label>
         <input
+          id="purchase-amount"
           type="number"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="Amount (CPC)"
+          min="0"
           disabled={!enabled || running}
           className="flex-1 bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-text-muted/60 focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20 disabled:opacity-40 transition-colors"
         />
@@ -136,7 +139,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       )}
 
       {steps.length > 0 && (
-        <div className="space-y-1 mt-4 bg-surface-3/50 rounded-lg p-4">
+        <div className="space-y-1 mt-4 bg-surface-3/50 rounded-lg p-4" aria-live="polite" aria-atomic="true">
           {steps.map((step, i) => (
             <div key={i} className="flex items-center gap-3 py-1.5">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
@@ -144,7 +147,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
                   <div className="w-2 h-2 rounded-full bg-text-muted/30" />
                 )}
                 {step.status === "active" && (
-                  <span className="inline-block w-4 h-4 border-2 border-bond-amber/40 border-t-bond-amber rounded-full animate-spin" />
+                  <span className="inline-block w-4 h-4 border-2 border-bond-amber/40 border-t-bond-amber rounded-full animate-spin" role="status" aria-label="Processing" />
                 )}
                 {step.status === "success" && (
                   <svg className="w-5 h-5 text-bond-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">

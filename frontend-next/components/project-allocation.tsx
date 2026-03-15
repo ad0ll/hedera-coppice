@@ -4,11 +4,11 @@ import { useHCSAudit } from "@/hooks/use-hcs-audit";
 
 const CATEGORY_COLORS: Record<string, string> = {
   "Renewable Energy": "bg-bond-green",
-  "Energy Efficiency": "bg-blue-500",
-  "Clean Transportation": "bg-purple-500",
-  "Sustainable Water": "bg-cyan-500",
-  "Green Buildings": "bg-emerald-500",
-  Other: "bg-gray-500",
+  "Energy Efficiency": "bg-bond-amber",
+  "Clean Transportation": "bg-bond-red",
+  "Sustainable Water": "bg-bond-green-dim",
+  "Green Buildings": "bg-bond-green/70",
+  Other: "bg-text-muted",
 };
 
 interface Allocation {

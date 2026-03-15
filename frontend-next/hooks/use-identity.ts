@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { usePublicClient } from "wagmi";
 import { type Address, zeroAddress } from "viem";
 import { identityRegistryAbi } from "@coppice/abi";
@@ -8,7 +9,7 @@ import { CONTRACT_ADDRESSES } from "@/lib/constants";
 export function useIdentity() {
   const publicClient = usePublicClient();
 
-  const isVerified = async (address: Address): Promise<boolean> => {
+  const isVerified = useCallback(async (address: Address): Promise<boolean> => {
     if (!publicClient) return false;
     try {
       return await publicClient.readContract({
@@ -20,9 +21,9 @@ export function useIdentity() {
     } catch {
       return false;
     }
-  };
+  }, [publicClient]);
 
-  const getCountry = async (address: Address): Promise<number> => {
+  const getCountry = useCallback(async (address: Address): Promise<number> => {
     if (!publicClient) return 0;
     try {
       return await publicClient.readContract({
@@ -34,9 +35,9 @@ export function useIdentity() {
     } catch {
       return 0;
     }
-  };
+  }, [publicClient]);
 
-  const getIdentity = async (address: Address): Promise<Address> => {
+  const getIdentity = useCallback(async (address: Address): Promise<Address> => {
     if (!publicClient) return zeroAddress;
     try {
       return await publicClient.readContract({
@@ -48,9 +49,9 @@ export function useIdentity() {
     } catch {
       return zeroAddress;
     }
-  };
+  }, [publicClient]);
 
-  const isRegistered = async (address: Address): Promise<boolean> => {
+  const isRegistered = useCallback(async (address: Address): Promise<boolean> => {
     if (!publicClient) return false;
     try {
       return await publicClient.readContract({
@@ -62,7 +63,7 @@ export function useIdentity() {
     } catch {
       return false;
     }
-  };
+  }, [publicClient]);
 
   return { isVerified, getCountry, getIdentity, isRegistered };
 }
