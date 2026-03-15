@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
 import { useIdentity } from "../hooks/useIdentity";
 import { useCompliance } from "../hooks/useCompliance";
-import { API_URL } from "../lib/constants";
+import { API_URL, API_KEY } from "../lib/constants";
 
 type StepStatus = "pending" | "active" | "success" | "error";
 
@@ -61,7 +61,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       // Steps 3 & 4: Backend handles eUSD transfer + CPC mint
       const purchaseRes = await fetch(`${API_URL}/api/purchase`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
         body: JSON.stringify({ investorAddress: account, amount: Number(amount) }),
       });
 

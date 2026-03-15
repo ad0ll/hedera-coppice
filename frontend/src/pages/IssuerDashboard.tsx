@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
 import { useToken } from "../hooks/useToken";
 import { ProjectAllocation } from "../components/ProjectAllocation";
-import { API_URL } from "../lib/constants";
+import { API_URL, API_KEY } from "../lib/constants";
 
 export function IssuerDashboard() {
   const { account } = useWallet();
@@ -95,7 +95,7 @@ export function IssuerDashboard() {
     try {
       const res = await fetch(`${API_URL}/api/allocate`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
         body: JSON.stringify({
           project,
           category,

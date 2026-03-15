@@ -86,7 +86,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post("/api/purchase", async (req, res) => {
+const API_KEY = process.env.API_KEY;
+if (!API_KEY) {
+  console.error("FATAL: API_KEY environment variable is required");
+  process.exit(1);
+}
+
+function requireApiKey(req: express.Request, res: express.Response, next: express.NextFunction) {
+  if (req.headers["x-api-key"] !== API_KEY) {
+    res.status(401).json({ error: "Missing or invalid X-API-Key header" });
+    return;
+  }
+  next();
+}
+
+app.post("/api/purchase", requireApiKey, async (req, res) => {
   const { investorAddress, amount } = req.body;
 
   if (!investorAddress || typeof investorAddress !== "string" || !amount || typeof amount !== "number" || amount <= 0) {
@@ -192,7 +206,7 @@ app.post("/api/purchase", async (req, res) => {
   }
 });
 
-app.post("/api/allocate", async (req, res) => {
+app.post("/api/allocate", requireApiKey, async (req, res) => {
   const { project, category, amount, currency } = req.body;
 
   if (!project || typeof project !== "string" || !category || typeof category !== "string" || !amount || typeof amount !== "number") {
