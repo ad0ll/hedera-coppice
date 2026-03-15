@@ -56,10 +56,16 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Other: "bg-text-muted",
 };
 
-/** ISO 3166-1 numeric country codes used in demo wallets. */
+/** ISO 3166-1 numeric country codes used in demo wallets and onboarding. */
 export const COUNTRY_NAMES: Record<number, string> = {
-  276: "Germany",
-  250: "France",
   156: "China",
+  250: "France",
+  276: "Germany",
+  392: "Japan",
+  702: "Singapore",
+  756: "Switzerland",
+  826: "United Kingdom",
   840: "United States",
+  // Fictional country — demos jurisdiction banning without targeting a real nation
+  999: "Narnia",
 };

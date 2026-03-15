@@ -1,19 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  createWalletClient,
-  createPublicClient,
-  http,
   parseEther,
   erc20Abi,
   getAddress,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
 import { z } from "zod";
 import { tokenAbi } from "@coppice/common";
-import { JSON_RPC_URL } from "@/lib/hedera";
-import { hederaTestnet } from "@/lib/wagmi";
 import { verifyAuth } from "@/lib/auth";
 import { EUSD_EVM_ADDRESS } from "@/lib/constants";
+import { getDeployerAccount, getDeployerWalletClient, getServerPublicClient } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
@@ -23,16 +18,6 @@ const purchaseBodySchema = z.object({
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
-
-function getDeployerAccount() {
-  const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
-  if (!deployerKey) {
-    throw new Error("Missing DEPLOYER_PRIVATE_KEY");
-  }
-  // Typecast required: env var string needs to be narrowed to viem's branded hex type for privateKeyToAccount
-  const keyHex = (deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`) as `0x${string}`;
-  return privateKeyToAccount(keyHex);
-}
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -83,16 +68,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const walletClient = createWalletClient({
-      account: deployerAccount,
-      chain: hederaTestnet,
-      transport: http(JSON_RPC_URL),
-    });
-
-    const publicClient = createPublicClient({
-      chain: hederaTestnet,
-      transport: http(JSON_RPC_URL),
-    });
+    const walletClient = getDeployerWalletClient();
+    const publicClient = getServerPublicClient();
 
     // 2. Transfer eUSD from investor to treasury via ERC-20 transferFrom
     // Investor must have already called eUSD.approve(deployerAddress, amount) client-side

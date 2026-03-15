@@ -22,7 +22,7 @@ import type { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 // on local Hardhat network we use Hardhat's signers
 const DEMO_WALLETS = {
   alice: { country: 276, label: "Alice (DE)" }, // Germany
-  charlie: { country: 156, label: "Charlie (CN)" }, // China (restricted)
+  charlie: { country: 156, label: "Charlie (CN)" }, // China (was restricted, now unrestricted — see update-country-restriction.ts)
   diana: { country: 250, label: "Diana (FR)" }, // France
 };
 
