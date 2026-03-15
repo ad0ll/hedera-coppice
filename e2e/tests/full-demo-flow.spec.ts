@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
-
-const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
-const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
-const BOB_KEY = "BOB_PRIVATE_KEY_REDACTED";
-const CHARLIE_KEY = "CHARLIE_PRIVATE_KEY_REDACTED";
+import { DEPLOYER_KEY, ALICE_KEY, BOB_KEY, CHARLIE_KEY } from "../fixtures/test-keys";
 
 test.describe("Full Demo Flow", () => {
   test("complete demo script — navigation and wallet states", async ({ page }) => {

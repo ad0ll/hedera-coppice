@@ -1,10 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
-
-// Demo wallet private keys (from .env)
-const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
-const BOB_KEY = "BOB_PRIVATE_KEY_REDACTED";
-const CHARLIE_KEY = "CHARLIE_PRIVATE_KEY_REDACTED";
+import { ALICE_KEY, BOB_KEY, CHARLIE_KEY } from "../fixtures/test-keys";
 
 test.describe("Investor Portal", () => {
   test("should display bond details", async ({ page }) => {

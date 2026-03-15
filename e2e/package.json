@@ -4,6 +4,7 @@
   "private": true,
   "devDependencies": {
     "@playwright/test": "^1.49.0",
+    "dotenv": "^16.6.1",
     "viem": "^2.22.0"
   }
 }

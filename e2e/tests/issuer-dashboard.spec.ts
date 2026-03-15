@@ -1,8 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
-
-const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
-const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
+import { DEPLOYER_KEY, ALICE_KEY } from "../fixtures/test-keys";
 
 test.describe("Issuer Dashboard", () => {
   test("should require wallet connection", async ({ page }) => {

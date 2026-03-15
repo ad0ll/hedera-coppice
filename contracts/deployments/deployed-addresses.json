@@ -14,7 +14,7 @@
   "supplyLimitModule": "0x4f88C806ca0844BD3B09b3B700D11C54eD794D1F",
   "trexFactory": "0x78A20A45aA6Bb35f516fFf5dcE26f25C86e03d7f",
   "claimIssuer": "0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A",
-  "claimIssuerSigningKey": "CLAIM_ISSUER_SIGNING_KEY_REDACTED",
+  "claimIssuerSigningKey": "SET_IN_ENV",
   "token": "0x17e19B53981370a904d0003Ba2D336837a43cbf0",
   "identityRegistry": "0x03ecdB8673d65b81752AC14dAaCa797D846c1B31",
   "identityRegistryStorage": "0xa2d2C216084028B0c63314a7901C7d1eE2b7e2e5",

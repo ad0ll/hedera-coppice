@@ -12,24 +12,6 @@ import { hederaTestnet } from "viem/chains";
 const RPC_URL = "https://testnet.hashio.io/api";
 const CHAIN_ID = 296;
 
-// Known test wallet addresses (pre-computed from private keys)
-const KEY_TO_ADDRESS: Record<string, string> = {
-  "DEPLOYER_KEY_REDACTED":
-    "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE",
-  ALICE_KEY_REDACTED:
-    "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762",
-  "BOB_KEY_REDACTED":
-    "0xad33bd43bd3c93ec956f00c2d9782b7ae929e2f7",
-  "CHARLIE_KEY_REDACTED":
-    "0xFf3a3D1fEc979BB1C6b3b368752b61B249a76F90",
-  DIANA_KEY_REDACTED:
-    "0x35bccFFf4fCaFD35fF5b3c412d85Fba6ee04bCdf",
-};
-
-function stripHexPrefix(key: string): string {
-  return key.startsWith("0x") ? key.slice(2) : key;
-}
-
 /**
  * Injects a mock `window.ethereum` provider into the page.
  * Read-only RPC calls are proxied to the real Hedera testnet.
@@ -42,15 +24,10 @@ export async function injectWalletMock(
   rpcUrl: string = RPC_URL,
   chainId: number = CHAIN_ID
 ) {
-  const rawKey = stripHexPrefix(privateKey);
-  const address = KEY_TO_ADDRESS[rawKey.toLowerCase()];
-  if (!address) {
-    throw new Error(`Unknown private key — add to KEY_TO_ADDRESS map: ${rawKey.slice(0, 8)}...`);
-  }
-
   // Typecast required: raw hex string needs to be narrowed to viem's branded Hex type for privateKeyToAccount
   const keyHex = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
   const account = privateKeyToAccount(keyHex);
+  const address = account.address;
 
   const walletClient = createWalletClient({
     account,

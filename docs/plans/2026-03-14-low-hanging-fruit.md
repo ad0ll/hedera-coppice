@@ -644,7 +644,7 @@ At `write-operations.spec.ts:123`, update the test:
 test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
   // Tests the full investor portal: 4 compliance checks + TransferFlow UI
   // REQUIRES: middleware purchase-api running (npm run purchase-api)
-  const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
+  const ALICE_KEY = process.env.ALICE_PRIVATE_KEY!;
 
   await injectWalletMock(page, ALICE_KEY);
   await page.goto("/");

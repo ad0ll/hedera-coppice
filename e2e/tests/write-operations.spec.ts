@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock, readContract, getTokenBalance } from "../fixtures/wallet-mock";
-
-const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
+import { DEPLOYER_KEY, ALICE_KEY } from "../fixtures/test-keys";
 const ALICE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
 const DIANA_ADDR = "0x35bccFFf4fCaFD35fF5b3c412d85Fba6ee04bCdf";
 const TOKEN = "0x17e19B53981370a904d0003Ba2D336837a43cbf0";
@@ -145,8 +144,6 @@ test.describe("Write Operations (Testnet)", () => {
 
   test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
     // Tests the full investor portal: 4 compliance checks + purchase via backend API
-    const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
-
     await injectWalletMock(page, ALICE_KEY);
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();

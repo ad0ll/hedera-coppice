@@ -1,7 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
-
-const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
+import { ALICE_KEY, DEPLOYER_KEY } from "../fixtures/test-keys";
 
 test.describe("Mobile Responsive Design", () => {
   test("should show hamburger menu instead of desktop nav", async ({ page }) => {
@@ -79,7 +78,6 @@ test.describe("Mobile Responsive Design", () => {
   });
 
   test("should display issuer dashboard responsively", async ({ page }) => {
-    const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
     await injectWalletMock(page, DEPLOYER_KEY);
     await page.goto("/issue");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
