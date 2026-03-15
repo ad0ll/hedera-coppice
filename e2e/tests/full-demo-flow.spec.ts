@@ -22,6 +22,8 @@ test.describe("Full Demo Flow", () => {
     await expect(page.getByText("Eligible to Invest")).toBeVisible({ timeout: 30000 });
 
     // Step 3: Navigate to Issuer Dashboard
+    // wagmi persists connection state, so disconnect first then re-inject with Deployer key
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await injectWalletMock(page, DEPLOYER_KEY);
     await page.goto("/issue");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
@@ -34,6 +36,7 @@ test.describe("Full Demo Flow", () => {
     await expect(page.getByText("Total Events")).toBeVisible();
 
     // Step 5: Connect as Bob - should be ineligible
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await injectWalletMock(page, BOB_KEY);
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
@@ -41,6 +44,7 @@ test.describe("Full Demo Flow", () => {
     await expect(page.getByText("Not Eligible")).toBeVisible({ timeout: 30000 });
 
     // Step 6: Connect as Charlie - country restricted
+    await page.getByRole("button", { name: "Disconnect" }).click();
     await injectWalletMock(page, CHARLIE_KEY);
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();

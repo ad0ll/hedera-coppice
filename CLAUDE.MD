@@ -8,7 +8,7 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
 - **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger, purchase/allocate API.
-- **frontend/**: React + Vite + Tailwind CSS. MetaMask wallet integration, ethers.js v6.
+- **frontend/**: React + Vite + Tailwind CSS. MetaMask wallet integration via wagmi v3 + viem v2.
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
 ## Critical Constraints
@@ -30,7 +30,8 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Audit docs: docs/audit-*.md
 - Reference fixture: reference/deploy-full-suite.fixture.ts
 - Accounts & keys: .env
-- Provider singleton: frontend/src/lib/provider.ts
+- Wagmi config: frontend/src/lib/wagmi.ts
+- Shared ABIs: packages/abi/ (generated via wagmi CLI from contract artifacts)
 - Purchase/allocate API: middleware/src/purchase-api.ts
 
 ## Deployed Contracts & Topics
