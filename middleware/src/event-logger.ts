@@ -57,13 +57,27 @@ async function submitToHCS(
     return;
   }
 
-  const tx = await new TopicMessageSubmitTransaction()
-    .setTopicId(topicId)
-    .setMessage(message)
-    .freezeWith(client)
-    .sign(submitKey);
+  const delays = [500, 1000, 2000];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const tx = await new TopicMessageSubmitTransaction()
+        .setTopicId(topicId)
+        .setMessage(message)
+        .freezeWith(client)
+        .sign(submitKey);
 
-  await tx.execute(client);
+      await tx.execute(client);
+      return;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      if (attempt < 2) {
+        console.warn(`  HCS submit attempt ${attempt + 1} failed: ${msg.slice(0, 80)}, retrying...`);
+        await new Promise((r) => setTimeout(r, delays[attempt]));
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 async function main() {

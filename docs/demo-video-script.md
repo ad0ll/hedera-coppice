@@ -68,22 +68,22 @@ This script is structured to hit every criterion:
 6. Click "Purchase" — show the 4-step transfer flow animate:
    - Verifying identity... (spinner -> check)
    - Checking compliance... (spinner -> check)
-   - Processing eUSD payment... (spinner -> check)
-   - Issuing bond tokens... (spinner -> check)
+   - Approving eUSD spending... (MetaMask popup -> check)
+   - Processing purchase... (spinner -> check)
 7. Show the CPC balance update in the Portfolio panel
 
 **Voiceover:**
 
 > This is Alice, a verified German investor. When she connects her wallet, four real-time compliance checks hit the Hedera smart contracts. Her ONCHAINID is linked — that's the on-chain identity standard from ERC-3643. Her KYC, AML, and accreditation claims are all verified by our trusted claim issuer. Germany is an approved jurisdiction. And the modular compliance engine confirms the transfer is permitted.
 >
-> Alice is eligible. She enters an amount and clicks Purchase. Watch the four steps — each one is a real smart contract call on Hedera testnet. Identity verification. Compliance check. eUSD payment via the Hedera Token Service. And finally, the ERC-3643 token mint. Every step is an on-chain transaction.
+> Alice is eligible. She enters an amount and clicks Purchase. Watch the four steps — each one is a real on-chain action. Identity verification. Compliance check. Then Alice approves the eUSD spending in MetaMask — that's a real ERC-20 approve call on the HTS token's EVM facade. Finally, the backend does an atomic transferFrom plus ERC-3643 mint. Every step is a real transaction.
 >
 > Her portfolio now shows the updated CPC bond token balance alongside her eUSD balance — that's a native HTS token, not an ERC-20.
 
 **Key points to hit:**
 - 4 compliance checks are real contract calls, not mocked (Execution)
 - Each purchase step is a real transaction (Execution, Success)
-- eUSD is HTS, not ERC-20 — shows HTS integration (Integration)
+- eUSD is HTS with ERC-20 facade via HIP-218 — shows deep Hedera integration (Integration)
 - ONCHAINID is the identity standard (Innovation — shows depth of ERC-3643 knowledge)
 
 ---

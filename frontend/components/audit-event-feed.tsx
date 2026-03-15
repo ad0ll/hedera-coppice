@@ -22,12 +22,28 @@ function formatTimestamp(ts: number | string): string {
 }
 
 export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | "impact" }) {
-  const { events, loading } = useHCSAudit(topicType);
+  const { events, loading, topicMissing } = useHCSAudit(topicType);
   const [filter, setFilter] = useState<string>("ALL");
 
   const eventTypes = ["ALL", ...new Set(events.map((e) => e.type))];
   const filtered = filter === "ALL" ? events : events.filter((e) => e.type === filter);
   const sorted = [...filtered].reverse();
+
+  if (topicMissing) {
+    return (
+      <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
+        </h3>
+        <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
+          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          HCS topic not configured — {topicType} trail unavailable.
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

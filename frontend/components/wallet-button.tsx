@@ -1,11 +1,11 @@
 "use client";
 
-import { useAccount, useConnect, useDisconnect } from "wagmi";
+import { useConnection, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { DEMO_WALLETS } from "@/lib/constants";
 
 export function WalletButton() {
-  const { address, isConnecting: accountConnecting } = useAccount();
+  const { address, isConnecting: accountConnecting } = useConnection();
   const { connect, isPending } = useConnect();
   const { disconnect } = useDisconnect();
 

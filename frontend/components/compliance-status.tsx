@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { zeroAddress, parseEther } from "viem";
-import { useAccount } from "wagmi";
+import { useConnection } from "wagmi";
+import { usePublicClient } from "wagmi";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
+import { countryRestrictModuleAbi } from "@coppice/abi";
+import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/constants";
 
 interface CheckResult {
   label: string;
@@ -13,7 +16,8 @@ interface CheckResult {
 }
 
 export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?: (eligible: boolean) => void }) {
-  const { address } = useAccount();
+  const { address } = useConnection();
+  const publicClient = usePublicClient();
   const { isVerified, isRegistered, getCountry } = useIdentity();
   const { canTransfer } = useCompliance();
   const [checks, setChecks] = useState<CheckResult[]>([]);
@@ -60,9 +64,21 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setChecks([...results]);
 
       const country = await getCountry(address);
-      const RESTRICTED_COUNTRIES = [156];
       const countryNames: Record<number, string> = { 276: "Germany", 250: "France", 156: "China", 840: "United States" };
-      const isRestricted = RESTRICTED_COUNTRIES.includes(country);
+      let isRestricted = false;
+      if (publicClient && country > 0) {
+        try {
+          isRestricted = await publicClient.readContract({
+            address: COUNTRY_RESTRICT_MODULE_ADDRESS,
+            abi: countryRestrictModuleAbi,
+            functionName: "isCountryRestricted",
+            args: [CONTRACT_ADDRESSES.compliance, country],
+          // Typecast required: readContract returns unknown when ABI is imported as const from external package
+          }) as boolean;
+        } catch {
+          // Fall back to assuming not restricted if contract call fails
+        }
+      }
       results[2] = {
         label: "Jurisdiction Check",
         status: isRestricted ? "fail" : "pass",
@@ -97,7 +113,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setEligible(false);
       onEligibilityChange?.(false);
     };
-  }, [address, isVerified, isRegistered, getCountry, canTransfer, onEligibilityChange]);
+  }, [address, publicClient, isVerified, isRegistered, getCountry, canTransfer, onEligibilityChange]);
 
   if (!address) {
     return (

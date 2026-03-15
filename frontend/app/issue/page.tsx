@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { isAddress, parseEther } from "viem";
-import { useAccount } from "wagmi";
+import { useConnection, useConfig } from "wagmi";
 import { useTokenRead, useTokenWrite, useIsAgent } from "@/hooks/use-token";
 import { ProjectAllocation } from "@/components/project-allocation";
+import { signAuthMessage } from "@/lib/auth";
 
 export default function IssuerDashboard() {
-  const { address } = useAccount();
+  const { address } = useConnection();
+  const config = useConfig();
   const { paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
   const { data: isAuthorized, isLoading: isCheckingAgent } = useIsAgent(address);
@@ -82,9 +84,11 @@ export default function IssuerDashboard() {
   }
 
   async function handleAllocateProceeds() {
-    if (!project || !proceedsAmount) return;
+    if (!project || !proceedsAmount || !address) return;
     setProceedsStatus(null);
     try {
+      const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
+
       const res = await fetch("/api/allocate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -93,6 +97,8 @@ export default function IssuerDashboard() {
           category,
           amount: Number(proceedsAmount),
           currency: "USD",
+          message: authMessage,
+          signature,
         }),
       });
       const data: { error?: string } = await res.json();

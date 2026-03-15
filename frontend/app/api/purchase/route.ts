@@ -1,50 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  TransferTransaction,
-  TokenId,
-  AccountId,
-  PrivateKey,
-  Status,
-} from "@hashgraph/sdk";
-import {
   createWalletClient,
   createPublicClient,
   http,
   parseEther,
+  erc20Abi,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { tokenAbi } from "@coppice/abi";
-import { getClient, getOperatorKey, MIRROR_NODE_URL, JSON_RPC_URL } from "@/lib/hedera";
+import { MIRROR_NODE_URL, JSON_RPC_URL } from "@/lib/hedera";
 import { hederaTestnet } from "@/lib/wagmi";
-
-function buildWalletKeys(): Map<string, { accountId: string; privateKey: string }> {
-  const map = new Map<string, { accountId: string; privateKey: string }>();
-
-  const wallets = [
-    { envPrefix: "ALICE", accountIdEnv: "ALICE_ACCOUNT_ID" },
-    { envPrefix: "DIANA", accountIdEnv: "DIANA_ACCOUNT_ID" },
-    { envPrefix: "DEPLOYER", accountIdEnv: "HEDERA_ACCOUNT_ID" },
-  ];
-
-  for (const w of wallets) {
-    const pk = process.env[`${w.envPrefix}_PRIVATE_KEY`];
-    const accountId = process.env[w.accountIdEnv];
-    if (pk && accountId) {
-      // Typecast required: env var string needs to be narrowed to viem's branded hex type for privateKeyToAccount
-      const keyHex = (pk.startsWith("0x") ? pk : `0x${pk}`) as `0x${string}`;
-      const account = privateKeyToAccount(keyHex);
-      map.set(account.address.toLowerCase(), { accountId, privateKey: pk });
-    }
-  }
-
-  return map;
-}
-
-let _walletKeys: Map<string, { accountId: string; privateKey: string }> | null = null;
-function getWalletKeys() {
-  if (!_walletKeys) _walletKeys = buildWalletKeys();
-  return _walletKeys;
-}
+import { verifyAuth } from "@/lib/auth";
+import { EUSD_EVM_ADDRESS } from "@/lib/constants";
+import { withRetry } from "@/lib/retry";
 
 interface MirrorTokenEntry {
   token_id: string;
@@ -55,21 +23,33 @@ async function getEusdBalance(accountId: string): Promise<number> {
   const eusdTokenId = process.env.EUSD_TOKEN_ID;
   if (!eusdTokenId) return 0;
   try {
-    const res = await fetch(
-      `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${eusdTokenId}`,
-    );
-    if (!res.ok) return 0;
-    const data: { tokens?: MirrorTokenEntry[] } = await res.json();
-    const entry = data.tokens?.find((t) => t.token_id === eusdTokenId);
-    return entry ? entry.balance / 100 : 0;
+    return await withRetry(async () => {
+      const res = await fetch(
+        `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${eusdTokenId}`,
+      );
+      if (!res.ok) throw new Error(`Mirror Node returned ${res.status}`);
+      const data: { tokens?: MirrorTokenEntry[] } = await res.json();
+      const entry = data.tokens?.find((t) => t.token_id === eusdTokenId);
+      return entry ? entry.balance / 100 : 0;
+    });
   } catch {
     return 0;
   }
 }
 
+function getDeployerAccount() {
+  const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!deployerKey) {
+    throw new Error("Missing DEPLOYER_PRIVATE_KEY");
+  }
+  // Typecast required: env var string needs to be narrowed to viem's branded hex type for privateKeyToAccount
+  const keyHex = (deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`) as `0x${string}`;
+  return privateKeyToAccount(keyHex);
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { investorAddress, amount } = body;
+  const { investorAddress, amount, message, signature } = body;
 
   if (
     !investorAddress ||
@@ -81,15 +61,33 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const walletInfo = getWalletKeys().get(investorAddress.toLowerCase());
-  if (!walletInfo) {
-    return NextResponse.json({ error: "Unknown wallet — only demo wallets are supported" }, { status: 400 });
+  // Verify wallet signature — proves caller owns the investor wallet
+  if (!message || !signature) {
+    return NextResponse.json({ error: "Missing authentication signature" }, { status: 401 });
+  }
+  try {
+    await verifyAuth(message, signature, investorAddress);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Auth failed";
+    return NextResponse.json({ error: msg }, { status: 401 });
   }
 
-  const client = getClient();
   try {
-    // 1. Check eUSD balance
-    const balance = await getEusdBalance(walletInfo.accountId);
+    const deployerAccount = getDeployerAccount();
+
+    // 1. Check eUSD balance via Mirror Node (uses Hedera account ID format)
+    // Look up the Hedera account ID from the EVM address
+    const accountRes = await fetch(
+      `${MIRROR_NODE_URL}/api/v1/accounts/${investorAddress}`,
+    );
+    if (!accountRes.ok) {
+      return NextResponse.json(
+        { error: "Could not look up investor account" },
+        { status: 400 },
+      );
+    }
+    const accountData: { account: string } = await accountRes.json();
+    const balance = await getEusdBalance(accountData.account);
     if (balance < amount) {
       return NextResponse.json(
         { error: `Insufficient eUSD: ${balance} < ${amount}` },
@@ -97,35 +95,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 2. Transfer eUSD from investor to treasury via HTS SDK
-    const eusdTokenIdStr = process.env.EUSD_TOKEN_ID;
-    const treasuryAccountIdStr = process.env.HEDERA_ACCOUNT_ID;
-    if (!eusdTokenIdStr || !treasuryAccountIdStr) {
-      return NextResponse.json({ error: "Server misconfigured: missing EUSD_TOKEN_ID or HEDERA_ACCOUNT_ID" }, { status: 500 });
-    }
-    const eusdTokenId = TokenId.fromString(eusdTokenIdStr);
-    const treasuryAccountId = AccountId.fromString(treasuryAccountIdStr);
+    const walletClient = createWalletClient({
+      account: deployerAccount,
+      chain: hederaTestnet,
+      transport: http(JSON_RPC_URL),
+    });
 
-    const investorKey = PrivateKey.fromStringECDSA(
-      walletInfo.privateKey.startsWith("0x")
-        ? walletInfo.privateKey.slice(2)
-        : walletInfo.privateKey,
-    );
+    const publicClient = createPublicClient({
+      chain: hederaTestnet,
+      transport: http(JSON_RPC_URL),
+    });
 
-    const eusdAmount = Math.round(amount * 100); // eUSD has 2 decimals
+    // 2. Transfer eUSD from investor to treasury via ERC-20 transferFrom
+    // Investor must have already called eUSD.approve(deployerAddress, amount) client-side
+    const eusdAmount = BigInt(Math.round(amount * 100)); // eUSD has 2 decimals
+    const treasuryAddress = deployerAccount.address;
 
-    const transferTx = await new TransferTransaction()
-      .addTokenTransfer(eusdTokenId, AccountId.fromString(walletInfo.accountId), -eusdAmount)
-      .addTokenTransfer(eusdTokenId, treasuryAccountId, eusdAmount)
-      .freezeWith(client)
-      .sign(investorKey);
+    const transferHash = await walletClient.writeContract({
+      address: EUSD_EVM_ADDRESS,
+      abi: erc20Abi,
+      functionName: "transferFrom",
+      // Typecast required: investorAddress is validated string but viem needs branded hex type
+      args: [investorAddress as `0x${string}`, treasuryAddress, eusdAmount],
+      gas: BigInt(300_000),
+    });
 
-    const transferResult = await transferTx.execute(client);
-    const transferReceipt = await transferResult.getReceipt(client);
-
-    if (transferReceipt.status !== Status.Success) {
+    const transferReceipt = await publicClient.waitForTransactionReceipt({ hash: transferHash });
+    if (transferReceipt.status !== "success") {
       return NextResponse.json(
-        { error: `eUSD transfer failed: ${transferReceipt.status}` },
+        { error: "eUSD transfer failed — did you approve the spending amount?" },
         { status: 500 },
       );
     }
@@ -133,25 +131,6 @@ export async function POST(request: NextRequest) {
     // 3. Mint CPC tokens to investor via viem
     let mintTxHash: string | undefined;
     try {
-      const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
-      if (!deployerKey) {
-        throw new Error("Missing DEPLOYER_PRIVATE_KEY");
-      }
-      // Typecast required: env var string needs to be narrowed to viem's branded hex type
-      const deployerKeyHex = (deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`) as `0x${string}`;
-      const deployerAccount = privateKeyToAccount(deployerKeyHex);
-
-      const walletClient = createWalletClient({
-        account: deployerAccount,
-        chain: hederaTestnet,
-        transport: http(JSON_RPC_URL),
-      });
-
-      const publicClient = createPublicClient({
-        chain: hederaTestnet,
-        transport: http(JSON_RPC_URL),
-      });
-
       // Typecast required: env var string needs to be narrowed to viem's branded hex type for address
       const tokenAddress = process.env.TOKEN_ADDRESS as `0x${string}`;
 
@@ -165,38 +144,41 @@ export async function POST(request: NextRequest) {
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       mintTxHash = receipt.transactionHash;
     } catch (mintErr: unknown) {
-      // Mint failed after eUSD was already transferred — refund
+      // Mint failed after eUSD was already transferred — refund via transferFrom back
       console.error("CPC mint failed, refunding eUSD...");
+      let refundSucceeded = false;
       try {
-        const refundTx = await new TransferTransaction()
-          .addTokenTransfer(eusdTokenId, treasuryAccountId, -eusdAmount)
-          .addTokenTransfer(eusdTokenId, AccountId.fromString(walletInfo.accountId), eusdAmount)
-          .freezeWith(client)
-          .sign(getOperatorKey());
-
-        const refundResult = await refundTx.execute(client);
-        const refundReceipt = await refundResult.getReceipt(client);
+        const refundHash = await walletClient.writeContract({
+          address: EUSD_EVM_ADDRESS,
+          abi: erc20Abi,
+          functionName: "transfer",
+          args: [investorAddress as `0x${string}`, eusdAmount],
+          gas: BigInt(300_000),
+        });
+        const refundReceipt = await publicClient.waitForTransactionReceipt({ hash: refundHash });
+        refundSucceeded = refundReceipt.status === "success";
         console.log(`eUSD refund: ${refundReceipt.status}`);
       } catch (refundErr: unknown) {
         const refundMsg = refundErr instanceof Error ? refundErr.message : "unknown";
         console.error(`eUSD refund FAILED: ${refundMsg} — manual intervention needed`);
       }
       const mintMsg = mintErr instanceof Error ? mintErr.message : "Mint failed";
+      const refundStatus = refundSucceeded
+        ? "eUSD refunded"
+        : "eUSD refund FAILED — contact support";
       return NextResponse.json(
-        { error: `CPC mint failed (eUSD refunded): ${mintMsg.slice(0, 150)}` },
+        { error: `CPC mint failed (${refundStatus}): ${mintMsg.slice(0, 150)}` },
         { status: 500 },
       );
     }
 
     return NextResponse.json({
       success: true,
-      eusdTxId: transferResult.transactionId.toString(),
+      transferTxHash: transferReceipt.transactionHash,
       mintTxHash,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message.slice(0, 200) : "Purchase failed";
     return NextResponse.json({ error: message }, { status: 500 });
-  } finally {
-    client.close();
   }
 }

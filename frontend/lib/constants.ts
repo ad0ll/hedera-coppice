@@ -5,6 +5,13 @@ import {
   modularComplianceAddress as deployedMcAddress,
 } from "@coppice/abi";
 
+// eUSD HTS token EVM address (long-zero format per HIP-218)
+// HTS token 0.0.8214937 → 8214937 decimal → 0x7D5999 hex → padded to 20 bytes
+export const EUSD_EVM_ADDRESS: Address = "0x00000000000000000000000000000000007D5999";
+
+// CountryRestrictModule — deployed compliance module for jurisdiction checks
+export const COUNTRY_RESTRICT_MODULE_ADDRESS: Address = "0xfeafC271237D5fbe90dC285df5AeD0bF901F3755";
+
 export const MIRROR_NODE_URL =
   process.env.NEXT_PUBLIC_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
 
