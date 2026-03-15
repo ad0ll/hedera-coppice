@@ -27,10 +27,9 @@ const ONBOARD_COUNTRIES = Object.entries(COUNTRY_NAMES)
 /** Format camelCase transaction keys to human-readable labels */
 function formatTxLabel(key: string): string {
   return key
-    .replace(/([A-Z])/g, " $1")
+    // Insert space before uppercase runs: "claimKYC" → "claim KYC", "deployIdentity" → "deploy Identity"
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/^./, (c) => c.toUpperCase())
-    .replace("Kyc", "KYC")
-    .replace("Aml", "AML")
     .trim();
 }
 
