@@ -22,25 +22,50 @@ Coppice solves this by:
 
 ## Architecture
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    React Frontend                         │
-│  InvestorPortal │ IssuerDashboard │ ComplianceMonitor     │
-│  ─────────────────────────────────────────────────────    │
-│  MetaMask ←→ wagmi/viem ←→ Hedera EVM (Chain 296)        │
-│  Mirror Node API ←→ HCS Audit Trail / HTS Balances       │
-└──────────────────────────────────────────────────────────┘
-        │                    │                    │
-┌───────┴────────┐  ┌───────┴────────┐  ┌───────┴────────┐
-│ Smart Contracts │  │  HCS Topics    │  │  HTS Tokens    │
-│ (Hedera EVM)    │  │  (Consensus)   │  │  (Token Svc)   │
-│                 │  │                │  │                │
-│ ERC-3643 T-REX  │  │ Audit Trail    │  │ eUSD Stablecoin│
-│ Token           │  │ Impact Track   │  │ (FungibleCommon)│
-│ IdentityRegistry│  │                │  │                │
-│ ModularCompliance│ │                │  │                │
-│ ClaimIssuer     │  │                │  │                │
-└─────────────────┘  └────────────────┘  └────────────────┘
+```mermaid
+graph TD
+    subgraph Frontend["Next.js 16 Frontend"]
+        IP["Investor Portal"]
+        ID["Issuer Dashboard"]
+        CM["Compliance Monitor"]
+        WV["wagmi v3 + viem v2"]
+        API["API Routes\npurchase | allocate | health"]
+    end
+
+    subgraph SC["Smart Contracts — Hedera EVM"]
+        Token["ERC-3643 Token\nCPC"]
+        IR["IdentityRegistry"]
+        MC["ModularCompliance"]
+        CI["ClaimIssuer"]
+        Modules["CountryRestrict\nMaxBalance\nSupplyLimit"]
+    end
+
+    subgraph HCS["Hedera Consensus Service"]
+        Audit["Audit Topic\n0.0.8214934"]
+        Impact["Impact Topic\n0.0.8214935"]
+    end
+
+    subgraph HTS["Hedera Token Service"]
+        eUSD["eUSD Stablecoin\n0.0.8214937"]
+    end
+
+    MN["Mirror Node REST API"]
+    EL["Event Logger\nEVM events → HCS"]
+
+    IP & ID --> WV
+    WV -->|"JSON-RPC\nChain 296"| SC
+    API -->|"transferFrom + mint"| SC
+    API -->|"TopicMessageSubmit"| Impact
+    CM --> MN
+    IP --> MN
+
+    EL -->|"eth_getLogs poll"| SC
+    EL -->|"TopicMessageSubmit"| Audit
+
+    MN -.->|"read"| HCS
+    MN -.->|"read"| HTS
+
+    MC --> Modules
 ```
 
 ### 4 Hedera Services Integrated
@@ -195,7 +220,7 @@ Covers all three frontend pages with a custom MetaMask mock that signs real tran
 | Development | Hardhat, TypeScript, Turborepo | |
 | Frontend | Next.js 16 App Router, React 19, wagmi v3, viem v2, Tailwind CSS v4 | API routes handle purchase/allocate. |
 | Hedera SDK | @hashgraph/sdk for HCS/HTS | |
-| Testing | Hardhat/viem (contracts), vitest (frontend unit), Playwright (E2E) | 101 tests total: 32 contract + 26 unit + 43 E2E |
+| Testing | Hardhat/viem (contracts), vitest (frontend unit), Playwright (E2E) | 115 tests total: 32 contract + 40 unit + 43 E2E |
 | Deployment | Hedera Testnet (Chain ID 296), Vercel (frontend) | |
 
 ## Contract Address Configuration
