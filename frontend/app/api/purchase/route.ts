@@ -40,7 +40,11 @@ function buildWalletKeys(): Map<string, { accountId: string; privateKey: string 
   return map;
 }
 
-const walletKeys = buildWalletKeys();
+let _walletKeys: Map<string, { accountId: string; privateKey: string }> | null = null;
+function getWalletKeys() {
+  if (!_walletKeys) _walletKeys = buildWalletKeys();
+  return _walletKeys;
+}
 
 interface MirrorTokenEntry {
   token_id: string;
@@ -77,7 +81,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 
-  const walletInfo = walletKeys.get(investorAddress.toLowerCase());
+  const walletInfo = getWalletKeys().get(investorAddress.toLowerCase());
   if (!walletInfo) {
     return NextResponse.json({ error: "Unknown wallet — only demo wallets are supported" }, { status: 400 });
   }
