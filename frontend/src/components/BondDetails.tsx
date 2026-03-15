@@ -1,22 +1,14 @@
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
-import { useToken } from "../hooks/useToken";
+import { useTokenRead } from "../hooks/useToken";
 import { BOND_DETAILS } from "../lib/constants";
+import { formatEther } from "viem";
 
 export function BondDetails() {
-  const { totalSupply, paused } = useToken();
-  const [supply, setSupply] = useState<string>("--");
-  const [isPaused, setIsPaused] = useState<boolean | null>(null);
+  const { totalSupply, paused } = useTokenRead();
 
-  useEffect(() => {
-    function refresh() {
-      totalSupply().then((s) => setSupply(Number(ethers.formatEther(s)).toLocaleString("en-US")));
-      paused().then(setIsPaused);
-    }
-    refresh();
-    const interval = setInterval(refresh, 10000);
-    return () => clearInterval(interval);
-  }, []);
+  const supply = totalSupply.data != null
+    ? Number(formatEther(totalSupply.data)).toLocaleString("en-US")
+    : "--";
+  const isPaused = paused.data ?? null;
 
   return (
     <div className="bg-surface-2 border border-border rounded-xl overflow-hidden card-glow">

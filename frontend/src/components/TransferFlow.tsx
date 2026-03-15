@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ethers } from "ethers";
+import { zeroAddress, parseEther, type Address } from "viem";
 import { useWallet } from "../providers/WalletProvider";
 import { useIdentity } from "../hooks/useIdentity";
 import { useCompliance } from "../hooks/useCompliance";
@@ -24,7 +24,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   async function handlePurchase() {
     if (!account || !amount || running) return;
 
-    const parsedAmount = ethers.parseEther(amount);
+    const parsedAmount = parseEther(amount);
     setRunning(true);
 
     const newSteps: Step[] = [
@@ -47,7 +47,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[1] = { ...newSteps[1], status: "active" };
       setSteps([...newSteps]);
 
-      const allowed = await canTransfer(ethers.ZeroAddress, account, parsedAmount);
+      const allowed = await canTransfer(zeroAddress, account, parsedAmount);
       if (!allowed) {
         newSteps[1] = { label: "Compliance check", status: "error", detail: "Transfer blocked by compliance" };
         setSteps([...newSteps]);
@@ -80,7 +80,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[3] = { ...newSteps[3], status: "active" };
       setSteps([...newSteps]);
 
-      // Brief pause to show the step transition
       await new Promise((r) => setTimeout(r, 500));
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);

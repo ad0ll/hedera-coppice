@@ -1,38 +1,36 @@
 import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { formatEther } from "viem";
 import { BondDetails } from "../components/BondDetails";
 import { ComplianceStatus } from "../components/ComplianceStatus";
 import { TransferFlow } from "../components/TransferFlow";
 import { useWallet } from "../providers/WalletProvider";
-import { useToken } from "../hooks/useToken";
+import { useTokenBalance } from "../hooks/useToken";
 import { useHTS } from "../hooks/useHTS";
 
 export function InvestorPortal() {
   const { account } = useWallet();
-  const { balanceOf } = useToken();
+  const { data: cpcBalanceRaw } = useTokenBalance(account ?? undefined);
   const { getEusdBalance } = useHTS();
   const [eligible, setEligible] = useState(false);
-  const [cpcBalance, setCpcBalance] = useState<string>("--");
   const [eusdBalance, setEusdBalance] = useState<string>("--");
+
+  const cpcBalance = cpcBalanceRaw != null
+    ? Number(formatEther(cpcBalanceRaw)).toLocaleString("en-US")
+    : "--";
 
   useEffect(() => {
     if (!account) {
-      setCpcBalance("--");
       setEusdBalance("--");
       return;
     }
-
-    async function loadBalances() {
-      const cpc = await balanceOf(account!);
-      setCpcBalance(Number(ethers.formatEther(cpc)).toLocaleString("en-US"));
-      const eusd = await getEusdBalance(account!);
+    const load = async () => {
+      const eusd = await getEusdBalance(account);
       setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
-    }
-
-    loadBalances();
-    const interval = setInterval(loadBalances, 10000);
+    };
+    load();
+    const interval = setInterval(load, 10000);
     return () => clearInterval(interval);
-  }, [account]);
+  }, [account, getEusdBalance]);
 
   return (
     <div className="space-y-6">

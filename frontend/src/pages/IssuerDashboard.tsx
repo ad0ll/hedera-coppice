@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react";
-import { ethers } from "ethers";
+import { useState } from "react";
+import { parseEther, type Address } from "viem";
 import { useWallet } from "../providers/WalletProvider";
-import { useToken } from "../hooks/useToken";
+import { useTokenRead, useTokenWrite, useIsAgent } from "../hooks/useToken";
 import { ProjectAllocation } from "../components/ProjectAllocation";
 import { API_URL, API_KEY } from "../lib/constants";
 
 export function IssuerDashboard() {
   const { account } = useWallet();
-  const { mint, pause, unpause, paused, setAddressFrozen, isAgent, loading } = useToken();
+  const { paused: pausedQuery } = useTokenRead();
+  const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
+  const { data: isAuthorized, isLoading: isCheckingAgent } = useIsAgent(account ?? undefined);
 
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const isPaused = pausedQuery.data ?? null;
 
   const [mintTo, setMintTo] = useState("");
   const [mintAmount, setMintAmount] = useState("");
@@ -18,7 +20,6 @@ export function IssuerDashboard() {
   const [freezeAddr, setFreezeAddr] = useState("");
   const [freezeStatus, setFreezeStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  const [isPaused, setIsPaused] = useState<boolean | null>(null);
   const [pauseStatus, setPauseStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const [project, setProject] = useState("");
@@ -26,27 +27,11 @@ export function IssuerDashboard() {
   const [proceedsAmount, setProceedsAmount] = useState("");
   const [proceedsStatus, setProceedsStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
-  useEffect(() => {
-    paused().then(setIsPaused).catch(() => {});
-    const interval = setInterval(() => {
-      paused().then(setIsPaused).catch(() => {});
-    }, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (!account) {
-      setIsAuthorized(null);
-      return;
-    }
-    isAgent(account).then(setIsAuthorized).catch(() => setIsAuthorized(false));
-  }, [account]);
-
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
     setMintStatus(null);
     try {
-      await mint(mintTo, ethers.parseEther(mintAmount));
+      await mint(mintTo as Address, parseEther(mintAmount));
       setMintStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${mintTo.slice(0, 10)}...` });
       setMintTo("");
       setMintAmount("");
@@ -60,7 +45,7 @@ export function IssuerDashboard() {
     if (!freezeAddr) return;
     setFreezeStatus(null);
     try {
-      await setAddressFrozen(freezeAddr, action === "freeze");
+      await setAddressFrozen(freezeAddr as Address, action === "freeze");
       setFreezeStatus({
         type: "success",
         msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
@@ -76,11 +61,9 @@ export function IssuerDashboard() {
     try {
       if (isPaused) {
         await unpause();
-        setIsPaused(false);
         setPauseStatus({ type: "success", msg: "Token unpaused" });
       } else {
         await pause();
-        setIsPaused(true);
         setPauseStatus({ type: "success", msg: "Token paused" });
       }
     } catch (err: unknown) {
@@ -103,7 +86,7 @@ export function IssuerDashboard() {
           currency: "USD",
         }),
       });
-      const data = await res.json();
+      const data: { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || "Allocation failed");
       setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
       setProject("");
@@ -128,7 +111,7 @@ export function IssuerDashboard() {
     );
   }
 
-  if (isAuthorized === null) {
+  if (isCheckingAgent) {
     return (
       <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
         <span className="inline-block w-6 h-6 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" />
@@ -137,7 +120,7 @@ export function IssuerDashboard() {
     );
   }
 
-  if (isAuthorized === false) {
+  if (!isAuthorized) {
     return (
       <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
         <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-bond-red/10 flex items-center justify-center">

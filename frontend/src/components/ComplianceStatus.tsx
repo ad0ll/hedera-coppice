@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
+import { zeroAddress, parseEther, type Address } from "viem";
 import { useWallet } from "../providers/WalletProvider";
 import { useIdentity } from "../hooks/useIdentity";
 import { useCompliance } from "../hooks/useCompliance";
-import { ethers } from "ethers";
 
 interface CheckResult {
   label: string;
@@ -26,6 +26,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     }
 
     async function runChecks() {
+      if (!account) return;
+
       const results: CheckResult[] = [
         { label: "Identity Registered", status: "loading" },
         { label: "KYC / AML / Accredited", status: "loading" },
@@ -34,7 +36,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       ];
       setChecks([...results]);
 
-      const registered = await isRegistered(account!);
+      const registered = await isRegistered(account);
       results[0] = {
         label: "Identity Registered",
         status: registered ? "pass" : "fail",
@@ -52,7 +54,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         return;
       }
 
-      const verified = await isVerified(account!);
+      const verified = await isVerified(account);
       results[1] = {
         label: "KYC / AML / Accredited",
         status: verified ? "pass" : "fail",
@@ -60,7 +62,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       };
       setChecks([...results]);
 
-      const country = await getCountry(account!);
+      const country = await getCountry(account);
       const RESTRICTED_COUNTRIES = [156];
       const countryNames: Record<number, string> = { 276: "Germany", 250: "France", 156: "China", 840: "United States" };
       const isRestricted = RESTRICTED_COUNTRIES.includes(country);
@@ -74,9 +76,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setChecks([...results]);
 
       const transferAllowed = await canTransfer(
-        ethers.ZeroAddress,
-        account!,
-        ethers.parseEther("1")
+        zeroAddress,
+        account,
+        parseEther("1")
       );
       results[3] = {
         label: "Compliance Module",
