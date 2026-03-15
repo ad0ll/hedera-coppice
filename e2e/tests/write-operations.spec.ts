@@ -1,6 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock, readContract, getTokenBalance } from "../fixtures/wallet-mock";
-import { ethers } from "ethers";
 
 const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
 const ALICE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
@@ -8,11 +7,35 @@ const DIANA_ADDR = "0x35bccFFf4fCaFD35fF5b3c412d85Fba6ee04bCdf";
 const TOKEN = "0x17e19B53981370a904d0003Ba2D336837a43cbf0";
 
 const TOKEN_ABI = [
-  "function balanceOf(address) view returns (uint256)",
-  "function totalSupply() view returns (uint256)",
-  "function paused() view returns (bool)",
-  "function isFrozen(address) view returns (bool)",
-];
+  {
+    name: "balanceOf",
+    type: "function",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    name: "totalSupply",
+    type: "function",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    name: "paused",
+    type: "function",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    name: "isFrozen",
+    type: "function",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+] as const;
 
 // These tests perform real transactions on Hedera testnet.
 // They use the deployer wallet and must run serially.
@@ -122,7 +145,6 @@ test.describe("Write Operations (Testnet)", () => {
 
   test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
     // Tests the full investor portal: 4 compliance checks + purchase via backend API
-    // REQUIRES: middleware purchase-api running (npm run purchase-api)
     const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
 
     await injectWalletMock(page, ALICE_KEY);

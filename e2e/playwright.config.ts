@@ -1,5 +1,7 @@
 import { defineConfig } from "@playwright/test";
 
+const PORT = parseInt(process.env.E2E_PORT || "3100", 10);
+
 export default defineConfig({
   testDir: "./tests",
   fullyParallel: false,
@@ -9,24 +11,16 @@ export default defineConfig({
   reporter: "html",
   timeout: 60000,
   use: {
-    baseURL: "http://localhost:5173",
+    baseURL: `http://localhost:${PORT}`,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  webServer: [
-    {
-      command: "cd ../frontend && npm run dev",
-      port: 5173,
-      reuseExistingServer: !process.env.CI,
-      timeout: 30000,
-    },
-    {
-      command: "cd ../middleware && npm run purchase-api",
-      port: 5000,
-      reuseExistingServer: !process.env.CI,
-      timeout: 15000,
-    },
-  ],
+  webServer: {
+    command: `cd ../frontend-next && npx next dev --port ${PORT}`,
+    port: PORT,
+    reuseExistingServer: !process.env.CI,
+    timeout: 30000,
+  },
   projects: [
     {
       name: "chromium",

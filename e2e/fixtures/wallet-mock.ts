@@ -1,5 +1,13 @@
 import { type Page } from "@playwright/test";
-import { ethers } from "ethers";
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  formatEther,
+  type Hex,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { hederaTestnet } from "viem/chains";
 
 const RPC_URL = "https://testnet.hashio.io/api";
 const CHAIN_ID = 296;
@@ -40,29 +48,29 @@ export async function injectWalletMock(
     throw new Error(`Unknown private key — add to KEY_TO_ADDRESS map: ${rawKey.slice(0, 8)}...`);
   }
 
-  // Create a server-side signer for this wallet
-  const provider = new ethers.JsonRpcProvider(rpcUrl);
-  const wallet = new ethers.Wallet(privateKey, provider);
+  // Typecast required: raw hex string needs to be narrowed to viem's branded Hex type for privateKeyToAccount
+  const keyHex = (privateKey.startsWith("0x") ? privateKey : `0x${privateKey}`) as Hex;
+  const account = privateKeyToAccount(keyHex);
+
+  const walletClient = createWalletClient({
+    account,
+    chain: hederaTestnet,
+    transport: http(rpcUrl),
+  });
 
   // Expose a function that the browser mock can call to sign+send transactions
-  // We need to handle the case where this is called multiple times (re-injection)
   try {
     await page.exposeFunction(
       "__signAndSendTransaction",
       async (txJson: string): Promise<string> => {
         const txParams = JSON.parse(txJson);
 
-        // Build the transaction for ethers
-        const tx: ethers.TransactionRequest = {
-          to: txParams.to,
-          data: txParams.data,
+        const hash = await walletClient.sendTransaction({
+          to: txParams.to as Hex,
+          data: txParams.data as Hex | undefined,
           value: txParams.value ? BigInt(txParams.value) : 0n,
-          from: wallet.address,
-        };
-
-        // Let ethers handle gas estimation and nonce
-        const response = await wallet.sendTransaction(tx);
-        return response.hash;
+        });
+        return hash;
       }
     );
   } catch {
@@ -74,9 +82,9 @@ export async function injectWalletMock(
     await page.exposeFunction(
       "__personalSign",
       async (message: string): Promise<string> => {
-        return wallet.signMessage(
-          ethers.getBytes(message)
-        );
+        return account.signMessage({
+          message: { raw: message as Hex },
+        });
       }
     );
   } catch {
@@ -211,13 +219,22 @@ export async function injectWalletMock(
  */
 export async function readContract(
   contractAddress: string,
-  abi: string[],
-  method: string,
+  abi: readonly { name: string; type: string; inputs: readonly { type: string }[]; outputs: readonly { type: string }[]; stateMutability: string }[],
+  functionName: string,
   args: unknown[] = []
 ): Promise<unknown> {
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
-  const contract = new ethers.Contract(contractAddress, abi, provider);
-  return contract[method](...args);
+  const publicClient = createPublicClient({
+    chain: hederaTestnet,
+    transport: http(RPC_URL),
+  });
+
+  return publicClient.readContract({
+    // Typecast required: dynamic contract address string needs to be narrowed to viem's branded Hex type
+    address: contractAddress as Hex,
+    abi,
+    functionName,
+    args,
+  });
 }
 
 /**
@@ -227,12 +244,26 @@ export async function getTokenBalance(
   tokenAddress: string,
   walletAddress: string
 ): Promise<string> {
-  const provider = new ethers.JsonRpcProvider(RPC_URL);
-  const contract = new ethers.Contract(
-    tokenAddress,
-    ["function balanceOf(address) view returns (uint256)"],
-    provider
-  );
-  const balance = await contract.balanceOf(walletAddress);
-  return ethers.formatEther(balance);
+  const publicClient = createPublicClient({
+    chain: hederaTestnet,
+    transport: http(RPC_URL),
+  });
+
+  const balance = await publicClient.readContract({
+    // Typecast required: dynamic contract address string needs to be narrowed to viem's branded Hex type
+    address: tokenAddress as Hex,
+    abi: [
+      {
+        name: "balanceOf",
+        type: "function",
+        inputs: [{ name: "account", type: "address" }],
+        outputs: [{ name: "", type: "uint256" }],
+        stateMutability: "view",
+      },
+    ] as const,
+    functionName: "balanceOf",
+    args: [walletAddress as Hex],
+  });
+
+  return formatEther(balance);
 }
