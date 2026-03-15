@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { zeroAddress, parseEther, erc20Abi } from "viem";
+import { zeroAddress, parseEther, erc20Abi, getAddress } from "viem";
 import { useConnection, useConfig } from "wagmi";
 import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { useIdentity } from "@/hooks/use-identity";
@@ -30,7 +30,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   const deployerEntry = Object.entries(DEMO_WALLETS).find(
     ([, info]) => info.role === "issuer",
   );
-  const deployerAddress = deployerEntry?.[0] as `0x${string}` | undefined;
+  const deployerAddress = deployerEntry ? getAddress(deployerEntry[0]) : undefined;
 
   async function handlePurchase() {
     if (!address || !amount || running || !deployerAddress) return;
@@ -167,8 +167,8 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
       {steps.length > 0 && (
         <div className="space-y-1 mt-4 bg-surface-3/50 rounded-lg p-4" aria-live="polite" aria-atomic="true">
-          {steps.map((step) => (
-            <div key={step.label} className="flex items-center gap-3 py-1.5">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center gap-3 py-1.5">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 {step.status === "pending" && (
                   <div className="w-2 h-2 rounded-full bg-text-muted/30" />

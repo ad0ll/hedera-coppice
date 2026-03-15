@@ -1,21 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
+import { z } from "zod";
 import { getClient, getOperatorKey } from "@/lib/hedera";
 import { verifyAuth } from "@/lib/auth";
 
-export async function POST(request: NextRequest) {
-  const { project, category, amount, currency, message: authMessage, signature } = await request.json();
+const allocateBodySchema = z.object({
+  project: z.string().nonempty(),
+  category: z.string().nonempty(),
+  amount: z.number().positive(),
+  currency: z.string().optional().default("USD"),
+  message: z.string().nonempty().optional(),
+  signature: z.string().nonempty().optional(),
+});
 
-  if (
-    !project ||
-    typeof project !== "string" ||
-    !category ||
-    typeof category !== "string" ||
-    !amount ||
-    typeof amount !== "number"
-  ) {
+type AllocateBody = z.infer<typeof allocateBodySchema>;
+
+export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const parsed = allocateBodySchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
+  const { project, category, amount, currency, message: authMessage, signature } = parsed.data;
 
   // Verify wallet signature — only the deployer (issuer) can allocate proceeds
   const deployerAddress = process.env.DEPLOYER_ADDRESS;
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
       project,
       category,
       amount: String(amount),
-      currency: typeof currency === "string" ? currency : "USD",
+      currency,
     },
   };
 

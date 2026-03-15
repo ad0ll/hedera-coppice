@@ -66,6 +66,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       const country = await getCountry(address);
       const countryNames: Record<number, string> = { 276: "Germany", 250: "France", 156: "China", 840: "United States" };
       let isRestricted = false;
+      let countryCheckFailed = false;
       if (publicClient && country > 0) {
         try {
           isRestricted = await publicClient.readContract({
@@ -76,15 +77,18 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           // Typecast required: readContract returns unknown when ABI is imported as const from external package
           }) as boolean;
         } catch {
-          // Fall back to assuming not restricted if contract call fails
+          countryCheckFailed = true;
         }
       }
+      const countryLabel = countryNames[country] || `Code ${country}`;
       results[2] = {
         label: "Jurisdiction Check",
-        status: isRestricted ? "fail" : "pass",
-        detail: isRestricted
-          ? `${countryNames[country] || `Code ${country}`} - Restricted`
-          : `${countryNames[country] || `Code ${country}`} - Approved`,
+        status: countryCheckFailed ? "fail" : isRestricted ? "fail" : "pass",
+        detail: countryCheckFailed
+          ? `${countryLabel} - Could not verify (try again)`
+          : isRestricted
+            ? `${countryLabel} - Restricted`
+            : `${countryLabel} - Approved`,
       };
       setChecks([...results]);
 

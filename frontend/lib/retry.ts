@@ -15,7 +15,7 @@ export async function withRetry<T>(
     } catch (err) {
       lastError = err;
       if (i < attempts - 1) {
-        await new Promise((r) => setTimeout(r, delays[i]));
+        await new Promise((r) => setTimeout(r, delays[Math.min(i, delays.length - 1)]));
       }
     }
   }

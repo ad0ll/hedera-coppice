@@ -1,4 +1,4 @@
-import { verifyMessage } from "viem";
+import { verifyMessage, getAddress } from "viem";
 import { signMessage } from "@wagmi/core";
 import type { Config } from "wagmi";
 import type { Address } from "viem";
@@ -50,8 +50,9 @@ export async function verifyAuth(
   validateTimestamp(message);
 
   const isValid = await verifyMessage({
-    address: expectedAddress as `0x${string}`,
+    address: getAddress(expectedAddress),
     message,
+    // Typecast required: signature is a hex string but not an address — getAddress doesn't apply
     signature: signature as `0x${string}`,
   });
 

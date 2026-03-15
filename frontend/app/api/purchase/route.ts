@@ -5,14 +5,25 @@ import {
   http,
   parseEther,
   erc20Abi,
+  getAddress,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { z } from "zod";
 import { tokenAbi } from "@coppice/abi";
 import { MIRROR_NODE_URL, JSON_RPC_URL } from "@/lib/hedera";
 import { hederaTestnet } from "@/lib/wagmi";
 import { verifyAuth } from "@/lib/auth";
 import { EUSD_EVM_ADDRESS } from "@/lib/constants";
 import { withRetry } from "@/lib/retry";
+
+const purchaseBodySchema = z.object({
+  investorAddress: z.string().nonempty(),
+  amount: z.number().positive(),
+  message: z.string().nonempty().optional(),
+  signature: z.string().nonempty().optional(),
+});
+
+type PurchaseBody = z.infer<typeof purchaseBodySchema>;
 
 interface MirrorTokenEntry {
   token_id: string;
@@ -49,16 +60,17 @@ function getDeployerAccount() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { investorAddress, amount, message, signature } = body;
-
-  if (
-    !investorAddress ||
-    typeof investorAddress !== "string" ||
-    !amount ||
-    typeof amount !== "number" ||
-    amount <= 0
-  ) {
+  const parsed = purchaseBodySchema.safeParse(body);
+  if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+  const { investorAddress, amount, message, signature } = parsed.data;
+
+  let investor;
+  try {
+    investor = getAddress(investorAddress);
+  } catch {
+    return NextResponse.json({ error: "Invalid investor address" }, { status: 400 });
   }
 
   // Verify wallet signature — proves caller owns the investor wallet
@@ -66,7 +78,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing authentication signature" }, { status: 401 });
   }
   try {
-    await verifyAuth(message, signature, investorAddress);
+    await verifyAuth(message, signature, investor);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "Auth failed";
     return NextResponse.json({ error: msg }, { status: 401 });
@@ -77,16 +89,19 @@ export async function POST(request: NextRequest) {
 
     // 1. Check eUSD balance via Mirror Node (uses Hedera account ID format)
     // Look up the Hedera account ID from the EVM address
-    const accountRes = await fetch(
-      `${MIRROR_NODE_URL}/api/v1/accounts/${investorAddress}`,
-    );
-    if (!accountRes.ok) {
+    const accountData = await withRetry(async () => {
+      const accountRes = await fetch(
+        `${MIRROR_NODE_URL}/api/v1/accounts/${investor}`,
+      );
+      if (!accountRes.ok) throw new Error(`Mirror Node returned ${accountRes.status}`);
+      return accountRes.json() as Promise<{ account: string }>;
+    }).catch(() => null);
+    if (!accountData) {
       return NextResponse.json(
         { error: "Could not look up investor account" },
         { status: 400 },
       );
     }
-    const accountData: { account: string } = await accountRes.json();
     const balance = await getEusdBalance(accountData.account);
     if (balance < amount) {
       return NextResponse.json(
@@ -115,8 +130,7 @@ export async function POST(request: NextRequest) {
       address: EUSD_EVM_ADDRESS,
       abi: erc20Abi,
       functionName: "transferFrom",
-      // Typecast required: investorAddress is validated string but viem needs branded hex type
-      args: [investorAddress as `0x${string}`, treasuryAddress, eusdAmount],
+      args: [investor, treasuryAddress, eusdAmount],
       gas: BigInt(300_000),
     });
 
@@ -131,20 +145,23 @@ export async function POST(request: NextRequest) {
     // 3. Mint CPC tokens to investor via viem
     let mintTxHash: string | undefined;
     try {
-      // Typecast required: env var string needs to be narrowed to viem's branded hex type for address
-      const tokenAddress = process.env.TOKEN_ADDRESS as `0x${string}`;
+      const tokenAddressRaw = process.env.TOKEN_ADDRESS;
+      if (!tokenAddressRaw) {
+        throw new Error("Missing TOKEN_ADDRESS");
+      }
+      const tokenAddress = getAddress(tokenAddressRaw);
 
       const hash = await walletClient.writeContract({
         address: tokenAddress,
         abi: tokenAbi,
         functionName: "mint",
-        args: [investorAddress as `0x${string}`, parseEther(String(amount))],
+        args: [investor, parseEther(String(amount))],
       });
 
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
       mintTxHash = receipt.transactionHash;
     } catch (mintErr: unknown) {
-      // Mint failed after eUSD was already transferred — refund via transferFrom back
+      // Mint failed after eUSD was already transferred — refund via transfer back to investor
       console.error("CPC mint failed, refunding eUSD...");
       let refundSucceeded = false;
       try {
@@ -152,7 +169,7 @@ export async function POST(request: NextRequest) {
           address: EUSD_EVM_ADDRESS,
           abi: erc20Abi,
           functionName: "transfer",
-          args: [investorAddress as `0x${string}`, eusdAmount],
+          args: [investor, eusdAmount],
           gas: BigInt(300_000),
         });
         const refundReceipt = await publicClient.waitForTransactionReceipt({ hash: refundHash });
