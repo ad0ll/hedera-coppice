@@ -91,6 +91,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     }
 
     runChecks();
+    const interval = setInterval(runChecks, 15000);
+    return () => clearInterval(interval);
   }, [account]);
 
   if (!account) {
