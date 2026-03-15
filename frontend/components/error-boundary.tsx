@@ -36,6 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 Reload Page
               </button>
             }
+            className="max-w-lg w-full p-8"
             wrapperClassName="min-h-screen bg-surface flex items-center justify-center p-8"
           />
         </div>
