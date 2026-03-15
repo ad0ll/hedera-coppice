@@ -7,6 +7,7 @@ import {
   PrivateKey,
   TopicMessageSubmitTransaction,
   TopicId,
+  Status,
 } from "@hashgraph/sdk";
 import { ethers } from "ethers";
 import { getClient, getOperatorKey, JSON_RPC_URL, MIRROR_NODE_URL } from "./config.js";
@@ -19,6 +20,19 @@ const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY!;
 
 // Map EVM addresses to Hedera account IDs + private keys for demo wallets
 const WALLET_KEYS: Record<string, { accountId: string; privateKey: string }> = {};
+
+interface MirrorAccountResponse {
+  account?: string;
+}
+
+interface MirrorTokenEntry {
+  token_id: string;
+  balance: number;
+}
+
+interface MirrorTokensResponse {
+  tokens?: MirrorTokenEntry[];
+}
 
 function loadWalletKeys() {
   const wallets = [
@@ -47,7 +61,7 @@ async function resolveAccountId(evmAddress: string): Promise<string | null> {
   try {
     const res = await fetch(`${MIRROR_NODE_URL}/api/v1/accounts/${evmAddress}`);
     if (!res.ok) return null;
-    const data = (await res.json()) as { account?: string };
+    const data: MirrorAccountResponse = await res.json();
     return data.account || null;
   } catch {
     return null;
@@ -60,7 +74,7 @@ async function getEusdBalance(accountId: string): Promise<number> {
       `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${EUSD_TOKEN_ID}`
     );
     if (!res.ok) return 0;
-    const data = (await res.json()) as { tokens?: Array<{ token_id: string; balance: number }> };
+    const data: MirrorTokensResponse = await res.json();
     const entry = data.tokens?.find((t) => t.token_id === EUSD_TOKEN_ID);
     return entry ? entry.balance / 100 : 0; // eUSD has 2 decimals
   } catch {
@@ -73,10 +87,17 @@ app.use(cors());
 app.use(express.json());
 
 app.post("/api/purchase", async (req, res) => {
-  const { investorAddress, amount } = req.body as { investorAddress?: string; amount?: number };
+  const { investorAddress, amount } = req.body;
 
-  if (!investorAddress || !amount || amount <= 0) {
-    res.status(400).json({ error: "Invalid request: need investorAddress and positive amount" });
+  if (!investorAddress || typeof investorAddress !== "string" || !amount || typeof amount !== "number" || amount <= 0) {
+    res.status(400).json({ error: "Invalid request: need investorAddress (string) and positive amount (number)" });
+    return;
+  }
+
+  // Validate wallet is known before creating any connections
+  const walletInfo = WALLET_KEYS[investorAddress.toLowerCase()];
+  if (!walletInfo) {
+    res.status(400).json({ error: "Unknown wallet - only demo wallets are supported" });
     return;
   }
 
@@ -97,50 +118,73 @@ app.post("/api/purchase", async (req, res) => {
 
     // 3. Transfer eUSD from investor to treasury (deployer)
     const client = getClient();
-    const treasuryAccountId = AccountId.fromString(process.env.HEDERA_ACCOUNT_ID!);
-    const tokenId = TokenId.fromString(EUSD_TOKEN_ID);
+    try {
+      const treasuryAccountId = AccountId.fromString(process.env.HEDERA_ACCOUNT_ID!);
+      const tokenId = TokenId.fromString(EUSD_TOKEN_ID);
 
-    // Get investor's private key for signing (demo wallets only)
-    const walletInfo = WALLET_KEYS[investorAddress.toLowerCase()];
-    if (!walletInfo) {
-      res.status(400).json({ error: "Unknown wallet - only demo wallets are supported" });
-      return;
+      const investorKey = PrivateKey.fromStringECDSA(
+        walletInfo.privateKey.startsWith("0x") ? walletInfo.privateKey.slice(2) : walletInfo.privateKey
+      );
+
+      // eUSD has 2 decimals
+      const eusdAmount = Math.round(amount * 100);
+
+      const transferTx = await new TransferTransaction()
+        .addTokenTransfer(tokenId, AccountId.fromString(investorAccountId), -eusdAmount)
+        .addTokenTransfer(tokenId, treasuryAccountId, eusdAmount)
+        .freezeWith(client)
+        .sign(investorKey);
+
+      const transferResult = await transferTx.execute(client);
+      const transferReceipt = await transferResult.getReceipt(client);
+
+      if (transferReceipt.status !== Status.Success) {
+        res.status(500).json({ error: `eUSD transfer failed: ${transferReceipt.status}` });
+        return;
+      }
+      console.log(`  eUSD transfer: ${transferReceipt.status} (${amount} eUSD from ${investorAccountId} to treasury)`);
+
+      // 4. Mint CPC tokens to investor via EVM
+      let mintReceipt: ethers.TransactionReceipt | null;
+      try {
+        const deployerKeyHex = DEPLOYER_KEY.startsWith("0x") ? DEPLOYER_KEY : `0x${DEPLOYER_KEY}`;
+        const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+        const deployerWallet = new ethers.Wallet(deployerKeyHex, provider);
+        const tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, deployerWallet);
+
+        const mintTx = await tokenContract.mint(investorAddress, ethers.parseEther(String(amount)));
+        mintReceipt = await mintTx.wait();
+        console.log(`  CPC mint: ${mintReceipt?.hash} (${amount} CPC to ${investorAddress})`);
+      } catch (mintErr: unknown) {
+        // Mint failed after eUSD was already transferred — refund eUSD
+        console.error("  CPC mint failed, refunding eUSD...");
+        try {
+          const refundTx = await new TransferTransaction()
+            .addTokenTransfer(tokenId, treasuryAccountId, -eusdAmount)
+            .addTokenTransfer(tokenId, AccountId.fromString(investorAccountId), eusdAmount)
+            .freezeWith(client)
+            .sign(getOperatorKey());
+
+          const refundResult = await refundTx.execute(client);
+          const refundReceipt = await refundResult.getReceipt(client);
+          console.log(`  eUSD refund: ${refundReceipt.status}`);
+        } catch (refundErr: unknown) {
+          const refundMsg = refundErr instanceof Error ? refundErr.message : "unknown";
+          console.error(`  eUSD refund FAILED: ${refundMsg} — manual intervention needed`);
+        }
+        const mintMsg = mintErr instanceof Error ? mintErr.message : "Mint failed";
+        res.status(500).json({ error: `CPC mint failed (eUSD refunded): ${mintMsg.slice(0, 150)}` });
+        return;
+      }
+
+      res.json({
+        success: true,
+        eusdTxId: transferReceipt.transactionId?.toString(),
+        mintTxHash: mintReceipt?.hash,
+      });
+    } finally {
+      client.close();
     }
-
-    const investorKey = PrivateKey.fromStringECDSA(
-      walletInfo.privateKey.startsWith("0x") ? walletInfo.privateKey.slice(2) : walletInfo.privateKey
-    );
-
-    // eUSD has 2 decimals
-    const eusdAmount = Math.round(amount * 100);
-
-    const transferTx = await new TransferTransaction()
-      .addTokenTransfer(tokenId, AccountId.fromString(investorAccountId), -eusdAmount)
-      .addTokenTransfer(tokenId, treasuryAccountId, eusdAmount)
-      .freezeWith(client)
-      .sign(investorKey);
-
-    const transferResult = await transferTx.execute(client);
-    const transferReceipt = await transferResult.getReceipt(client);
-    console.log(`  eUSD transfer: ${transferReceipt.status} (${amount} eUSD from ${investorAccountId} to treasury)`);
-
-    // 4. Mint CPC tokens to investor via EVM
-    const deployerKeyHex = DEPLOYER_KEY.startsWith("0x") ? DEPLOYER_KEY : `0x${DEPLOYER_KEY}`;
-    const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
-    const deployerWallet = new ethers.Wallet(deployerKeyHex, provider);
-    const tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, deployerWallet);
-
-    const mintTx = await tokenContract.mint(investorAddress, ethers.parseEther(String(amount)));
-    const mintReceipt = await mintTx.wait();
-    console.log(`  CPC mint: ${mintReceipt?.hash} (${amount} CPC to ${investorAddress})`);
-
-    client.close();
-
-    res.json({
-      success: true,
-      eusdTxId: transferReceipt.transactionId?.toString(),
-      mintTxHash: mintReceipt?.hash,
-    });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Purchase failed";
     console.error("Purchase error:", message);
@@ -149,26 +193,22 @@ app.post("/api/purchase", async (req, res) => {
 });
 
 app.post("/api/allocate", async (req, res) => {
-  const { project, category, amount, currency } = req.body as {
-    project?: string;
-    category?: string;
-    amount?: number;
-    currency?: string;
-  };
+  const { project, category, amount, currency } = req.body;
 
-  if (!project || !category || !amount) {
-    res.status(400).json({ error: "Missing project, category, or amount" });
+  if (!project || typeof project !== "string" || !category || typeof category !== "string" || !amount || typeof amount !== "number") {
+    res.status(400).json({ error: "Missing or invalid project (string), category (string), or amount (number)" });
     return;
   }
 
+  const impactTopicId = process.env.IMPACT_TOPIC_ID;
+  if (!impactTopicId) {
+    res.status(500).json({ error: "IMPACT_TOPIC_ID not configured" });
+    return;
+  }
+
+  const client = getClient();
   try {
-    const client = getClient();
     const operatorKey = getOperatorKey();
-    const impactTopicId = process.env.IMPACT_TOPIC_ID;
-    if (!impactTopicId) {
-      res.status(500).json({ error: "IMPACT_TOPIC_ID not configured" });
-      return;
-    }
 
     const payload = {
       type: "PROCEEDS_ALLOCATED",
@@ -177,7 +217,7 @@ app.post("/api/allocate", async (req, res) => {
         project,
         category,
         amount: String(amount),
-        currency: currency || "USD",
+        currency: typeof currency === "string" ? currency : "USD",
       },
     };
 
@@ -191,13 +231,13 @@ app.post("/api/allocate", async (req, res) => {
     const receipt = await result.getReceipt(client);
     console.log(`  Proceeds allocated: ${project} - $${amount} ${category} (${receipt.status})`);
 
-    client.close();
-
     res.json({ success: true, status: receipt.status.toString() });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Allocation failed";
     console.error("Allocate error:", message);
     res.status(500).json({ error: message.slice(0, 200) });
+  } finally {
+    client.close();
   }
 });
 

@@ -50,8 +50,9 @@ export function IssuerDashboard() {
       setMintStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${mintTo.slice(0, 10)}...` });
       setMintTo("");
       setMintAmount("");
-    } catch (err: any) {
-      setMintStatus({ type: "error", msg: err.reason || err.message?.slice(0, 80) || "Mint failed" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message.slice(0, 80) : "Mint failed";
+      setMintStatus({ type: "error", msg: message });
     }
   }
 
@@ -64,8 +65,9 @@ export function IssuerDashboard() {
         type: "success",
         msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
       });
-    } catch (err: any) {
-      setFreezeStatus({ type: "error", msg: err.reason || err.message?.slice(0, 80) || "Failed" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message.slice(0, 80) : "Failed";
+      setFreezeStatus({ type: "error", msg: message });
     }
   }
 
@@ -81,8 +83,9 @@ export function IssuerDashboard() {
         setIsPaused(true);
         setPauseStatus({ type: "success", msg: "Token paused" });
       }
-    } catch (err: any) {
-      setPauseStatus({ type: "error", msg: err.reason || err.message?.slice(0, 80) || "Failed" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message.slice(0, 80) : "Failed";
+      setPauseStatus({ type: "error", msg: message });
     }
   }
 

@@ -65,7 +65,12 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         body: JSON.stringify({ investorAddress: account, amount: Number(amount) }),
       });
 
-      const purchaseData = await purchaseRes.json();
+      let purchaseData: { error?: string; success?: boolean };
+      try {
+        purchaseData = await purchaseRes.json();
+      } catch {
+        throw new Error(`Server error (${purchaseRes.status})`);
+      }
 
       if (!purchaseRes.ok) {
         throw new Error(purchaseData.error || "Purchase failed");
@@ -80,13 +85,14 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);
       setAmount("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       const failIndex = newSteps.findIndex((s) => s.status === "active");
       if (failIndex >= 0) {
+        const message = err instanceof Error ? err.message.slice(0, 60) : "Transaction failed";
         newSteps[failIndex] = {
           label: newSteps[failIndex].label,
           status: "error",
-          detail: err.reason || err.message?.slice(0, 60) || "Transaction failed",
+          detail: message,
         };
         setSteps([...newSteps]);
       }
