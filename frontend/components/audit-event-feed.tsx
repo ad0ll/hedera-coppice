@@ -31,8 +31,8 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
 
   if (topicMissing) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="card">
+        <h3 className="card-title">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
         <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
@@ -47,12 +47,12 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
 
   if (loading) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-        <h3 className="text-lg font-semibold text-white mb-4">
+      <div className="card">
+        <h3 className="card-title">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
-          <span className="inline-block w-4 h-4 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" aria-hidden="true" />
+          <span className="spinner" aria-hidden="true" />
           Loading events from HCS...
         </div>
       </div>
@@ -60,7 +60,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   }
 
   return (
-    <div className="bg-surface-2 border border-border rounded-xl overflow-hidden card-glow">
+    <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-white">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}

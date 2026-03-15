@@ -6,6 +6,7 @@ import { useConnection } from "wagmi";
 import { BondDetails } from "@/components/bond-details";
 import { ComplianceStatus } from "@/components/compliance-status";
 import { TransferFlow } from "@/components/transfer-flow";
+import { Card } from "@/components/ui/card";
 import { useTokenBalance } from "@/hooks/use-token";
 import { useHTS } from "@/hooks/use-hts";
 
@@ -51,25 +52,25 @@ export default function InvestorPortal() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-            <h3 className="text-lg font-semibold text-white mb-4">Portfolio</h3>
+          <Card>
+            <h3 className="card-title">Portfolio</h3>
             {!address ? (
               <p className="text-sm text-text-muted">Connect wallet to view portfolio.</p>
             ) : (
               <div className="space-y-3">
                 <div className="bg-surface-3/70 rounded-lg p-4 border border-border/30">
-                  <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">CPC Balance</p>
+                  <p className="stat-label mb-1">CPC Balance</p>
                   <p className="text-2xl font-mono font-semibold text-white">{cpcBalance}</p>
                   <p className="text-xs text-text-muted mt-1">Coppice Green Bond</p>
                 </div>
                 <div className="bg-surface-3/70 rounded-lg p-4 border border-border/30">
-                  <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">eUSD Balance</p>
+                  <p className="stat-label mb-1">eUSD Balance</p>
                   <p className="text-2xl font-mono font-semibold text-bond-green">{displayEusdBalance}</p>
                   <p className="text-xs text-text-muted mt-1">Coppice USD (HTS)</p>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
       </div>
     </div>

@@ -68,6 +68,81 @@ body {
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
+/* ── Shared UI classes ────────────────────────── */
+
+/* Card surfaces (includes glow hover effect) */
+.card {
+  @apply bg-surface-2 border border-border rounded-xl p-6;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card:hover {
+  border-color: color-mix(in srgb, var(--color-bond-green) 15%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-bond-green) 4%, transparent);
+}
+.card-flush {
+  @apply bg-surface-2 border border-border rounded-xl overflow-hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.card-flush:hover {
+  border-color: color-mix(in srgb, var(--color-bond-green) 15%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--color-bond-green) 4%, transparent);
+}
+
+/* Typography */
+.page-title {
+  @apply text-2xl font-semibold text-white;
+}
+.card-title {
+  @apply text-lg font-semibold text-white mb-4;
+}
+.stat-label {
+  @apply text-[11px] text-text-muted uppercase tracking-widest;
+}
+
+/* Form inputs */
+.input {
+  @apply w-full bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm
+    placeholder:text-text-muted/60
+    focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20
+    disabled:opacity-40
+    transition-colors;
+}
+
+/* Buttons — @apply cannot chain custom classes, so base styles are inlined in each variant */
+.btn-primary {
+  @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40
+    bg-bond-green text-black hover:bg-bond-green/90 transition-all
+    shadow-[0_0_12px_rgba(34,197,94,0.15)];
+}
+.btn-outline-green {
+  @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-colors
+    bg-bond-green/15 text-bond-green border border-bond-green/20 hover:bg-bond-green/25;
+}
+.btn-outline-red {
+  @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-colors
+    bg-bond-red/15 text-bond-red border border-bond-red/20 hover:bg-bond-red/25;
+}
+.btn-outline-amber {
+  @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-colors
+    bg-bond-amber/15 text-bond-amber border border-bond-amber/20 hover:bg-bond-amber/25;
+}
+
+/* Spinner */
+.spinner {
+  @apply inline-block w-4 h-4 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin;
+}
+.spinner-amber {
+  @apply inline-block w-4 h-4 border-2 border-bond-amber/40 border-t-bond-amber rounded-full animate-spin;
+}
+
+/* Status message (success/error feedback) */
+.status-msg-success {
+  @apply text-xs text-bond-green;
+}
+.status-msg-error {
+  @apply text-xs text-bond-red;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

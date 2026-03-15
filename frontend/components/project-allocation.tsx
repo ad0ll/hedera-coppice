@@ -38,8 +38,8 @@ export function ProjectAllocation() {
   }
 
   return (
-    <div className="bg-surface-2 border border-border rounded-xl p-6">
-      <h3 className="text-lg font-semibold text-white mb-4">Use of Proceeds</h3>
+    <div className="card">
+      <h3 className="card-title">Use of Proceeds</h3>
 
       {allocations.length === 0 ? (
         <p className="text-sm text-text-muted">No allocations recorded yet.</p>
