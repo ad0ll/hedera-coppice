@@ -5,6 +5,7 @@
   "description": "ERC-3643 compliant green bond tokenization on Hedera",
   "license": "GPL-3.0",
   "workspaces": [
+    "packages/*",
     "contracts",
     "middleware",
     "frontend",
