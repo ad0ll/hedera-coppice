@@ -1,17 +1,10 @@
 "use client";
 
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
-
-const CATEGORY_COLORS: Record<string, string> = {
-  "Renewable Energy": "bg-bond-green",
-  "Energy Efficiency": "bg-bond-amber",
-  "Clean Transportation": "bg-bond-red",
-  "Sustainable Water": "bg-bond-green-dim",
-  "Green Buildings": "bg-bond-green/70",
-  Other: "bg-text-muted",
-};
+import { CATEGORY_COLORS, EVENT_TYPES } from "@/lib/event-types";
 
 interface Allocation {
+  sequenceNumber: number;
   project: string;
   category: string;
   amount: number;
@@ -22,8 +15,9 @@ export function ProjectAllocation() {
   const { events } = useHCSAudit("impact");
 
   const allocations: Allocation[] = events
-    .filter((e) => e.type === "PROCEEDS_ALLOCATED")
+    .filter((e) => e.type === EVENT_TYPES.PROCEEDS_ALLOCATED)
     .map((e) => ({
+      sequenceNumber: e.sequenceNumber,
       project: e.data.project || "Unknown",
       category: e.data.category || "Other",
       amount: parseFloat(e.data.amount || "0"),
@@ -69,7 +63,7 @@ export function ProjectAllocation() {
 
           <div className="space-y-2">
             {allocations.map((a) => (
-              <div key={`${a.project}-${a.category}-${a.amount}`} className="flex items-center justify-between text-sm py-1 border-b border-border/30 last:border-0">
+              <div key={a.sequenceNumber} className="flex items-center justify-between text-sm py-1 border-b border-border/30 last:border-0">
                 <div>
                   <span className="text-white">{a.project}</span>
                   <span className="text-xs text-text-muted ml-2">{a.category}</span>

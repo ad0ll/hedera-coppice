@@ -3,6 +3,7 @@
 import { useConnection, useConnect, useDisconnect } from "wagmi";
 import { injected } from "wagmi/connectors";
 import { DEMO_WALLETS } from "@/lib/constants";
+import { abbreviateAddress } from "@/lib/format";
 
 export function WalletButton() {
   const { address, isConnecting: accountConnecting } = useConnection();
@@ -12,7 +13,7 @@ export function WalletButton() {
   const isConnecting = accountConnecting || isPending;
 
   const walletLabel = address
-    ? DEMO_WALLETS[address.toLowerCase()]?.label || `${address.slice(0, 6)}...${address.slice(-4)}`
+    ? DEMO_WALLETS[address.toLowerCase()]?.label || abbreviateAddress(address)
     : "";
 
   if (address) {
@@ -22,7 +23,7 @@ export function WalletButton() {
           <span className="w-2 h-2 rounded-full bg-bond-green animate-pulse-dot" />
           <span className="text-sm font-medium text-white">{walletLabel}</span>
           <span className="text-xs font-mono text-text-muted hidden sm:inline">
-            {address.slice(0, 6)}...{address.slice(-4)}
+            {abbreviateAddress(address)}
           </span>
         </div>
         <button

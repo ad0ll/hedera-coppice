@@ -69,7 +69,7 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
       }
 
       if (!cancelled) {
-        setEvents(allEvents);
+        setEvents(allEvents.length > 500 ? allEvents.slice(-500) : allEvents);
         setLoading(false);
         initialLoadDone.current = true;
       }
@@ -88,7 +88,10 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
 
         if (newEvents.length > 0 && !cancelled) {
           lastSequenceRef.current = newEvents[newEvents.length - 1].sequenceNumber;
-          setEvents((prev) => [...prev, ...newEvents]);
+          setEvents((prev) => {
+            const combined = [...prev, ...newEvents];
+            return combined.length > 500 ? combined.slice(-500) : combined;
+          });
         }
       } catch {
         // Network error, retry on next poll

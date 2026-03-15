@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { formatEther } from "viem";
 import { useConnection } from "wagmi";
+import { formatBalance } from "@/lib/format";
 import { BondDetails } from "@/components/bond-details";
 import { ComplianceStatus } from "@/components/compliance-status";
 import { TransferFlow } from "@/components/transfer-flow";
@@ -17,9 +17,7 @@ export default function InvestorPortal() {
   const [eligible, setEligible] = useState(false);
   const [eusdBalance, setEusdBalance] = useState<string>("--");
 
-  const cpcBalance = cpcBalanceRaw != null
-    ? Number(formatEther(cpcBalanceRaw)).toLocaleString("en-US")
-    : "--";
+  const cpcBalance = cpcBalanceRaw != null ? formatBalance(cpcBalanceRaw) : "--";
 
   useEffect(() => {
     if (!address) return;

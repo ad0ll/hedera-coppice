@@ -10,11 +10,12 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { z } from "zod";
 import { tokenAbi } from "@coppice/common";
-import { MIRROR_NODE_URL, JSON_RPC_URL } from "@/lib/hedera";
+import { JSON_RPC_URL } from "@/lib/hedera";
 import { hederaTestnet } from "@/lib/wagmi";
 import { verifyAuth } from "@/lib/auth";
 import { EUSD_EVM_ADDRESS } from "@/lib/constants";
-import { withRetry } from "@/lib/retry";
+import { getErrorMessage } from "@/lib/format";
+import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
 const purchaseBodySchema = z.object({
   investorAddress: z.string().nonempty(),
@@ -22,29 +23,6 @@ const purchaseBodySchema = z.object({
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
-
-interface MirrorTokenEntry {
-  token_id: string;
-  balance: number;
-}
-
-async function getEusdBalance(accountId: string): Promise<number> {
-  const eusdTokenId = process.env.EUSD_TOKEN_ID;
-  if (!eusdTokenId) return 0;
-  try {
-    return await withRetry(async () => {
-      const res = await fetch(
-        `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${eusdTokenId}`,
-      );
-      if (!res.ok) throw new Error(`Mirror Node returned ${res.status}`);
-      const data: { tokens?: MirrorTokenEntry[] } = await res.json();
-      const entry = data.tokens?.find((t) => t.token_id === eusdTokenId);
-      return entry ? entry.balance / 100 : 0;
-    });
-  } catch {
-    return 0;
-  }
-}
 
 function getDeployerAccount() {
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
@@ -75,7 +53,7 @@ export async function POST(request: NextRequest) {
   try {
     await verifyAuth(message, signature, investor);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Auth failed";
+    const msg = getErrorMessage(err, 0, "Auth failed");
     return NextResponse.json({ error: msg }, { status: 401 });
   }
 
@@ -83,21 +61,21 @@ export async function POST(request: NextRequest) {
     const deployerAccount = getDeployerAccount();
 
     // 1. Check eUSD balance via Mirror Node (uses Hedera account ID format)
-    // Look up the Hedera account ID from the EVM address
-    const accountData = await withRetry(async () => {
-      const accountRes = await fetch(
-        `${MIRROR_NODE_URL}/api/v1/accounts/${investor}`,
-      );
-      if (!accountRes.ok) throw new Error(`Mirror Node returned ${accountRes.status}`);
-      return accountRes.json() as Promise<{ account: string }>;
-    }).catch(() => null);
-    if (!accountData) {
+    const eusdTokenId = process.env.EUSD_TOKEN_ID;
+    if (!eusdTokenId) {
+      return NextResponse.json({ error: "EUSD_TOKEN_ID not configured" }, { status: 500 });
+    }
+    let accountId: string;
+    try {
+      accountId = await getHederaAccountId(investor);
+    } catch {
       return NextResponse.json(
         { error: "Could not look up investor account" },
         { status: 400 },
       );
     }
-    const balance = await getEusdBalance(accountData.account);
+    const rawBalance = await getHtsTokenBalance(accountId, eusdTokenId);
+    const balance = rawBalance / 100; // eUSD has 2 decimals
     if (balance < amount) {
       return NextResponse.json(
         { error: `Insufficient eUSD: ${balance} < ${amount}` },
@@ -171,15 +149,15 @@ export async function POST(request: NextRequest) {
         refundSucceeded = refundReceipt.status === "success";
         console.log(`eUSD refund: ${refundReceipt.status}`);
       } catch (refundErr: unknown) {
-        const refundMsg = refundErr instanceof Error ? refundErr.message : "unknown";
+        const refundMsg = getErrorMessage(refundErr, 0, "unknown");
         console.error(`eUSD refund FAILED: ${refundMsg} — manual intervention needed`);
       }
-      const mintMsg = mintErr instanceof Error ? mintErr.message : "Mint failed";
+      const mintMsg = getErrorMessage(mintErr, 150, "Mint failed");
       const refundStatus = refundSucceeded
         ? "eUSD refunded"
         : "eUSD refund FAILED — contact support";
       return NextResponse.json(
-        { error: `CPC mint failed (${refundStatus}): ${mintMsg.slice(0, 150)}` },
+        { error: `CPC mint failed (${refundStatus}): ${mintMsg}` },
         { status: 500 },
       );
     }
@@ -190,7 +168,7 @@ export async function POST(request: NextRequest) {
       mintTxHash,
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message.slice(0, 200) : "Purchase failed";
+    const message = getErrorMessage(err, 200, "Purchase failed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

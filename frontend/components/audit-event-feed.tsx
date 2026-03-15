@@ -1,17 +1,9 @@
 "use client";
 
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
-import { useState } from "react";
-
-const EVENT_BADGES: Record<string, string> = {
-  TRANSFER: "bg-bond-green/15 text-bond-green",
-  MINT: "bg-bond-green/15 text-bond-green",
-  TOKEN_PAUSED: "bg-bond-red/15 text-bond-red",
-  TOKEN_UNPAUSED: "bg-bond-green/15 text-bond-green",
-  WALLET_FROZEN: "bg-bond-red/15 text-bond-red",
-  WALLET_UNFROZEN: "bg-bond-green/15 text-bond-green",
-  PROCEEDS_ALLOCATED: "bg-bond-amber/15 text-bond-amber",
-};
+import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
+import { WarningIcon, Spinner } from "@/components/ui/icons";
+import { useState, useMemo } from "react";
 
 function formatTimestamp(ts: number | string): string {
   if (typeof ts === "string") {
@@ -25,7 +17,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   const { events, loading, topicMissing } = useHCSAudit(topicType);
   const [filter, setFilter] = useState<string>("ALL");
 
-  const eventTypes = ["ALL", ...new Set(events.map((e) => e.type))];
+  const eventTypes = useMemo(() => ["ALL", ...new Set(events.map((e) => e.type))], [events]);
   const filtered = filter === "ALL" ? events : events.filter((e) => e.type === filter);
   const sorted = [...filtered].reverse();
 
@@ -36,9 +28,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
         <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
-          <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
+          <WarningIcon className="w-5 h-5 shrink-0" />
           HCS topic not configured — {topicType} trail unavailable.
         </div>
       </div>
@@ -52,7 +42,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
-          <span className="spinner" aria-hidden="true" />
+          <Spinner className="w-4 h-4" aria-hidden />
           Loading events from HCS...
         </div>
       </div>
@@ -93,7 +83,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           <div className="space-y-1 max-h-96 overflow-y-auto">
             {sorted.map((event) => (
               <div key={event.sequenceNumber} className="flex items-start gap-3 py-2.5 border-b border-border/20 last:border-0">
-                <span className={`text-[11px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGES[event.type] || "bg-surface-3 text-text-muted"}`}>
+                <span className={`text-[11px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
                   {event.type}
                 </span>
                 <div className="flex-1 min-w-0">

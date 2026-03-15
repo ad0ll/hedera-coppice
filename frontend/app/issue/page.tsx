@@ -8,6 +8,9 @@ import { ProjectAllocation } from "@/components/project-allocation";
 import { signAuthMessage } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
+import { useOperationStatus } from "@/hooks/use-operation-status";
+import { abbreviateAddress, getErrorMessage } from "@/lib/format";
+import { BOND_CATEGORIES } from "@/lib/event-types";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -20,74 +23,71 @@ export default function IssuerDashboard() {
 
   const [mintTo, setMintTo] = useState("");
   const [mintAmount, setMintAmount] = useState("");
-  const [mintStatus, setMintStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const mintOp = useOperationStatus();
 
   const [freezeAddr, setFreezeAddr] = useState("");
-  const [freezeStatus, setFreezeStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const freezeOp = useOperationStatus();
 
-  const [pauseStatus, setPauseStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const pauseOp = useOperationStatus();
 
   const [project, setProject] = useState("");
   const [category, setCategory] = useState("Renewable Energy");
   const [proceedsAmount, setProceedsAmount] = useState("");
-  const [proceedsStatus, setProceedsStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const proceedsOp = useOperationStatus();
 
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
     if (!isAddress(mintTo)) {
-      setMintStatus({ type: "error", msg: "Invalid Ethereum address" });
+      mintOp.setStatus({ type: "error", msg: "Invalid Ethereum address" });
       return;
     }
-    setMintStatus(null);
+    mintOp.clear();
     try {
       await mint(mintTo, parseEther(mintAmount));
-      setMintStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${mintTo.slice(0, 10)}...` });
+      mintOp.setStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${abbreviateAddress(mintTo, 10, 0)}` });
       setMintTo("");
       setMintAmount("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message.slice(0, 80) : "Mint failed";
-      setMintStatus({ type: "error", msg: message });
+      mintOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Mint failed") });
     }
   }
 
   async function handleFreeze(action: "freeze" | "unfreeze") {
     if (!freezeAddr) return;
     if (!isAddress(freezeAddr)) {
-      setFreezeStatus({ type: "error", msg: "Invalid Ethereum address" });
+      freezeOp.setStatus({ type: "error", msg: "Invalid Ethereum address" });
       return;
     }
-    setFreezeStatus(null);
+    freezeOp.clear();
     try {
       await setAddressFrozen(freezeAddr, action === "freeze");
-      setFreezeStatus({
+      freezeOp.setStatus({
         type: "success",
-        msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
+        msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${abbreviateAddress(freezeAddr, 10, 0)}`,
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message.slice(0, 80) : "Failed";
-      setFreezeStatus({ type: "error", msg: message });
+      freezeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
   }
 
   async function handlePauseToggle() {
-    setPauseStatus(null);
+    pauseOp.clear();
     try {
       if (isPaused) {
         await unpause();
-        setPauseStatus({ type: "success", msg: "Token unpaused" });
+        pauseOp.setStatus({ type: "success", msg: "Token unpaused" });
       } else {
         await pause();
-        setPauseStatus({ type: "success", msg: "Token paused" });
+        pauseOp.setStatus({ type: "success", msg: "Token paused" });
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message.slice(0, 80) : "Failed";
-      setPauseStatus({ type: "error", msg: message });
+      pauseOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
   }
 
   async function handleAllocateProceeds() {
     if (!project || !proceedsAmount || !address) return;
-    setProceedsStatus(null);
+    proceedsOp.clear();
     try {
       const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
 
@@ -105,12 +105,11 @@ export default function IssuerDashboard() {
       });
       const data: { error?: string } = await res.json();
       if (!res.ok) throw new Error(data.error || "Allocation failed");
-      setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
+      proceedsOp.setStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
       setProject("");
       setProceedsAmount("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed";
-      setProceedsStatus({ type: "error", msg: message.slice(0, 80) });
+      proceedsOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
   }
 
@@ -163,9 +162,9 @@ export default function IssuerDashboard() {
               className="w-full btn-primary">
               {loading ? "Minting..." : "Mint"}
             </button>
-            {mintStatus && (
-              <p className={mintStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                {mintStatus.msg}
+            {mintOp.status && (
+              <p className={mintOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
+                {mintOp.status.msg}
               </p>
             )}
           </div>
@@ -190,9 +189,9 @@ export default function IssuerDashboard() {
                 Unfreeze
               </button>
             </div>
-            {freezeStatus && (
-              <p className={freezeStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                {freezeStatus.msg}
+            {freezeOp.status && (
+              <p className={freezeOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
+                {freezeOp.status.msg}
               </p>
             )}
           </div>
@@ -212,9 +211,9 @@ export default function IssuerDashboard() {
             className={`w-full ${isPaused ? "btn-outline-green" : "btn-outline-red"}`}>
             {isPaused ? "Unpause Token" : "Pause Token"}
           </button>
-          {pauseStatus && (
-            <p className={`mt-2 ${pauseStatus.type === "success" ? "status-msg-success" : "status-msg-error"}`}>
-              {pauseStatus.msg}
+          {pauseOp.status && (
+            <p className={`mt-2 ${pauseOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}`}>
+              {pauseOp.status.msg}
             </p>
           )}
         </Card>
@@ -228,11 +227,7 @@ export default function IssuerDashboard() {
               placeholder="Project name" className="input" />
             <label className="sr-only" htmlFor="project-category">Category</label>
             <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input">
-              <option>Renewable Energy</option>
-              <option>Energy Efficiency</option>
-              <option>Clean Transportation</option>
-              <option>Sustainable Water</option>
-              <option>Green Buildings</option>
+              {BOND_CATEGORIES.map((cat) => <option key={cat}>{cat}</option>)}
             </select>
             <label className="sr-only" htmlFor="proceeds-amount">Amount in USD</label>
             <input id="proceeds-amount" type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
@@ -241,9 +236,9 @@ export default function IssuerDashboard() {
               className="w-full btn-outline-amber">
               Allocate to HCS
             </button>
-            {proceedsStatus && (
-              <p className={proceedsStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                {proceedsStatus.msg}
+            {proceedsOp.status && (
+              <p className={proceedsOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
+                {proceedsOp.status.msg}
               </p>
             )}
           </div>
