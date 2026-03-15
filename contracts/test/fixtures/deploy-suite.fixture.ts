@@ -223,7 +223,8 @@ export async function deployGreenBondFixture() {
         topics: log.topics,
       });
       if (event.eventName === "TREXSuiteDeployed") {
-        // TREXSuiteDeployed(_token, _ir, _irs, _tir, _ctr, _mc, _salt)
+        // Typecast required: decodeEventLog returns a generic args type, but TREXSuiteDeployed
+        // emits named address fields (_token, _ir, _irs, _tir, _ctr, _mc) that we need to access by name
         const a = event.args as unknown as Record<string, Address>;
         tokenAddress = a._token;
         irAddress = a._ir;

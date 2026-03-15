@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { parseEther, type Address } from "viem";
-import { useAccount } from "wagmi";
+import { isAddress, parseEther } from "viem";
+import { useConnection, useConfig } from "wagmi";
 import { useTokenRead, useTokenWrite, useIsAgent } from "@/hooks/use-token";
 import { ProjectAllocation } from "@/components/project-allocation";
+import { signAuthMessage } from "@/lib/auth";
 
 export default function IssuerDashboard() {
-  const { address } = useAccount();
+  const { address } = useConnection();
+  const config = useConfig();
   const { paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
   const { data: isAuthorized, isLoading: isCheckingAgent } = useIsAgent(address);
@@ -30,10 +32,13 @@ export default function IssuerDashboard() {
 
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
+    if (!isAddress(mintTo)) {
+      setMintStatus({ type: "error", msg: "Invalid Ethereum address" });
+      return;
+    }
     setMintStatus(null);
     try {
-      // Typecast required: user-entered address string needs to be narrowed to viem Address type
-      await mint(mintTo as Address, parseEther(mintAmount));
+      await mint(mintTo, parseEther(mintAmount));
       setMintStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${mintTo.slice(0, 10)}...` });
       setMintTo("");
       setMintAmount("");
@@ -45,10 +50,13 @@ export default function IssuerDashboard() {
 
   async function handleFreeze(action: "freeze" | "unfreeze") {
     if (!freezeAddr) return;
+    if (!isAddress(freezeAddr)) {
+      setFreezeStatus({ type: "error", msg: "Invalid Ethereum address" });
+      return;
+    }
     setFreezeStatus(null);
     try {
-      // Typecast required: user-entered address string needs to be narrowed to viem Address type
-      await setAddressFrozen(freezeAddr as Address, action === "freeze");
+      await setAddressFrozen(freezeAddr, action === "freeze");
       setFreezeStatus({
         type: "success",
         msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${freezeAddr.slice(0, 10)}...`,
@@ -76,9 +84,11 @@ export default function IssuerDashboard() {
   }
 
   async function handleAllocateProceeds() {
-    if (!project || !proceedsAmount) return;
+    if (!project || !proceedsAmount || !address) return;
     setProceedsStatus(null);
     try {
+      const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
+
       const res = await fetch("/api/allocate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -87,6 +97,8 @@ export default function IssuerDashboard() {
           category,
           amount: Number(proceedsAmount),
           currency: "USD",
+          message: authMessage,
+          signature,
         }),
       });
       const data: { error?: string } = await res.json();

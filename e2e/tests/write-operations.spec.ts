@@ -144,6 +144,8 @@ test.describe("Write Operations (Testnet)", () => {
 
   test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
     // Tests the full investor portal: 4 compliance checks + purchase via backend API
+    // New flow: identity check → compliance check → eUSD approve (client-side tx) →
+    //           sign auth message → API call (transferFrom + mint)
     await injectWalletMock(page, ALICE_KEY);
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
@@ -163,11 +165,13 @@ test.describe("Write Operations (Testnet)", () => {
     await page.getByPlaceholder("Amount (CPC)").fill("5");
     await page.getByRole("button", { name: "Purchase" }).click();
 
-    // All 4 steps should pass (steps 1-2 are contract reads, steps 3-4 via backend API)
+    // Step 1-2: contract reads for identity and compliance
     await expect(page.getByText("Identity verified")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Compliance verified")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("eUSD payment processed")).toBeVisible({ timeout: 45000 });
-    await expect(page.getByText("Bond tokens issued")).toBeVisible({ timeout: 15000 });
+    // Step 3: client-side eUSD.approve() tx signed by investor in MetaMask
+    await expect(page.getByText("eUSD spending approved")).toBeVisible({ timeout: 45000 });
+    // Step 4: API call with auth signature — backend does transferFrom + mint
+    await expect(page.getByText("Bond tokens issued")).toBeVisible({ timeout: 45000 });
   });
 
   test("should load and filter HCS audit events", async ({ page }) => {

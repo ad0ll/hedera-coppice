@@ -12,45 +12,79 @@ export interface AuditEvent {
   consensusTimestamp: string;
 }
 
-export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
-  const [events, setEvents] = useState<AuditEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const lastSequenceRef = useRef(0);
+function parseMessages(messages: { sequence_number: number; message: string; consensus_timestamp: string }[]): AuditEvent[] {
+  const events: AuditEvent[] = [];
+  for (const msg of messages) {
+    try {
+      const decoded = atob(msg.message);
+      const parsed = JSON.parse(decoded);
+      events.push({
+        ...parsed,
+        sequenceNumber: msg.sequence_number,
+        consensusTimestamp: msg.consensus_timestamp,
+      });
+    } catch {
+      // Skip malformed messages
+    }
+  }
+  return events;
+}
 
+export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
   const topicId = topicType === "audit" ? TOPIC_IDS.audit : TOPIC_IDS.impact;
+  const topicMissing = !topicId;
+
+  const [events, setEvents] = useState<AuditEvent[]>([]);
+  const [loading, setLoading] = useState(!topicMissing);
+  const lastSequenceRef = useRef(0);
+  const initialLoadDone = useRef(false);
 
   useEffect(() => {
-    if (!topicId) {
-      setLoading(false);
-      return;
-    }
+    if (!topicId) return;
 
     let cancelled = false;
 
-    async function fetchMessages() {
+    async function initialLoad() {
+      // Paginate through all messages using links.next
+      const allEvents: AuditEvent[] = [];
+      let nextPath: string | null = `/api/v1/topics/${topicId}/messages?order=asc&limit=100`;
+
+      while (nextPath && !cancelled) {
+        try {
+          const res: Response = await fetch(`${MIRROR_NODE_URL}${nextPath}`);
+          if (!res.ok) break;
+
+          const data: { messages?: { sequence_number: number; message: string; consensus_timestamp: string }[]; links?: { next?: string } } = await res.json();
+          const parsed = parseMessages(data.messages || []);
+          allEvents.push(...parsed);
+
+          if (parsed.length > 0) {
+            lastSequenceRef.current = parsed[parsed.length - 1].sequenceNumber;
+          }
+
+          nextPath = data.links?.next || null;
+        } catch {
+          break;
+        }
+      }
+
+      if (!cancelled) {
+        setEvents(allEvents);
+        setLoading(false);
+        initialLoadDone.current = true;
+      }
+    }
+
+    async function pollNewMessages() {
+      if (!initialLoadDone.current) return;
+
       try {
-        const url = `${MIRROR_NODE_URL}/api/v1/topics/${topicId}/messages?order=asc&limit=100`;
+        const url = `${MIRROR_NODE_URL}/api/v1/topics/${topicId}/messages?order=asc&limit=100&sequencenumber=gt:${lastSequenceRef.current}`;
         const response = await fetch(url);
         if (!response.ok) return;
 
         const data = await response.json();
-        const newEvents: AuditEvent[] = [];
-
-        for (const msg of data.messages || []) {
-          if (msg.sequence_number <= lastSequenceRef.current) continue;
-
-          try {
-            const decoded = atob(msg.message);
-            const parsed = JSON.parse(decoded);
-            newEvents.push({
-              ...parsed,
-              sequenceNumber: msg.sequence_number,
-              consensusTimestamp: msg.consensus_timestamp,
-            });
-          } catch {
-            // Skip malformed messages
-          }
-        }
+        const newEvents = parseMessages(data.messages || []);
 
         if (newEvents.length > 0 && !cancelled) {
           lastSequenceRef.current = newEvents[newEvents.length - 1].sequenceNumber;
@@ -58,13 +92,11 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
         }
       } catch {
         // Network error, retry on next poll
-      } finally {
-        if (!cancelled) setLoading(false);
       }
     }
 
-    fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    initialLoad();
+    const interval = setInterval(pollNewMessages, 5000);
 
     return () => {
       cancelled = true;
@@ -72,5 +104,5 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
     };
   }, [topicId]);
 
-  return { events, loading };
+  return { events, loading, topicMissing };
 }

@@ -20,7 +20,10 @@ export function getClient(): Client {
 }
 
 export function getOperatorKey(): PrivateKey {
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY!;
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("Missing DEPLOYER_PRIVATE_KEY");
+  }
   const keyHex = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
   return PrivateKey.fromStringECDSA(keyHex);
 }

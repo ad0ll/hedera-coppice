@@ -53,16 +53,31 @@ async function submitToHCS(
   const message = JSON.stringify(payload);
 
   if (Buffer.byteLength(message) > 1024) {
-    console.warn("  Warning: message exceeds 1KB, truncating data");
+    console.warn("  Warning: message exceeds 1KB, skipping HCS submission");
+    return;
   }
 
-  const tx = await new TopicMessageSubmitTransaction()
-    .setTopicId(topicId)
-    .setMessage(message)
-    .freezeWith(client)
-    .sign(submitKey);
+  const delays = [500, 1000, 2000];
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const tx = await new TopicMessageSubmitTransaction()
+        .setTopicId(topicId)
+        .setMessage(message)
+        .freezeWith(client)
+        .sign(submitKey);
 
-  await tx.execute(client);
+      await tx.execute(client);
+      return;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "unknown";
+      if (attempt < 2) {
+        console.warn(`  HCS submit attempt ${attempt + 1} failed: ${msg.slice(0, 80)}, retrying...`);
+        await new Promise((r) => setTimeout(r, delays[attempt]));
+      } else {
+        throw err;
+      }
+    }
+  }
 }
 
 async function main() {
@@ -92,7 +107,8 @@ async function main() {
   console.log(`  Starting from block: ${lastBlock}`);
   console.log(`  Listening for events...\n`);
 
-  const seenTxs = new Set<string>();
+  const seenTxs = new Map<string, number>(); // logKey -> blockNumber for pruning
+  const MAX_SEEN_ENTRIES = 10_000;
 
   // Narrow tokenAddress to `0x${string}` once for viem's strict hex typing
   const tokenAddr = tokenAddress as `0x${string}`; // viem requires branded hex type for addresses
@@ -112,7 +128,15 @@ async function main() {
         // Deduplicate by tx hash + log index
         const logKey = `${log.transactionHash}-${log.logIndex}`;
         if (seenTxs.has(logKey)) continue;
-        seenTxs.add(logKey);
+        seenTxs.set(logKey, Number(currentBlock));
+
+        // Prune old entries when map grows too large
+        if (seenTxs.size > MAX_SEEN_ENTRIES) {
+          const cutoff = Number(currentBlock) - 1000;
+          for (const [key, block] of seenTxs) {
+            if (block < cutoff) seenTxs.delete(key);
+          }
+        }
 
         let payload: AuditEvent | null = null;
 

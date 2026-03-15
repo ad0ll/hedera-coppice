@@ -257,6 +257,8 @@ async function main() {
           topics: log.topics,
         });
         if (event.eventName === "TREXSuiteDeployed") {
+          // Typecast required: decodeEventLog returns a generic args type, but TREXSuiteDeployed
+          // emits named address fields (_token, _ir, _irs, _tir, _ctr, _mc) that we need to access by name
           const a = event.args as unknown as Record<string, Address>;
           addresses.token = a._token;
           addresses.identityRegistry = a._ir;

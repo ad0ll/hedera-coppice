@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { formatEther } from "viem";
-import { useAccount } from "wagmi";
+import { useConnection } from "wagmi";
 import { BondDetails } from "@/components/bond-details";
 import { ComplianceStatus } from "@/components/compliance-status";
 import { TransferFlow } from "@/components/transfer-flow";
@@ -10,7 +10,7 @@ import { useTokenBalance } from "@/hooks/use-token";
 import { useHTS } from "@/hooks/use-hts";
 
 export default function InvestorPortal() {
-  const { address } = useAccount();
+  const { address } = useConnection();
   const { data: cpcBalanceRaw } = useTokenBalance(address);
   const { getEusdBalance } = useHTS();
   const [eligible, setEligible] = useState(false);

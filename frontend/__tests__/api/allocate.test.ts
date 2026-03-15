@@ -29,7 +29,12 @@ vi.mock("@/lib/hedera", () => ({
   getOperatorKey: vi.fn().mockReturnValue({}),
 }));
 
-const originalEnv = process.env.IMPACT_TOPIC_ID;
+// Mock auth — accept all signatures in tests
+vi.mock("@/lib/auth", () => ({
+  verifyAuth: vi.fn().mockResolvedValue(undefined),
+}));
+
+const originalEnv = { ...process.env };
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/allocate", {
@@ -43,15 +48,22 @@ describe("POST /api/allocate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.IMPACT_TOPIC_ID = "0.0.8214935";
+    process.env.DEPLOYER_ADDRESS = "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE";
   });
 
   afterEach(() => {
-    process.env.IMPACT_TOPIC_ID = originalEnv;
+    process.env.IMPACT_TOPIC_ID = originalEnv.IMPACT_TOPIC_ID;
+    process.env.DEPLOYER_ADDRESS = originalEnv.DEPLOYER_ADDRESS;
   });
 
   it("rejects missing project field", async () => {
     const { POST } = await import("@/app/api/allocate/route");
-    const res = await POST(makeRequest({ category: "Renewable Energy", amount: 1000 }));
+    const res = await POST(makeRequest({
+      category: "Renewable Energy",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe("Missing fields");
@@ -59,41 +71,107 @@ describe("POST /api/allocate", () => {
 
   it("rejects missing category field", async () => {
     const { POST } = await import("@/app/api/allocate/route");
-    const res = await POST(makeRequest({ project: "Solar Farm", amount: 1000 }));
+    const res = await POST(makeRequest({
+      project: "Solar Farm",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(400);
   });
 
   it("rejects missing amount field", async () => {
     const { POST } = await import("@/app/api/allocate/route");
-    const res = await POST(makeRequest({ project: "Solar Farm", category: "Renewable Energy" }));
+    const res = await POST(makeRequest({
+      project: "Solar Farm",
+      category: "Renewable Energy",
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(400);
   });
 
   it("rejects non-string project", async () => {
     const { POST } = await import("@/app/api/allocate/route");
-    const res = await POST(makeRequest({ project: 123, category: "Renewable Energy", amount: 1000 }));
+    const res = await POST(makeRequest({
+      project: 123,
+      category: "Renewable Energy",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(400);
   });
 
   it("rejects non-number amount", async () => {
     const { POST } = await import("@/app/api/allocate/route");
-    const res = await POST(makeRequest({ project: "Solar Farm", category: "Renewable Energy", amount: "1000" }));
+    const res = await POST(makeRequest({
+      project: "Solar Farm",
+      category: "Renewable Energy",
+      amount: "1000",
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(400);
   });
 
-  it("returns 500 when IMPACT_TOPIC_ID is not configured", async () => {
-    delete process.env.IMPACT_TOPIC_ID;
-    // Need to re-import to pick up env change
-    vi.resetModules();
+  it("rejects missing auth signature", async () => {
     const { POST } = await import("@/app/api/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
       amount: 1000,
     }));
+    expect(res.status).toBe(401);
+    const data = await res.json();
+    expect(data.error).toMatch(/authentication/i);
+  });
+
+  it("returns 500 when DEPLOYER_ADDRESS is not configured", async () => {
+    delete process.env.DEPLOYER_ADDRESS;
+    vi.resetModules();
+    const { POST } = await import("@/app/api/allocate/route");
+    const res = await POST(makeRequest({
+      project: "Solar Farm",
+      category: "Renewable Energy",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(500);
+    const data = await res.json();
+    expect(data.error).toMatch(/DEPLOYER_ADDRESS/);
+  });
+
+  it("returns 500 when IMPACT_TOPIC_ID is not configured", async () => {
+    delete process.env.IMPACT_TOPIC_ID;
+    vi.resetModules();
+    const { POST } = await import("@/app/api/allocate/route");
+    const res = await POST(makeRequest({
+      project: "Solar Farm",
+      category: "Renewable Energy",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
     expect(res.status).toBe(500);
     const data = await res.json();
     expect(data.error).toMatch(/IMPACT_TOPIC_ID/);
+  });
+
+  it("rejects payload exceeding 1KB", async () => {
+    vi.resetModules();
+    const { POST } = await import("@/app/api/allocate/route");
+    const res = await POST(makeRequest({
+      project: "A".repeat(1500),
+      category: "Renewable Energy",
+      amount: 1000,
+      message: "auth",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toMatch(/too large/i);
   });
 
   it("succeeds with valid inputs", async () => {
@@ -104,6 +182,8 @@ describe("POST /api/allocate", () => {
       category: "Renewable Energy",
       amount: 50000,
       currency: "USD",
+      message: "auth",
+      signature: "0xsig",
     }));
     expect(res.status).toBe(200);
     const data = await res.json();
@@ -119,6 +199,8 @@ describe("POST /api/allocate", () => {
       project: "Wind Farm",
       category: "Renewable Energy",
       amount: 25000,
+      message: "auth",
+      signature: "0xsig",
     }));
     expect(setMessageCalls.length).toBeGreaterThan(0);
     const payload = JSON.parse(setMessageCalls[0]);

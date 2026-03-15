@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { zeroAddress, parseEther } from "viem";
-import { useAccount } from "wagmi";
+import { zeroAddress, parseEther, erc20Abi, getAddress } from "viem";
+import { useConnection, useConfig } from "wagmi";
+import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
+import { signAuthMessage } from "@/lib/auth";
+import { EUSD_EVM_ADDRESS, DEMO_WALLETS } from "@/lib/constants";
 
 type StepStatus = "pending" | "active" | "success" | "error";
 
@@ -15,15 +18,22 @@ interface Step {
 }
 
 export function TransferFlow({ enabled }: { enabled: boolean }) {
-  const { address } = useAccount();
+  const { address } = useConnection();
+  const config = useConfig();
   const { isVerified } = useIdentity();
   const { canTransfer } = useCompliance();
   const [amount, setAmount] = useState("");
   const [steps, setSteps] = useState<Step[]>([]);
   const [running, setRunning] = useState(false);
 
+  // Look up the deployer address from DEMO_WALLETS
+  const deployerEntry = Object.entries(DEMO_WALLETS).find(
+    ([, info]) => info.role === "issuer",
+  );
+  const deployerAddress = deployerEntry ? getAddress(deployerEntry[0]) : undefined;
+
   async function handlePurchase() {
-    if (!address || !amount || running) return;
+    if (!address || !amount || running || !deployerAddress) return;
 
     const parsedAmount = parseEther(amount);
     setRunning(true);
@@ -31,8 +41,8 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
     const newSteps: Step[] = [
       { label: "Verifying identity...", status: "active" },
       { label: "Checking compliance...", status: "pending" },
-      { label: "Processing eUSD payment...", status: "pending" },
-      { label: "Issuing bond tokens...", status: "pending" },
+      { label: "Approving eUSD spending...", status: "pending" },
+      { label: "Processing purchase...", status: "pending" },
     ];
     setSteps([...newSteps]);
 
@@ -59,11 +69,33 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[2] = { ...newSteps[2], status: "active" };
       setSteps([...newSteps]);
 
-      // Steps 3 & 4: Backend handles eUSD transfer + CPC mint
+      // Step 3: Approve eUSD spending — investor signs in MetaMask
+      const eusdAmount = BigInt(Math.round(Number(amount) * 100)); // eUSD has 2 decimals
+      const approveHash = await writeContract(config, {
+        address: EUSD_EVM_ADDRESS,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [deployerAddress, eusdAmount],
+        gas: BigInt(100_000),
+      });
+      await waitForTransactionReceipt(config, { hash: approveHash });
+
+      newSteps[2] = { label: "eUSD spending approved", status: "success" };
+      newSteps[3] = { ...newSteps[3], status: "active" };
+      setSteps([...newSteps]);
+
+      // Step 4: Sign auth message and call purchase API
+      const { message, signature } = await signAuthMessage(config, address, "Purchase Bond Tokens");
+
       const purchaseRes = await fetch("/api/purchase", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ investorAddress: address, amount: Number(amount) }),
+        body: JSON.stringify({
+          investorAddress: address,
+          amount: Number(amount),
+          message,
+          signature,
+        }),
       });
 
       let purchaseData: { error?: string; success?: boolean };
@@ -77,11 +109,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         throw new Error(purchaseData.error || "Purchase failed");
       }
 
-      newSteps[2] = { label: "eUSD payment processed", status: "success" };
-      newSteps[3] = { ...newSteps[3], status: "active" };
-      setSteps([...newSteps]);
-
-      await new Promise((r) => setTimeout(r, 500));
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);
       setAmount("");
