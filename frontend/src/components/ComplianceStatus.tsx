@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { zeroAddress, parseEther, type Address } from "viem";
+import { zeroAddress, parseEther } from "viem";
 import { useWallet } from "../providers/WalletProvider";
 import { useIdentity } from "../hooks/useIdentity";
 import { useCompliance } from "../hooks/useCompliance";
