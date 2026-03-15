@@ -2,6 +2,7 @@ export const HEDERA_CHAIN_ID = 296;
 export const HEDERA_CHAIN_ID_HEX = "0x128";
 export const JSON_RPC_URL = import.meta.env.VITE_HEDERA_JSON_RPC || "https://testnet.hashio.io/api";
 export const MIRROR_NODE_URL = import.meta.env.VITE_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 export const CONTRACT_ADDRESSES = {
   token: import.meta.env.VITE_TOKEN_ADDRESS || "",

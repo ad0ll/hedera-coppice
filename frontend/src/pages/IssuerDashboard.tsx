@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
 import { useToken } from "../hooks/useToken";
 import { ProjectAllocation } from "../components/ProjectAllocation";
+import { API_URL } from "../lib/constants";
 
 export function IssuerDashboard() {
   const { account } = useWallet();
@@ -89,11 +90,24 @@ export function IssuerDashboard() {
     if (!project || !proceedsAmount) return;
     setProceedsStatus(null);
     try {
-      setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (HCS submission requires middleware)` });
+      const res = await fetch(`${API_URL}/api/allocate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project,
+          category,
+          amount: Number(proceedsAmount),
+          currency: "USD",
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Allocation failed");
+      setProceedsStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
       setProject("");
       setProceedsAmount("");
-    } catch (err: any) {
-      setProceedsStatus({ type: "error", msg: err.message?.slice(0, 80) || "Failed" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed";
+      setProceedsStatus({ type: "error", msg: message.slice(0, 80) });
     }
   }
 

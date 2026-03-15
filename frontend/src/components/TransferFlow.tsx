@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useWallet } from "../providers/WalletProvider";
-import { useToken } from "../hooks/useToken";
 import { useIdentity } from "../hooks/useIdentity";
 import { useCompliance } from "../hooks/useCompliance";
+import { API_URL } from "../lib/constants";
 
 type StepStatus = "pending" | "active" | "success" | "error";
 
@@ -15,7 +15,6 @@ interface Step {
 
 export function TransferFlow({ enabled }: { enabled: boolean }) {
   const { account } = useWallet();
-  const { mint } = useToken();
   const { isVerified } = useIdentity();
   const { canTransfer } = useCompliance();
   const [amount, setAmount] = useState("");
@@ -59,12 +58,25 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[2] = { ...newSteps[2], status: "active" };
       setSteps([...newSteps]);
 
-      await new Promise((r) => setTimeout(r, 1500));
+      // Steps 3 & 4: Backend handles eUSD transfer + CPC mint
+      const purchaseRes = await fetch(`${API_URL}/api/purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ investorAddress: account, amount: Number(amount) }),
+      });
+
+      const purchaseData = await purchaseRes.json();
+
+      if (!purchaseRes.ok) {
+        throw new Error(purchaseData.error || "Purchase failed");
+      }
+
       newSteps[2] = { label: "eUSD payment processed", status: "success" };
       newSteps[3] = { ...newSteps[3], status: "active" };
       setSteps([...newSteps]);
 
-      await mint(account, parsedAmount);
+      // Brief pause to show the step transition
+      await new Promise((r) => setTimeout(r, 500));
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);
       setAmount("");

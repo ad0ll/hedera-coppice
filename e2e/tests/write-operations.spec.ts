@@ -121,9 +121,8 @@ test.describe("Write Operations (Testnet)", () => {
   });
 
   test("should run Alice compliance checks and purchase flow UI", async ({ page }) => {
-    // Tests the full investor portal: 4 compliance checks + TransferFlow UI
-    // Note: The mint step requires agent role, so we verify the flow reaches
-    // the correct steps (identity + compliance pass) and the UI is functional.
+    // Tests the full investor portal: 4 compliance checks + purchase via backend API
+    // REQUIRES: middleware purchase-api running (npm run purchase-api)
     const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
 
     await injectWalletMock(page, ALICE_KEY);
@@ -145,10 +144,11 @@ test.describe("Write Operations (Testnet)", () => {
     await page.getByPlaceholder("Amount (CPC)").fill("5");
     await page.getByRole("button", { name: "Purchase" }).click();
 
-    // First two steps should pass (real contract calls)
+    // All 4 steps should pass (steps 1-2 are contract reads, steps 3-4 via backend API)
     await expect(page.getByText("Identity verified")).toBeVisible({ timeout: 15000 });
     await expect(page.getByText("Compliance verified")).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText("eUSD payment processed")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("eUSD payment processed")).toBeVisible({ timeout: 45000 });
+    await expect(page.getByText("Bond tokens issued")).toBeVisible({ timeout: 15000 });
   });
 
   test("should load and filter HCS audit events", async ({ page }) => {

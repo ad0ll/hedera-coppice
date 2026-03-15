@@ -13,12 +13,20 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  webServer: {
-    command: "cd ../frontend && npm run dev",
-    port: 5173,
-    reuseExistingServer: !process.env.CI,
-    timeout: 30000,
-  },
+  webServer: [
+    {
+      command: "cd ../frontend && npm run dev",
+      port: 5173,
+      reuseExistingServer: !process.env.CI,
+      timeout: 30000,
+    },
+    {
+      command: "cd ../middleware && npm run purchase-api",
+      port: 5000,
+      reuseExistingServer: !process.env.CI,
+      timeout: 15000,
+    },
+  ],
   projects: [
     {
       name: "chromium",
