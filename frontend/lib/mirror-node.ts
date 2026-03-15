@@ -6,6 +6,7 @@ export async function fetchMirrorNode<T>(path: string): Promise<T> {
   return withRetry(async () => {
     const res = await fetch(`${MIRROR_NODE_URL}${path}`);
     if (!res.ok) throw new Error(`Mirror Node returned ${res.status}`);
+    // Typecast required: Response.json() returns Promise<any>; caller-provided T narrows the type
     return res.json() as Promise<T>;
   });
 }

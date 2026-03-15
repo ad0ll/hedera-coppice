@@ -158,7 +158,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 flex items-center justify-center">
                 {check.status === "loading" ? (
-                  <Spinner />
+                  <Spinner aria-label="Checking" />
                 ) : check.status === "pass" ? (
                   <CheckIcon className="w-5 h-5 text-bond-green" />
                 ) : (

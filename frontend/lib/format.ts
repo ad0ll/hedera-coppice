@@ -15,6 +15,7 @@ export function formatBalance(
 /** Truncate an EVM address to a short display form: 0xAbCd...1234 */
 export function abbreviateAddress(address: string, prefixLen = 6, suffixLen = 4): string {
   if (address.length <= prefixLen + suffixLen + 3) return address;
+  if (suffixLen === 0) return `${address.slice(0, prefixLen)}...`;
   return `${address.slice(0, prefixLen)}...${address.slice(-suffixLen)}`;
 }
 

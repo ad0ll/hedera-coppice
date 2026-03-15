@@ -42,7 +42,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h3>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
-          <Spinner className="w-4 h-4" />
+          <Spinner className="w-4 h-4" aria-hidden />
           Loading events from HCS...
         </div>
       </div>

@@ -180,7 +180,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
                   <div className="w-2 h-2 rounded-full bg-text-muted/30" />
                 )}
                 {step.status === "active" && (
-                  <span aria-label="Processing"><Spinner variant="amber" /></span>
+                  <Spinner variant="amber" aria-label="Processing" />
                 )}
                 {step.status === "success" && (
                   <CheckIcon className="w-5 h-5 text-bond-green" />

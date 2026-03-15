@@ -26,7 +26,12 @@ export function WarningIcon({ className = "w-5 h-5" }: IconProps) {
   );
 }
 
-export function Spinner({ variant = "default", className }: { variant?: "default" | "amber"; className?: string }) {
+export function Spinner({ variant = "default", className, "aria-label": ariaLabel, "aria-hidden": ariaHidden }: {
+  variant?: "default" | "amber";
+  className?: string;
+  "aria-label"?: string;
+  "aria-hidden"?: boolean;
+}) {
   const base = className ?? "w-4 h-4";
   const colorClasses = variant === "amber"
     ? "border-bond-amber/40 border-t-bond-amber"
@@ -34,7 +39,9 @@ export function Spinner({ variant = "default", className }: { variant?: "default
   return (
     <span
       className={`inline-block ${base} border-2 ${colorClasses} rounded-full animate-spin`}
-      role="status"
+      role={ariaHidden ? undefined : "status"}
+      aria-label={ariaLabel}
+      aria-hidden={ariaHidden}
     />
   );
 }

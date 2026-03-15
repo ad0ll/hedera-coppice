@@ -64,12 +64,6 @@ vi.mock("@/lib/mirror-node", () => ({
   getHtsTokenBalance: (...args: unknown[]) => mockGetHtsTokenBalance(...args),
 }));
 
-// Mock format utility
-vi.mock("@/lib/format", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/format")>("@/lib/format");
-  return actual;
-});
-
 // Fake deployer key — NOT a real key
 process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
 process.env.EUSD_TOKEN_ID = "0.0.8214937";
