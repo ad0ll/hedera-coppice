@@ -1,247 +1,309 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
 import OnchainID from "@onchain-id/solidity";
+import {
+  type Address,
+  type Hex,
+  type PublicClient,
+  encodeAbiParameters,
+  encodeFunctionData,
+  keccak256,
+  parseEther,
+  toHex,
+  zeroAddress,
+  getAddress,
+  getContract,
+  decodeEventLog,
+} from "viem";
+import {
+  type PrivateKeyAccount,
+  generatePrivateKey,
+  privateKeyToAccount,
+} from "viem/accounts";
+import type { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 
-const CLAIM_TOPICS = [1, 2, 7]; // KYC, AML, ACCREDITED
+const CLAIM_TOPICS = [1n, 2n, 7n]; // KYC, AML, ACCREDITED
 
-async function deployIdentityProxy(
-  implAuthorityAddress: string,
-  walletAddress: string,
-  deployer: any
-): Promise<string> {
-  const proxy = await new ethers.ContractFactory(
-    OnchainID.contracts.IdentityProxy.abi,
-    OnchainID.contracts.IdentityProxy.bytecode,
-    deployer
-  ).deploy(implAuthorityAddress, walletAddress);
-  await proxy.waitForDeployment();
-  return proxy.getAddress();
+async function deployOnchainIDContract(
+  abi: readonly unknown[],
+  bytecode: Hex,
+  args: unknown[] = []
+): Promise<Address> {
+  const [deployer] = await hre.viem.getWalletClients();
+  const publicClient = await hre.viem.getPublicClient();
+
+  const hash = await deployer.deployContract({
+    abi,
+    bytecode,
+    args,
+  });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  if (!receipt.contractAddress) {
+    throw new Error("Contract deployment failed — no address in receipt");
+  }
+  return getAddress(receipt.contractAddress);
 }
 
 async function issueClaim(
-  identityAddr: string,
-  topic: number,
-  claimIssuerAddress: string,
-  claimIssuerSigningKey: any,
-  walletSigner: any
+  publicClient: PublicClient,
+  identityAddr: Address,
+  topic: bigint,
+  claimIssuerAddress: Address,
+  claimIssuerAccount: PrivateKeyAccount,
+  ownerWalletClient: WalletClient
 ): Promise<void> {
-  const identity = new ethers.Contract(
-    identityAddr,
-    OnchainID.contracts.Identity.abi,
-    walletSigner
-  );
-  const data = ethers.hexlify(ethers.toUtf8Bytes("Verified"));
-  const dataHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(
-      ["address", "uint256", "bytes"],
+  const data = toHex("Verified");
+  const dataHash = keccak256(
+    encodeAbiParameters(
+      [{ type: "address" }, { type: "uint256" }, { type: "bytes" }],
       [identityAddr, topic, data]
     )
   );
-  const signature = await claimIssuerSigningKey.signMessage(ethers.getBytes(dataHash));
-  await (await identity.addClaim(
-    topic, 1, claimIssuerAddress, signature, data, ""
-  )).wait();
+  const signature = await claimIssuerAccount.signMessage({
+    message: { raw: dataHash },
+  });
+
+  const hash = await ownerWalletClient.writeContract({
+    address: identityAddr,
+    abi: OnchainID.contracts.Identity.abi,
+    functionName: "addClaim",
+    args: [topic, 1n, claimIssuerAddress, signature, data, "0x"],
+  });
+  await publicClient.waitForTransactionReceipt({ hash });
 }
 
 export async function deployGreenBondFixture() {
-  const [deployer, alice, bob, charlie, diana] = await ethers.getSigners();
+  const publicClient = await hre.viem.getPublicClient();
+  const [deployer, alice, bob, charlie, diana] = await hre.viem.getWalletClients();
 
   // ================================================================
   // Phase 1: OnchainID infrastructure
   // ================================================================
-  const identityImpl = await new ethers.ContractFactory(
+  const identityImplAddr = await deployOnchainIDContract(
     OnchainID.contracts.Identity.abi,
     OnchainID.contracts.Identity.bytecode,
-    deployer
-  ).deploy(deployer.address, true);
-  await identityImpl.waitForDeployment();
+    [deployer.account.address, true]
+  );
 
-  const identityImplAuthority = await new ethers.ContractFactory(
+  const identityImplAuthorityAddr = await deployOnchainIDContract(
     OnchainID.contracts.ImplementationAuthority.abi,
     OnchainID.contracts.ImplementationAuthority.bytecode,
-    deployer
-  ).deploy(await identityImpl.getAddress());
-  await identityImplAuthority.waitForDeployment();
+    [identityImplAddr]
+  );
 
-  const idFactory = await new ethers.ContractFactory(
+  const idFactoryAddr = await deployOnchainIDContract(
     OnchainID.contracts.Factory.abi,
     OnchainID.contracts.Factory.bytecode,
-    deployer
-  ).deploy(await identityImplAuthority.getAddress());
-  await idFactory.waitForDeployment();
+    [identityImplAuthorityAddr]
+  );
 
   // ================================================================
   // Phase 2: T-REX implementations
   // ================================================================
-  const tokenImpl = await ethers.deployContract("Token");
-  const ctrImpl = await ethers.deployContract("ClaimTopicsRegistry");
-  const irImpl = await ethers.deployContract("IdentityRegistry");
-  const irsImpl = await ethers.deployContract("IdentityRegistryStorage");
-  const tirImpl = await ethers.deployContract("TrustedIssuersRegistry");
-  const mcImpl = await ethers.deployContract("ModularCompliance");
-  await Promise.all([
-    tokenImpl.waitForDeployment(), ctrImpl.waitForDeployment(),
-    irImpl.waitForDeployment(), irsImpl.waitForDeployment(),
-    tirImpl.waitForDeployment(), mcImpl.waitForDeployment(),
-  ]);
+  const tokenImpl = await hre.viem.deployContract("Token", []);
+  const ctrImpl = await hre.viem.deployContract("ClaimTopicsRegistry", []);
+  const irImpl = await hre.viem.deployContract("IdentityRegistry", []);
+  const irsImpl = await hre.viem.deployContract("IdentityRegistryStorage", []);
+  const tirImpl = await hre.viem.deployContract("TrustedIssuersRegistry", []);
+  const mcImpl = await hre.viem.deployContract("ModularCompliance", []);
 
   // ================================================================
   // Phase 3: TREXImplementationAuthority
   // ================================================================
-  const trexImplAuth = await ethers.deployContract("TREXImplementationAuthority", [
-    true, ethers.ZeroAddress, ethers.ZeroAddress,
+  const trexImplAuth = await hre.viem.deployContract("TREXImplementationAuthority", [
+    true, zeroAddress, zeroAddress,
   ]);
-  await trexImplAuth.waitForDeployment();
-  await (await trexImplAuth.addAndUseTREXVersion(
+
+  let hash = await trexImplAuth.write.addAndUseTREXVersion([
     { major: 4, minor: 0, patch: 0 },
     {
-      tokenImplementation: await tokenImpl.getAddress(),
-      ctrImplementation: await ctrImpl.getAddress(),
-      irImplementation: await irImpl.getAddress(),
-      irsImplementation: await irsImpl.getAddress(),
-      tirImplementation: await tirImpl.getAddress(),
-      mcImplementation: await mcImpl.getAddress(),
-    }
-  )).wait();
+      tokenImplementation: tokenImpl.address,
+      ctrImplementation: ctrImpl.address,
+      irImplementation: irImpl.address,
+      irsImplementation: irsImpl.address,
+      tirImplementation: tirImpl.address,
+      mcImplementation: mcImpl.address,
+    },
+  ]);
+  await publicClient.waitForTransactionReceipt({ hash });
 
   // ================================================================
   // Phase 4: Compliance modules
   // ================================================================
-  const countryRestrict = await ethers.deployContract("CountryRestrictModule");
-  const maxBalance = await ethers.deployContract("MaxBalanceModule");
-  const supplyLimit = await ethers.deployContract("SupplyLimitModule");
-  await Promise.all([
-    countryRestrict.waitForDeployment(),
-    maxBalance.waitForDeployment(),
-    supplyLimit.waitForDeployment(),
-  ]);
+  const countryRestrict = await hre.viem.deployContract("CountryRestrictModule", []);
+  const maxBalance = await hre.viem.deployContract("MaxBalanceModule", []);
+  const supplyLimit = await hre.viem.deployContract("SupplyLimitModule", []);
 
   // ================================================================
   // Phase 5: TREXFactory
   // ================================================================
-  const trexFactory = await ethers.deployContract("TREXFactory", [
-    await trexImplAuth.getAddress(),
-    await idFactory.getAddress(),
+  const trexFactory = await hre.viem.deployContract("TREXFactory", [
+    trexImplAuth.address,
+    idFactoryAddr,
   ]);
-  await trexFactory.waitForDeployment();
-  await (await idFactory.addTokenFactory(await trexFactory.getAddress())).wait();
+
+  const idFactory = getContract({
+    address: idFactoryAddr,
+    abi: OnchainID.contracts.Factory.abi,
+    client: { public: publicClient, wallet: deployer },
+  });
+  hash = await idFactory.write.addTokenFactory([trexFactory.address]);
+  await publicClient.waitForTransactionReceipt({ hash });
 
   // ================================================================
   // Phase 6: ClaimIssuer
   // ================================================================
-  const claimIssuerSigningKey = ethers.Wallet.createRandom();
-  const claimIssuerContract = await ethers.deployContract("ClaimIssuer", [deployer.address]);
-  await claimIssuerContract.waitForDeployment();
-  const keyHash = ethers.keccak256(
-    ethers.AbiCoder.defaultAbiCoder().encode(["address"], [claimIssuerSigningKey.address])
+  const claimIssuerPrivateKey = generatePrivateKey();
+  const claimIssuerAccount = privateKeyToAccount(claimIssuerPrivateKey);
+
+  const claimIssuerContract = await hre.viem.deployContract("ClaimIssuer", [
+    deployer.account.address,
+  ]);
+
+  const keyHash = keccak256(
+    encodeAbiParameters([{ type: "address" }], [claimIssuerAccount.address])
   );
-  await (await claimIssuerContract.addKey(keyHash, 3, 1)).wait();
+  hash = await claimIssuerContract.write.addKey([keyHash, 3n, 1n]);
+  await publicClient.waitForTransactionReceipt({ hash });
 
   // ================================================================
   // Phase 7: deployTREXSuite
   // ================================================================
-  const countryRestrictIface = new ethers.Interface([
-    "function batchRestrictCountries(uint16[] calldata countries)",
-  ]);
-  const maxBalanceIface = new ethers.Interface([
-    "function setMaxBalance(uint256 _max)",
-  ]);
-  const supplyLimitIface = new ethers.Interface([
-    "function setSupplyLimit(uint256 _limit)",
-  ]);
+  const countryRestrictCalldata = encodeFunctionData({
+    abi: [{ type: "function", name: "batchRestrictCountries", inputs: [{ type: "uint16[]", name: "countries" }], outputs: [], stateMutability: "nonpayable" }] as const,
+    functionName: "batchRestrictCountries",
+    args: [[156]],
+  });
+  const maxBalanceCalldata = encodeFunctionData({
+    abi: [{ type: "function", name: "setMaxBalance", inputs: [{ type: "uint256", name: "_max" }], outputs: [], stateMutability: "nonpayable" }] as const,
+    functionName: "setMaxBalance",
+    args: [parseEther("1000000")],
+  });
+  const supplyLimitCalldata = encodeFunctionData({
+    abi: [{ type: "function", name: "setSupplyLimit", inputs: [{ type: "uint256", name: "_limit" }], outputs: [], stateMutability: "nonpayable" }] as const,
+    functionName: "setSupplyLimit",
+    args: [parseEther("1000000")],
+  });
 
-  const suiteTx = await trexFactory.deployTREXSuite(
+  hash = await trexFactory.write.deployTREXSuite([
     "coppice-green-bond",
     {
-      owner: deployer.address,
+      owner: deployer.account.address,
       name: "Coppice Green Bond",
       symbol: "CPC",
       decimals: 18,
-      irs: ethers.ZeroAddress,
-      ONCHAINID: ethers.ZeroAddress,
-      irAgents: [deployer.address],
-      tokenAgents: [deployer.address],
-      complianceModules: [
-        await countryRestrict.getAddress(),
-        await maxBalance.getAddress(),
-        await supplyLimit.getAddress(),
-      ],
-      complianceSettings: [
-        countryRestrictIface.encodeFunctionData("batchRestrictCountries", [[156]]),
-        maxBalanceIface.encodeFunctionData("setMaxBalance", [ethers.parseEther("1000000")]),
-        supplyLimitIface.encodeFunctionData("setSupplyLimit", [ethers.parseEther("1000000")]),
-      ],
+      irs: zeroAddress,
+      ONCHAINID: zeroAddress,
+      irAgents: [deployer.account.address],
+      tokenAgents: [deployer.account.address],
+      complianceModules: [countryRestrict.address, maxBalance.address, supplyLimit.address],
+      complianceSettings: [countryRestrictCalldata, maxBalanceCalldata, supplyLimitCalldata],
     },
     {
       claimTopics: CLAIM_TOPICS,
-      issuers: [await claimIssuerContract.getAddress()],
+      issuers: [claimIssuerContract.address],
       issuerClaims: [CLAIM_TOPICS],
+    },
+  ]);
+
+  const suiteReceipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  // Extract suite addresses from TREXSuiteDeployed event
+  const factoryArtifact = await hre.artifacts.readArtifact("TREXFactory");
+
+  let tokenAddress: Address = zeroAddress;
+  let irAddress: Address = zeroAddress;
+  let mcAddress: Address = zeroAddress;
+
+  for (const log of suiteReceipt.logs) {
+    try {
+      const event = decodeEventLog({
+        abi: factoryArtifact.abi,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (event.eventName === "TREXSuiteDeployed") {
+        // TREXSuiteDeployed(_token, _ir, _irs, _tir, _ctr, _mc, _salt)
+        const a = event.args as unknown as Record<string, Address>;
+        tokenAddress = a._token;
+        irAddress = a._ir;
+        mcAddress = a._mc;
+        break;
+      }
+    } catch {
+      // Not a TREXFactory event — skip
     }
-  );
-  const suiteReceipt = await suiteTx.wait();
+  }
 
-  // Extract suite addresses
-  const factoryForParsing = await ethers.getContractAt("TREXFactory", await trexFactory.getAddress());
-  const suiteEvents = suiteReceipt!.logs
-    .map((log: any) => {
-      try {
-        return factoryForParsing.interface.parseLog({ topics: log.topics as string[], data: log.data });
-      } catch { return null; }
-    })
-    .filter((e: any) => e && e.name === "TREXSuiteDeployed");
+  if (tokenAddress === zeroAddress) {
+    throw new Error("TREXSuiteDeployed event not found in receipt");
+  }
 
-  const event = suiteEvents[0]!;
-  const tokenAddress = event.args[0];
-  const irAddress = event.args[1];
-  const mcAddress = event.args[5];
-
-  const token = await ethers.getContractAt("Token", tokenAddress);
-  const identityRegistry = await ethers.getContractAt("IdentityRegistry", irAddress);
-  const compliance = await ethers.getContractAt("ModularCompliance", mcAddress);
+  const token = await hre.viem.getContractAt("Token", tokenAddress);
+  const identityRegistry = await hre.viem.getContractAt("IdentityRegistry", irAddress);
+  const compliance = await hre.viem.getContractAt("ModularCompliance", mcAddress);
 
   // ================================================================
   // Setup: Deploy identities, register, issue claims
   // ================================================================
-  const implAuthAddr = await identityImplAuthority.getAddress();
-  const deployerIdentity = await deployIdentityProxy(implAuthAddr, deployer.address, deployer);
-  const aliceIdentity = await deployIdentityProxy(implAuthAddr, alice.address, deployer);
-  const charlieIdentity = await deployIdentityProxy(implAuthAddr, charlie.address, deployer);
-  const dianaIdentity = await deployIdentityProxy(implAuthAddr, diana.address, deployer);
+  async function deployIdentityProxy(walletAddress: Address): Promise<Address> {
+    return deployOnchainIDContract(
+      OnchainID.contracts.IdentityProxy.abi,
+      OnchainID.contracts.IdentityProxy.bytecode,
+      [identityImplAuthorityAddr, walletAddress]
+    );
+  }
 
-  // Add token as agent if not already
-  const isTokenAgent = await identityRegistry.isAgent(tokenAddress);
+  const deployerIdentity = await deployIdentityProxy(deployer.account.address);
+  const aliceIdentity = await deployIdentityProxy(alice.account.address);
+  const charlieIdentity = await deployIdentityProxy(charlie.account.address);
+  const dianaIdentity = await deployIdentityProxy(diana.account.address);
+
+  // Add token as agent if needed
+  const isTokenAgent = await identityRegistry.read.isAgent([tokenAddress]);
   if (!isTokenAgent) {
-    await (await identityRegistry.addAgent(tokenAddress)).wait();
+    hash = await identityRegistry.write.addAgent([tokenAddress]);
+    await publicClient.waitForTransactionReceipt({ hash });
   }
 
   // Register identities
-  await (await identityRegistry.batchRegisterIdentity(
-    [deployer.address, alice.address, charlie.address, diana.address],
+  hash = await identityRegistry.write.batchRegisterIdentity([
+    [deployer.account.address, alice.account.address, charlie.account.address, diana.account.address],
     [deployerIdentity, aliceIdentity, charlieIdentity, dianaIdentity],
-    [276, 276, 156, 250]
-  )).wait();
+    [276, 276, 156, 250],
+  ]);
+  await publicClient.waitForTransactionReceipt({ hash });
 
   // Issue claims
-  const claimIssuerAddr = await claimIssuerContract.getAddress();
-  for (const [signer, identityAddr] of [
+  for (const [walletClient, identityAddr] of [
     [deployer, deployerIdentity],
     [alice, aliceIdentity],
     [charlie, charlieIdentity],
     [diana, dianaIdentity],
   ] as const) {
     for (const topic of CLAIM_TOPICS) {
-      await issueClaim(identityAddr, topic, claimIssuerAddr, claimIssuerSigningKey, signer);
+      await issueClaim(
+        publicClient,
+        identityAddr,
+        topic,
+        claimIssuerContract.address,
+        claimIssuerAccount,
+        walletClient
+      );
     }
   }
 
   // Mint initial supply and unpause
-  await (await token.mint(deployer.address, ethers.parseEther("100000"))).wait();
-  await (await token.unpause()).wait();
+  hash = await token.write.mint([deployer.account.address, parseEther("100000")]);
+  await publicClient.waitForTransactionReceipt({ hash });
+  hash = await token.write.unpause();
+  await publicClient.waitForTransactionReceipt({ hash });
 
   return {
     token, identityRegistry, compliance, claimIssuerContract,
     trexFactory, countryRestrict, maxBalance, supplyLimit,
     deployer, alice, bob, charlie, diana,
-    claimIssuerSigningKey,
+    claimIssuerAccount,
     identities: { deployerIdentity, aliceIdentity, charlieIdentity, dianaIdentity },
   };
 }
