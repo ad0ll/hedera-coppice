@@ -93,6 +93,7 @@ All completed as planned in previous session. 32 Hardhat tests passing.
 - Vercel deployment and pitch deck are user-driven tasks
 
 ## Overall Status
+
 - **Total Tests:** 64 (32 Hardhat + 32 Playwright E2E)
 - **All passing**
 - **Frontend unit tests:** None currently — old tests deleted during viem migration (they tested deleted code). TODO: Write new unit tests for wagmi-based hooks.
