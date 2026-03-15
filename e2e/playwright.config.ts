@@ -16,7 +16,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `cd ../frontend-next && npx next dev --port ${PORT}`,
+    command: `cd ../frontend && npx next dev --port ${PORT}`,
     port: PORT,
     reuseExistingServer: !process.env.CI,
     timeout: 30000,

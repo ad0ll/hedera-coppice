@@ -7,8 +7,8 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 ## Architecture
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
-- **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger, purchase/allocate API.
-- **frontend/**: React + Vite + Tailwind CSS. MetaMask wallet integration via wagmi v3 + viem v2.
+- **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger.
+- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via wagmi v3 + viem v2. API routes handle purchase/allocate (no separate middleware server needed).
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
 ## Critical Constraints
@@ -30,9 +30,10 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Audit docs: docs/audit-*.md
 - Reference fixture: reference/deploy-full-suite.fixture.ts
 - Accounts & keys: .env
-- Wagmi config: frontend/src/lib/wagmi.ts
+- Wagmi config: frontend/lib/wagmi.ts
 - Shared ABIs: packages/abi/ (generated via wagmi CLI from contract artifacts)
-- Purchase/allocate API: middleware/src/purchase-api.ts
+- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/allocate/route.ts
+- Hedera server utils: frontend/lib/hedera.ts
 
 ## Deployed Contracts & Topics
 
@@ -63,16 +64,15 @@ cd contracts && npx hardhat test
 cd contracts && npx hardhat run scripts/deploy.ts --network hederaTestnet
 cd contracts && npx hardhat run scripts/verify-contracts.ts --network hederaTestnet
 
-# Middleware
+# Middleware (setup scripts + event logger only — purchase/allocate are now API routes)
 cd middleware && npx tsx src/hcs-setup.ts
 cd middleware && npx tsx src/hts-setup.ts
 cd middleware && npm run event-logger
-cd middleware && npm run purchase-api
 
-# Frontend
+# Frontend (Next.js — includes API routes for purchase/allocate)
 cd frontend && npm run dev
 
-# E2E (requires frontend + purchase-api running)
+# E2E (requires frontend running — API routes are built-in)
 cd e2e && npx playwright test
 ```
 
