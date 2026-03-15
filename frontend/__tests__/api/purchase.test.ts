@@ -56,10 +56,19 @@ vi.mock("@/lib/constants", () => ({
   EUSD_EVM_ADDRESS: "0x00000000000000000000000000000000007D5999",
 }));
 
-// Mock retry — pass through immediately without delays
-vi.mock("@/lib/retry", () => ({
-  withRetry: vi.fn().mockImplementation((fn: () => Promise<unknown>) => fn()),
+// Mock mirror-node utilities used by the purchase route
+const mockGetHederaAccountId = vi.fn().mockResolvedValue("0.0.8213185");
+const mockGetHtsTokenBalance = vi.fn().mockResolvedValue(100000); // raw balance, 2 decimals → 1000.00 eUSD
+vi.mock("@/lib/mirror-node", () => ({
+  getHederaAccountId: (...args: unknown[]) => mockGetHederaAccountId(...args),
+  getHtsTokenBalance: (...args: unknown[]) => mockGetHtsTokenBalance(...args),
 }));
+
+// Mock format utility
+vi.mock("@/lib/format", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/format")>("@/lib/format");
+  return actual;
+});
 
 // Fake deployer key — NOT a real key
 process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
@@ -79,19 +88,9 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
 describe("POST /api/purchase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Mock fetch: first call = account lookup, second call = balance check
-    vi.stubGlobal("fetch", vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ account: "0.0.8213185" }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          tokens: [{ token_id: "0.0.8214937", balance: 100000 }],
-        }),
-      }),
-    );
+    // Reset mirror-node mocks to defaults
+    mockGetHederaAccountId.mockResolvedValue("0.0.8213185");
+    mockGetHtsTokenBalance.mockResolvedValue(100000); // raw balance, 2 decimals → 1000.00 eUSD
   });
 
   it("rejects missing investorAddress", async () => {
@@ -155,19 +154,8 @@ describe("POST /api/purchase", () => {
   });
 
   it("rejects insufficient eUSD balance", async () => {
-    // Mock: account lookup succeeds, balance returns low
-    vi.stubGlobal("fetch", vi.fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({ account: "0.0.8213185" }),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          tokens: [{ token_id: "0.0.8214937", balance: 100 }], // 1.00 eUSD
-        }),
-      }),
-    );
+    // Mock: account lookup succeeds, balance returns low (100 raw = 1.00 eUSD)
+    mockGetHtsTokenBalance.mockResolvedValueOnce(100);
 
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({

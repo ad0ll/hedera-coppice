@@ -8,6 +8,8 @@ import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { countryRestrictModuleAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/constants";
+import { COUNTRY_NAMES } from "@/lib/event-types";
+import { CheckIcon, XIcon, Spinner } from "@/components/ui/icons";
 
 interface CheckResult {
   label: string;
@@ -55,32 +57,39 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         return;
       }
 
-      const verified = await isVerified(address);
+      // Checks 2-4 are independent once registration is confirmed — run in parallel
+      const [verified, countryResult, transferAllowed] = await Promise.all([
+        isVerified(address),
+        (async () => {
+          const country = await getCountry(address);
+          let isRestricted = false;
+          let countryCheckFailed = false;
+          if (publicClient && country > 0) {
+            try {
+              isRestricted = await publicClient.readContract({
+                address: COUNTRY_RESTRICT_MODULE_ADDRESS,
+                abi: countryRestrictModuleAbi,
+                functionName: "isCountryRestricted",
+                args: [CONTRACT_ADDRESSES.compliance, country],
+              // Typecast required: readContract returns unknown when ABI is imported as const from external package
+              }) as boolean;
+            } catch {
+              countryCheckFailed = true;
+            }
+          }
+          return { country, isRestricted, countryCheckFailed };
+        })(),
+        canTransfer(zeroAddress, address, parseEther("1")),
+      ]);
+
       results[1] = {
         label: "KYC / AML / Accredited",
         status: verified ? "pass" : "fail",
         detail: verified ? "All claims verified" : "Missing required claims",
       };
-      setChecks([...results]);
 
-      const country = await getCountry(address);
-      const countryNames: Record<number, string> = { 276: "Germany", 250: "France", 156: "China", 840: "United States" };
-      let isRestricted = false;
-      let countryCheckFailed = false;
-      if (publicClient && country > 0) {
-        try {
-          isRestricted = await publicClient.readContract({
-            address: COUNTRY_RESTRICT_MODULE_ADDRESS,
-            abi: countryRestrictModuleAbi,
-            functionName: "isCountryRestricted",
-            args: [CONTRACT_ADDRESSES.compliance, country],
-          // Typecast required: readContract returns unknown when ABI is imported as const from external package
-          }) as boolean;
-        } catch {
-          countryCheckFailed = true;
-        }
-      }
-      const countryLabel = countryNames[country] || `Code ${country}`;
+      const { country, isRestricted, countryCheckFailed } = countryResult;
+      const countryLabel = COUNTRY_NAMES[country] || `Code ${country}`;
       results[2] = {
         label: "Jurisdiction Check",
         status: countryCheckFailed ? "fail" : isRestricted ? "fail" : "pass",
@@ -90,13 +99,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
             ? `${countryLabel} - Restricted`
             : `${countryLabel} - Approved`,
       };
-      setChecks([...results]);
 
-      const transferAllowed = await canTransfer(
-        zeroAddress,
-        address,
-        parseEther("1")
-      );
       results[3] = {
         label: "Compliance Module",
         status: transferAllowed ? "pass" : "fail",
@@ -117,7 +120,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setEligible(false);
       onEligibilityChange?.(false);
     };
-  }, [address, publicClient, isVerified, isRegistered, getCountry, canTransfer, onEligibilityChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isVerified, isRegistered, getCountry, canTransfer are useCallback-wrapped with [publicClient] deps, so they are stable when publicClient is stable
+  }, [address, publicClient, onEligibilityChange]);
 
   if (!address) {
     return (
@@ -154,15 +158,11 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
             <div className="flex items-center gap-3">
               <div className="w-5 h-5 flex items-center justify-center">
                 {check.status === "loading" ? (
-                  <span className="spinner" role="status" aria-label="Checking" />
+                  <Spinner />
                 ) : check.status === "pass" ? (
-                  <svg className="w-5 h-5 text-bond-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
+                  <CheckIcon className="w-5 h-5 text-bond-green" />
                 ) : (
-                  <svg className="w-5 h-5 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <XIcon className="w-5 h-5 text-bond-red" />
                 )}
               </div>
               <span className="text-sm text-white">{check.label}</span>

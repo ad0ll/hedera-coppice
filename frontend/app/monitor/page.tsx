@@ -2,12 +2,13 @@
 
 import { AuditEventFeed } from "@/components/audit-event-feed";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
+import { APPROVAL_EVENTS, RESTRICTION_EVENTS } from "@/lib/event-types";
 
 export default function ComplianceMonitor() {
   const { events } = useHCSAudit("audit");
 
-  const approvals = events.filter((e) => ["TRANSFER", "MINT", "TOKEN_UNPAUSED", "WALLET_UNFROZEN"].includes(e.type)).length;
-  const restrictions = events.filter((e) => ["TOKEN_PAUSED", "WALLET_FROZEN"].includes(e.type)).length;
+  const approvals = events.filter((e) => APPROVAL_EVENTS.has(e.type)).length;
+  const restrictions = events.filter((e) => RESTRICTION_EVENTS.has(e.type)).length;
 
   return (
     <div className="space-y-6">

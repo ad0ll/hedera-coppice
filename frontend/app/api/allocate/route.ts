@@ -3,6 +3,7 @@ import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
 import { z } from "zod";
 import { getClient, getOperatorKey } from "@/lib/hedera";
 import { verifyAuth } from "@/lib/auth";
+import { getErrorMessage } from "@/lib/format";
 
 const allocateBodySchema = z.object({
   project: z.string().nonempty(),
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
   try {
     await verifyAuth(authMessage, signature, deployerAddress);
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : "Auth failed";
+    const msg = getErrorMessage(err, 0, "Auth failed");
     return NextResponse.json({ error: msg }, { status: 401 });
   }
 
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, status: receipt.status.toString() });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message.slice(0, 200) : "Allocation failed";
+    const message = getErrorMessage(err, 200, "Allocation failed");
     return NextResponse.json({ error: message }, { status: 500 });
   } finally {
     client.close();
