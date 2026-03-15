@@ -149,9 +149,9 @@ describe("POST /api/purchase", () => {
       investorAddress: FAKE_ALICE_ADDR,
       amount: 10,
     }));
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toMatch(/authentication/i);
+    expect(data.error).toBe("Invalid request");
   });
 
   it("rejects insufficient eUSD balance", async () => {

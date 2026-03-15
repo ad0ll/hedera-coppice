@@ -19,11 +19,9 @@ import { withRetry } from "@/lib/retry";
 const purchaseBodySchema = z.object({
   investorAddress: z.string().nonempty(),
   amount: z.number().positive(),
-  message: z.string().nonempty().optional(),
-  signature: z.string().nonempty().optional(),
+  message: z.string().nonempty(),
+  signature: z.string().nonempty(),
 });
-
-type PurchaseBody = z.infer<typeof purchaseBodySchema>;
 
 interface MirrorTokenEntry {
   token_id: string;
@@ -74,9 +72,6 @@ export async function POST(request: NextRequest) {
   }
 
   // Verify wallet signature — proves caller owns the investor wallet
-  if (!message || !signature) {
-    return NextResponse.json({ error: "Missing authentication signature" }, { status: 401 });
-  }
   try {
     await verifyAuth(message, signature, investor);
   } catch (err: unknown) {
