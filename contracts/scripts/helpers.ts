@@ -1,43 +1,44 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
 import * as fs from "fs";
 import * as path from "path";
+import { type Address, type Hex } from "viem";
 
 const ADDRESSES_FILE = path.join(__dirname, "..", "deployments", "deployed-addresses.json");
 
 export interface DeployedAddresses {
   // OnchainID infrastructure
-  identityImplementation: string;
-  identityImplAuthority: string;
-  idFactory: string;
+  identityImplementation: Address;
+  identityImplAuthority: Address;
+  idFactory: Address;
 
   // T-REX implementation contracts
-  tokenImpl: string;
-  claimTopicsRegistryImpl: string;
-  identityRegistryImpl: string;
-  identityRegistryStorageImpl: string;
-  trustedIssuersRegistryImpl: string;
-  modularComplianceImpl: string;
+  tokenImpl: Address;
+  claimTopicsRegistryImpl: Address;
+  identityRegistryImpl: Address;
+  identityRegistryStorageImpl: Address;
+  trustedIssuersRegistryImpl: Address;
+  modularComplianceImpl: Address;
 
   // T-REX infrastructure
-  trexImplAuthority: string;
-  trexFactory: string;
+  trexImplAuthority: Address;
+  trexFactory: Address;
 
   // Compliance modules
-  countryRestrictModule: string;
-  maxBalanceModule: string;
-  supplyLimitModule: string;
+  countryRestrictModule: Address;
+  maxBalanceModule: Address;
+  supplyLimitModule: Address;
 
   // Claim issuer
-  claimIssuer: string;
-  claimIssuerSigningKey: string;
+  claimIssuer: Address;
+  claimIssuerSigningKey: Hex;
 
   // Suite (from TREXSuiteDeployed event)
-  token: string;
-  identityRegistry: string;
-  identityRegistryStorage: string;
-  trustedIssuersRegistry: string;
-  claimTopicsRegistry: string;
-  modularCompliance: string;
+  token: Address;
+  identityRegistry: Address;
+  identityRegistryStorage: Address;
+  trustedIssuersRegistry: Address;
+  claimTopicsRegistry: Address;
+  modularCompliance: Address;
 }
 
 export function saveAddresses(addresses: Partial<DeployedAddresses>): void {
@@ -46,7 +47,6 @@ export function saveAddresses(addresses: Partial<DeployedAddresses>): void {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  // Merge with existing if any
   let existing: Partial<DeployedAddresses> = {};
   if (fs.existsSync(ADDRESSES_FILE)) {
     existing = JSON.parse(fs.readFileSync(ADDRESSES_FILE, "utf8"));
@@ -66,17 +66,15 @@ export function loadAddresses(): DeployedAddresses {
 
 export async function deployAndLog(
   name: string,
-  args: any[] = []
-): Promise<any> {
+  constructorArgs: unknown[] = []
+): Promise<{ address: Address }> {
   const startTime = Date.now();
   console.log(`  Deploying ${name}...`);
 
-  const contract = await ethers.deployContract(name, args);
-  await contract.waitForDeployment();
+  const contract = await hre.viem.deployContract(name, constructorArgs);
 
-  const address = await contract.getAddress();
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-  console.log(`  ${name} deployed at ${address} (${elapsed}s)`);
+  console.log(`  ${name} deployed at ${contract.address} (${elapsed}s)`);
 
   return contract;
 }
