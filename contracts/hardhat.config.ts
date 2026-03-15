@@ -23,6 +23,25 @@ const config: HardhatUserConfig = {
       chainId: 296,
     },
   },
+  sourcify: {
+    enabled: true,
+  },
+  etherscan: {
+    enabled: false,
+    apiKey: {
+      hederaTestnet: "no-api-key-needed",
+    },
+    customChains: [
+      {
+        network: "hederaTestnet",
+        chainId: 296,
+        urls: {
+          apiURL: "https://server-verify.hashscan.io",
+          browserURL: "https://hashscan.io/testnet",
+        },
+      },
+    ],
+  },
 };
 
 export default config;
