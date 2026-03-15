@@ -94,8 +94,13 @@ export async function POST(request: NextRequest) {
     }
 
     // 2. Transfer eUSD from investor to treasury via HTS SDK
-    const eusdTokenId = TokenId.fromString(process.env.EUSD_TOKEN_ID!);
-    const treasuryAccountId = AccountId.fromString(process.env.HEDERA_ACCOUNT_ID!);
+    const eusdTokenIdStr = process.env.EUSD_TOKEN_ID;
+    const treasuryAccountIdStr = process.env.HEDERA_ACCOUNT_ID;
+    if (!eusdTokenIdStr || !treasuryAccountIdStr) {
+      return NextResponse.json({ error: "Server misconfigured: missing EUSD_TOKEN_ID or HEDERA_ACCOUNT_ID" }, { status: 500 });
+    }
+    const eusdTokenId = TokenId.fromString(eusdTokenIdStr);
+    const treasuryAccountId = AccountId.fromString(treasuryAccountIdStr);
 
     const investorKey = PrivateKey.fromStringECDSA(
       walletInfo.privateKey.startsWith("0x")
@@ -124,7 +129,10 @@ export async function POST(request: NextRequest) {
     // 3. Mint CPC tokens to investor via viem
     let mintTxHash: string | undefined;
     try {
-      const deployerKey = process.env.DEPLOYER_PRIVATE_KEY!;
+      const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
+      if (!deployerKey) {
+        throw new Error("Missing DEPLOYER_PRIVATE_KEY");
+      }
       // Typecast required: env var string needs to be narrowed to viem's branded hex type
       const deployerKeyHex = (deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`) as `0x${string}`;
       const deployerAccount = privateKeyToAccount(deployerKeyHex);

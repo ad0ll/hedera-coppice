@@ -68,8 +68,8 @@ export function ProjectAllocation() {
           </div>
 
           <div className="space-y-2">
-            {allocations.map((a, i) => (
-              <div key={i} className="flex items-center justify-between text-sm py-1 border-b border-border/30 last:border-0">
+            {allocations.map((a) => (
+              <div key={`${a.project}-${a.category}-${a.amount}`} className="flex items-center justify-between text-sm py-1 border-b border-border/30 last:border-0">
                 <div>
                   <span className="text-white">{a.project}</span>
                   <span className="text-xs text-text-muted ml-2">{a.category}</span>

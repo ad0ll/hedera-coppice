@@ -213,7 +213,7 @@ This script is structured to hit every criterion:
 
 **Voiceover:**
 
-> Coppice brings institutional-grade compliant tokenization to Hedera. Thirty-two smart contract tests, twenty-three end-to-end browser tests, all passing. Five contracts deployed on testnet. A working live demo you can try right now.
+> Coppice brings institutional-grade compliant tokenization to Hedera. A hundred and one tests — thirty-two smart contract, twenty-six frontend unit, forty-three end-to-end browser — all passing. Five contracts deployed on testnet. A working live demo you can try right now.
 >
 > Thank you for watching.
 

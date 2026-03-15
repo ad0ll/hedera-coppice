@@ -53,7 +53,8 @@ async function submitToHCS(
   const message = JSON.stringify(payload);
 
   if (Buffer.byteLength(message) > 1024) {
-    console.warn("  Warning: message exceeds 1KB, truncating data");
+    console.warn("  Warning: message exceeds 1KB, skipping HCS submission");
+    return;
   }
 
   const tx = await new TopicMessageSubmitTransaction()
@@ -92,7 +93,8 @@ async function main() {
   console.log(`  Starting from block: ${lastBlock}`);
   console.log(`  Listening for events...\n`);
 
-  const seenTxs = new Set<string>();
+  const seenTxs = new Map<string, number>(); // logKey -> blockNumber for pruning
+  const MAX_SEEN_ENTRIES = 10_000;
 
   // Narrow tokenAddress to `0x${string}` once for viem's strict hex typing
   const tokenAddr = tokenAddress as `0x${string}`; // viem requires branded hex type for addresses
@@ -112,7 +114,15 @@ async function main() {
         // Deduplicate by tx hash + log index
         const logKey = `${log.transactionHash}-${log.logIndex}`;
         if (seenTxs.has(logKey)) continue;
-        seenTxs.add(logKey);
+        seenTxs.set(logKey, Number(currentBlock));
+
+        // Prune old entries when map grows too large
+        if (seenTxs.size > MAX_SEEN_ENTRIES) {
+          const cutoff = Number(currentBlock) - 1000;
+          for (const [key, block] of seenTxs) {
+            if (block < cutoff) seenTxs.delete(key);
+          }
+        }
 
         let payload: AuditEvent | null = null;
 

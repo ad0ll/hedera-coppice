@@ -15,6 +15,12 @@ frontend/dist/
 e2e/test-results/
 e2e/playwright-report/
 
+# Turbo
+.turbo/
+
+# Deployment state (may contain private keys)
+contracts/deployments/
+
 # Misc
 .DS_Store
 *.log

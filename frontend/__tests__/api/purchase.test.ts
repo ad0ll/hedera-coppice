@@ -98,12 +98,12 @@ describe("POST /api/purchase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Mock fetch for eUSD balance check
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
         tokens: [{ token_id: "0.0.8214937", balance: 100000 }],
       }),
-    }) as unknown as typeof fetch;
+    }));
   });
 
   it("rejects missing investorAddress", async () => {
@@ -168,12 +168,12 @@ describe("POST /api/purchase", () => {
 
   it("rejects insufficient eUSD balance", async () => {
     // Mock mirror node returning low balance
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({
         tokens: [{ token_id: "0.0.8214937", balance: 100 }], // 1.00 eUSD
       }),
-    }) as unknown as typeof fetch;
+    }));
 
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({

@@ -25,13 +25,20 @@ export function getClient(): Client {
 }
 
 export function getOperatorKey(): PrivateKey {
-  const privateKey = process.env.DEPLOYER_PRIVATE_KEY!;
+  const privateKey = process.env.DEPLOYER_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("Missing DEPLOYER_PRIVATE_KEY in .env");
+  }
   const keyHex = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
   return PrivateKey.fromStringECDSA(keyHex);
 }
 
 export function getOperatorAccountId(): AccountId {
-  return AccountId.fromString(process.env.HEDERA_ACCOUNT_ID!);
+  const accountId = process.env.HEDERA_ACCOUNT_ID;
+  if (!accountId) {
+    throw new Error("Missing HEDERA_ACCOUNT_ID in .env");
+  }
+  return AccountId.fromString(accountId);
 }
 
 export const MIRROR_NODE_URL = process.env.HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";

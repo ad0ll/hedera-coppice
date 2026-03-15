@@ -27,7 +27,7 @@ Coppice solves this by:
 │                    React Frontend                         │
 │  InvestorPortal │ IssuerDashboard │ ComplianceMonitor     │
 │  ─────────────────────────────────────────────────────    │
-│  MetaMask ←→ ethers.js ←→ Hedera EVM (Chain 296)        │
+│  MetaMask ←→ wagmi/viem ←→ Hedera EVM (Chain 296)        │
 │  Mirror Node API ←→ HCS Audit Trail / HTS Balances       │
 └──────────────────────────────────────────────────────────┘
         │                    │                    │
@@ -142,17 +142,19 @@ hedera-green-bonds/
 ├── middleware/                # HCS + HTS Node.js scripts
 │   └── src/
 │       ├── config.ts              # Hedera SDK client setup
-│       ├── create-diana.ts        # Create Diana's testnet account
 │       ├── hcs-setup.ts           # Create HCS audit + impact topics
 │       ├── hts-setup.ts           # Create eUSD, associate wallets, distribute
 │       └── event-logger.ts        # Contract events → HCS audit trail (polling)
-├── frontend/                  # React + Vite + Tailwind CSS v4
-│   └── src/
-│       ├── providers/WalletProvider.tsx   # MetaMask integration
-│       ├── hooks/                 # useToken, useIdentity, useCompliance, useHCSAudit, useHTS
-│       ├── pages/                 # InvestorPortal, IssuerDashboard, ComplianceMonitor
-│       ├── components/            # BondDetails, ComplianceStatus, TransferFlow, AuditEventFeed
-│       └── lib/                   # Contract ABIs, addresses, constants
+├── frontend/                  # Next.js 16 App Router + Tailwind CSS v4
+│   ├── app/
+│   │   ├── layout.tsx             # Server component layout with wagmi providers
+│   │   ├── page.tsx               # Investor Portal (client)
+│   │   ├── issue/page.tsx         # Issuer Dashboard (client)
+│   │   ├── monitor/page.tsx       # Compliance Monitor (client)
+│   │   └── api/                   # API routes (purchase, allocate, health)
+│   ├── components/            # BondDetails, ComplianceStatus, TransferFlow, AuditEventFeed
+│   ├── hooks/                 # useToken, useIdentity, useCompliance, useHCSAudit, useHTS
+│   └── lib/                   # wagmi config, Hedera utils, constants
 ├── e2e/                       # Playwright E2E tests
 │   ├── fixtures/wallet-mock.ts    # EIP-1193 MetaMask mock with real tx signing
 │   └── tests/                     # 6 spec files (desktop + mobile)
@@ -187,10 +189,10 @@ Covers all three frontend pages with a custom MetaMask mock that signs real tran
 | Component | Technology | Notes |
 |-----------|-----------|-------|
 | Smart Contracts | Solidity 0.8.17, [T-REX v4.1.6](https://github.com/ERC-3643/ERC-3643), [OnchainID v2.0.0](https://github.com/onchain-id/solidity), OpenZeppelin v4.9.6 | All latest stable compatible versions. T-REX pins Solidity 0.8.17 and requires OZ v4.x. |
-| Development | Hardhat, TypeScript | |
-| Frontend | React 19, Vite 8, Tailwind CSS v4, ethers.js v6 | Vite chosen over Next.js — this is a pure client-side SPA with no server-side requirements. |
+| Development | Hardhat, TypeScript, Turborepo | |
+| Frontend | Next.js 16 App Router, React 19, wagmi v3, viem v2, Tailwind CSS v4 | API routes handle purchase/allocate (no separate middleware server). |
 | Hedera SDK | @hashgraph/sdk for HCS/HTS | |
-| Testing | Mocha/Chai (contracts), Playwright (E2E) | |
+| Testing | Hardhat/viem (contracts), vitest (frontend unit), Playwright (E2E) | 101 tests total: 32 contract + 26 unit + 43 E2E |
 | Deployment | Hedera Testnet (Chain ID 296), Vercel (frontend) | |
 
 ## Deployed Contracts (Hedera Testnet)

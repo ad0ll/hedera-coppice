@@ -58,7 +58,14 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 ## Commands
 
 ```bash
-# Contracts
+# Monorepo (Turborepo) — run from root
+npm run build          # builds contracts + frontend
+npm run lint           # lints frontend
+npm run test           # runs contract tests
+npm run test:unit      # runs frontend vitest
+npm run dev            # starts frontend dev server
+
+# Contracts (direct)
 cd contracts && npx hardhat compile
 cd contracts && npx hardhat test
 cd contracts && npx hardhat run scripts/deploy.ts --network hederaTestnet
@@ -82,7 +89,7 @@ cd e2e && npx playwright test
 
 - Avoid using `use client` when possible
 - Prefer functional components over class components
-- Use `bun/pnpm run lint` to check for linting errors after you're done
+- Use `npm run lint` from the repo root to check for linting errors after you're done
 
 ### Testing standards
 
@@ -101,7 +108,7 @@ cd e2e && npx playwright test
 - Never do hot imports in code function bodies
 - When using Zod schemas, derive TypeScript types using `z.infer<typeof schema>` rather than defining types separately - this prevents type drift where the schema and type diverge
 - Prefer vitest for testing when able
-- After making significant changes (adding functions, renaming files and functions, significant logic changes, etc), you should run `bun run lint`, `bun run build` and `bun run test:unit` to confirm your changes compile, or if you change multiple apps/packages, verify with `turbo run lint`, `turbo run build`, and `turbo run test:unit` (pnpm or bun allowed depending on the project standard, avoid yarn and npm unless standard in project)
+- After making significant changes (adding functions, renaming files and functions, significant logic changes, etc), run `npm run lint`, `npm run build`, and `npm run test:unit` from the repo root (these use Turborepo)
 
 ### Solidity standards
 

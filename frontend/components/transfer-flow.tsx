@@ -140,8 +140,8 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
       {steps.length > 0 && (
         <div className="space-y-1 mt-4 bg-surface-3/50 rounded-lg p-4" aria-live="polite" aria-atomic="true">
-          {steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-3 py-1.5">
+          {steps.map((step) => (
+            <div key={step.label} className="flex items-center gap-3 py-1.5">
               <div className="w-5 h-5 flex items-center justify-center shrink-0">
                 {step.status === "pending" && (
                   <div className="w-2 h-2 rounded-full bg-text-muted/30" />
