@@ -1,11 +1,47 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
 import OnchainID from "@onchain-id/solidity";
-import { deployAndLog, saveAddresses, DeployedAddresses } from "./helpers";
+import {
+  type Address,
+  type Hex,
+  encodeAbiParameters,
+  encodeFunctionData,
+  getAddress,
+  getContract,
+  keccak256,
+  parseEther,
+  zeroAddress,
+  decodeEventLog,
+} from "viem";
+import { generatePrivateKey, privateKeyToAccount } from "viem/accounts";
+import { deployAndLog, saveAddresses, type DeployedAddresses } from "./helpers";
+
+async function deployOnchainIDContract(
+  abi: readonly unknown[],
+  bytecode: Hex,
+  args: unknown[] = []
+): Promise<Address> {
+  const [deployer] = await hre.viem.getWalletClients();
+  const publicClient = await hre.viem.getPublicClient();
+
+  const startTime = Date.now();
+  const hash = await deployer.deployContract({ abi, bytecode, args });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  if (!receipt.contractAddress) {
+    throw new Error("Contract deployment failed — no address in receipt");
+  }
+  const address = getAddress(receipt.contractAddress);
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+  console.log(`  Deployed at ${address} (${elapsed}s)`);
+  return address;
+}
 
 async function main() {
-  const [deployer] = await ethers.getSigners();
-  console.log("Deployer:", deployer.address);
-  console.log("Network:", (await ethers.provider.getNetwork()).name);
+  const publicClient = await hre.viem.getPublicClient();
+  const [deployer] = await hre.viem.getWalletClients();
+  console.log("Deployer:", deployer.account.address);
+  const chainId = await publicClient.getChainId();
+  console.log("Chain ID:", chainId);
 
   const addresses: Partial<DeployedAddresses> = {};
   const startTime = Date.now();
@@ -16,32 +52,26 @@ async function main() {
     // ================================================================
     console.log("\n=== Phase 1: OnchainID Infrastructure ===");
 
-    const identityImpl = await new ethers.ContractFactory(
+    console.log("  Deploying Identity impl...");
+    addresses.identityImplementation = await deployOnchainIDContract(
       OnchainID.contracts.Identity.abi,
       OnchainID.contracts.Identity.bytecode,
-      deployer
-    ).deploy(deployer.address, true);
-    await identityImpl.waitForDeployment();
-    addresses.identityImplementation = await identityImpl.getAddress();
-    console.log(`  Identity impl: ${addresses.identityImplementation}`);
+      [deployer.account.address, true]
+    );
 
-    const identityImplAuthority = await new ethers.ContractFactory(
+    console.log("  Deploying ImplementationAuthority...");
+    addresses.identityImplAuthority = await deployOnchainIDContract(
       OnchainID.contracts.ImplementationAuthority.abi,
       OnchainID.contracts.ImplementationAuthority.bytecode,
-      deployer
-    ).deploy(addresses.identityImplementation);
-    await identityImplAuthority.waitForDeployment();
-    addresses.identityImplAuthority = await identityImplAuthority.getAddress();
-    console.log(`  Identity ImplementationAuthority: ${addresses.identityImplAuthority}`);
+      [addresses.identityImplementation]
+    );
 
-    const idFactory = await new ethers.ContractFactory(
+    console.log("  Deploying IdFactory...");
+    addresses.idFactory = await deployOnchainIDContract(
       OnchainID.contracts.Factory.abi,
       OnchainID.contracts.Factory.bytecode,
-      deployer
-    ).deploy(addresses.identityImplAuthority);
-    await idFactory.waitForDeployment();
-    addresses.idFactory = await idFactory.getAddress();
-    console.log(`  IdFactory: ${addresses.idFactory}`);
+      [addresses.identityImplAuthority]
+    );
 
     saveAddresses(addresses);
 
@@ -51,22 +81,22 @@ async function main() {
     console.log("\n=== Phase 2: T-REX Implementation Contracts ===");
 
     const tokenImpl = await deployAndLog("Token");
-    addresses.tokenImpl = await tokenImpl.getAddress();
+    addresses.tokenImpl = tokenImpl.address;
 
     const claimTopicsRegistryImpl = await deployAndLog("ClaimTopicsRegistry");
-    addresses.claimTopicsRegistryImpl = await claimTopicsRegistryImpl.getAddress();
+    addresses.claimTopicsRegistryImpl = claimTopicsRegistryImpl.address;
 
     const identityRegistryImpl = await deployAndLog("IdentityRegistry");
-    addresses.identityRegistryImpl = await identityRegistryImpl.getAddress();
+    addresses.identityRegistryImpl = identityRegistryImpl.address;
 
     const identityRegistryStorageImpl = await deployAndLog("IdentityRegistryStorage");
-    addresses.identityRegistryStorageImpl = await identityRegistryStorageImpl.getAddress();
+    addresses.identityRegistryStorageImpl = identityRegistryStorageImpl.address;
 
     const trustedIssuersRegistryImpl = await deployAndLog("TrustedIssuersRegistry");
-    addresses.trustedIssuersRegistryImpl = await trustedIssuersRegistryImpl.getAddress();
+    addresses.trustedIssuersRegistryImpl = trustedIssuersRegistryImpl.address;
 
     const modularComplianceImpl = await deployAndLog("ModularCompliance");
-    addresses.modularComplianceImpl = await modularComplianceImpl.getAddress();
+    addresses.modularComplianceImpl = modularComplianceImpl.address;
 
     saveAddresses(addresses);
 
@@ -76,25 +106,26 @@ async function main() {
     console.log("\n=== Phase 3: TREXImplementationAuthority ===");
 
     const trexImplAuthority = await deployAndLog("TREXImplementationAuthority", [
-      true,
-      ethers.ZeroAddress,
-      ethers.ZeroAddress,
+      true, zeroAddress, zeroAddress,
     ]);
-    addresses.trexImplAuthority = await trexImplAuthority.getAddress();
+    addresses.trexImplAuthority = trexImplAuthority.address;
 
     console.log("  Registering T-REX version 4.0.0...");
-    const versionTx = await trexImplAuthority.addAndUseTREXVersion(
+    const trexImplAuthContract = await hre.viem.getContractAt(
+      "TREXImplementationAuthority", trexImplAuthority.address
+    );
+    let hash = await trexImplAuthContract.write.addAndUseTREXVersion([
       { major: 4, minor: 0, patch: 0 },
       {
-        tokenImplementation: addresses.tokenImpl,
-        ctrImplementation: addresses.claimTopicsRegistryImpl,
-        irImplementation: addresses.identityRegistryImpl,
-        irsImplementation: addresses.identityRegistryStorageImpl,
-        tirImplementation: addresses.trustedIssuersRegistryImpl,
-        mcImplementation: addresses.modularComplianceImpl,
-      }
-    );
-    await versionTx.wait();
+        tokenImplementation: addresses.tokenImpl!,
+        ctrImplementation: addresses.claimTopicsRegistryImpl!,
+        irImplementation: addresses.identityRegistryImpl!,
+        irsImplementation: addresses.identityRegistryStorageImpl!,
+        tirImplementation: addresses.trustedIssuersRegistryImpl!,
+        mcImplementation: addresses.modularComplianceImpl!,
+      },
+    ]);
+    await publicClient.waitForTransactionReceipt({ hash });
     console.log("  Version 4.0.0 registered.");
 
     saveAddresses(addresses);
@@ -105,13 +136,13 @@ async function main() {
     console.log("\n=== Phase 4: Compliance Modules ===");
 
     const countryRestrictModule = await deployAndLog("CountryRestrictModule");
-    addresses.countryRestrictModule = await countryRestrictModule.getAddress();
+    addresses.countryRestrictModule = countryRestrictModule.address;
 
     const maxBalanceModule = await deployAndLog("MaxBalanceModule");
-    addresses.maxBalanceModule = await maxBalanceModule.getAddress();
+    addresses.maxBalanceModule = maxBalanceModule.address;
 
     const supplyLimitModule = await deployAndLog("SupplyLimitModule");
-    addresses.supplyLimitModule = await supplyLimitModule.getAddress();
+    addresses.supplyLimitModule = supplyLimitModule.address;
 
     saveAddresses(addresses);
 
@@ -120,15 +151,20 @@ async function main() {
     // ================================================================
     console.log("\n=== Phase 5: TREXFactory ===");
 
-    const trexFactory = await deployAndLog("TREXFactory", [
+    const trexFactoryResult = await deployAndLog("TREXFactory", [
       addresses.trexImplAuthority,
       addresses.idFactory,
     ]);
-    addresses.trexFactory = await trexFactory.getAddress();
+    addresses.trexFactory = trexFactoryResult.address;
 
     console.log("  Linking IdFactory to TREXFactory...");
-    const linkTx = await idFactory.addTokenFactory(addresses.trexFactory);
-    await linkTx.wait();
+    const idFactory = getContract({
+      address: addresses.idFactory!,
+      abi: OnchainID.contracts.Factory.abi,
+      client: { public: publicClient, wallet: deployer },
+    });
+    hash = await idFactory.write.addTokenFactory([addresses.trexFactory!]);
+    await publicClient.waitForTransactionReceipt({ hash });
     console.log("  IdFactory linked.");
 
     saveAddresses(addresses);
@@ -138,21 +174,23 @@ async function main() {
     // ================================================================
     console.log("\n=== Phase 6: ClaimIssuer ===");
 
-    const claimIssuerSigningKey = ethers.Wallet.createRandom();
-    console.log(`  ClaimIssuer signing key address: ${claimIssuerSigningKey.address}`);
+    const claimIssuerPrivateKey = generatePrivateKey();
+    const claimIssuerAccount = privateKeyToAccount(claimIssuerPrivateKey);
+    console.log(`  ClaimIssuer signing key address: ${claimIssuerAccount.address}`);
 
-    const claimIssuerContract = await deployAndLog("ClaimIssuer", [deployer.address]);
-    addresses.claimIssuer = await claimIssuerContract.getAddress();
+    const claimIssuerResult = await deployAndLog("ClaimIssuer", [deployer.account.address]);
+    addresses.claimIssuer = claimIssuerResult.address;
 
     console.log("  Adding signing key (purpose=3/CLAIM, type=1/ECDSA)...");
-    const keyHash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(["address"], [claimIssuerSigningKey.address])
+    const claimIssuerContract = await hre.viem.getContractAt("ClaimIssuer", addresses.claimIssuer);
+    const keyHash = keccak256(
+      encodeAbiParameters([{ type: "address" }], [claimIssuerAccount.address])
     );
-    const addKeyTx = await claimIssuerContract.addKey(keyHash, 3, 1);
-    await addKeyTx.wait();
+    hash = await claimIssuerContract.write.addKey([keyHash, 3n, 1n]);
+    await publicClient.waitForTransactionReceipt({ hash });
     console.log("  Signing key added.");
 
-    addresses.claimIssuerSigningKey = claimIssuerSigningKey.privateKey;
+    addresses.claimIssuerSigningKey = claimIssuerPrivateKey;
     saveAddresses(addresses);
 
     // ================================================================
@@ -160,78 +198,82 @@ async function main() {
     // ================================================================
     console.log("\n=== Phase 7: deployTREXSuite ===");
 
-    // Encode compliance module settings
-    const countryRestrictIface = new ethers.Interface([
-      "function batchRestrictCountries(uint16[] calldata countries)",
-    ]);
-    const maxBalanceIface = new ethers.Interface([
-      "function setMaxBalance(uint256 _max)",
-    ]);
-    const supplyLimitIface = new ethers.Interface([
-      "function setSupplyLimit(uint256 _limit)",
-    ]);
+    const countryRestrictCalldata = encodeFunctionData({
+      abi: [{ type: "function", name: "batchRestrictCountries", inputs: [{ type: "uint16[]", name: "countries" }], outputs: [], stateMutability: "nonpayable" }] as const,
+      functionName: "batchRestrictCountries",
+      args: [[156]],
+    });
+    const maxBalanceCalldata = encodeFunctionData({
+      abi: [{ type: "function", name: "setMaxBalance", inputs: [{ type: "uint256", name: "_max" }], outputs: [], stateMutability: "nonpayable" }] as const,
+      functionName: "setMaxBalance",
+      args: [parseEther("1000000")],
+    });
+    const supplyLimitCalldata = encodeFunctionData({
+      abi: [{ type: "function", name: "setSupplyLimit", inputs: [{ type: "uint256", name: "_limit" }], outputs: [], stateMutability: "nonpayable" }] as const,
+      functionName: "setSupplyLimit",
+      args: [parseEther("1000000")],
+    });
 
-    const CLAIM_TOPICS = [1, 2, 7]; // KYC, AML, ACCREDITED
+    const CLAIM_TOPICS = [1n, 2n, 7n]; // KYC, AML, ACCREDITED
 
-    const tokenDetails = {
-      owner: deployer.address,
-      name: "Coppice Green Bond",
-      symbol: "CPC",
-      decimals: 18,
-      irs: ethers.ZeroAddress,
-      ONCHAINID: ethers.ZeroAddress,
-      irAgents: [deployer.address],
-      tokenAgents: [deployer.address],
-      complianceModules: [
-        addresses.countryRestrictModule,
-        addresses.maxBalanceModule,
-        addresses.supplyLimitModule,
-      ],
-      complianceSettings: [
-        countryRestrictIface.encodeFunctionData("batchRestrictCountries", [[156]]),
-        maxBalanceIface.encodeFunctionData("setMaxBalance", [ethers.parseEther("1000000")]),
-        supplyLimitIface.encodeFunctionData("setSupplyLimit", [ethers.parseEther("1000000")]),
-      ],
-    };
-
-    const claimDetails = {
-      claimTopics: CLAIM_TOPICS,
-      issuers: [addresses.claimIssuer],
-      issuerClaims: [CLAIM_TOPICS],
-    };
+    const trexFactory = await hre.viem.getContractAt("TREXFactory", addresses.trexFactory!);
 
     console.log("  Calling deployTREXSuite...");
-    const suiteTx = await trexFactory.deployTREXSuite(
+    hash = await trexFactory.write.deployTREXSuite([
       "coppice-green-bond",
-      tokenDetails,
-      claimDetails
-    );
-    const suiteReceipt = await suiteTx.wait();
-    console.log(`  Suite deployed! Gas used: ${suiteReceipt!.gasUsed.toString()}`);
+      {
+        owner: deployer.account.address,
+        name: "Coppice Green Bond",
+        symbol: "CPC",
+        decimals: 18,
+        irs: zeroAddress,
+        ONCHAINID: zeroAddress,
+        irAgents: [deployer.account.address],
+        tokenAgents: [deployer.account.address],
+        complianceModules: [
+          addresses.countryRestrictModule!,
+          addresses.maxBalanceModule!,
+          addresses.supplyLimitModule!,
+        ],
+        complianceSettings: [countryRestrictCalldata, maxBalanceCalldata, supplyLimitCalldata],
+      },
+      {
+        claimTopics: CLAIM_TOPICS,
+        issuers: [addresses.claimIssuer!],
+        issuerClaims: [CLAIM_TOPICS],
+      },
+    ]);
+    const suiteReceipt = await publicClient.waitForTransactionReceipt({ hash });
+    console.log(`  Suite deployed! Gas used: ${suiteReceipt.gasUsed.toString()}`);
 
     // Extract addresses from TREXSuiteDeployed event
-    const trexFactoryContract = await ethers.getContractAt("TREXFactory", addresses.trexFactory);
-    const suiteEvents = suiteReceipt!.logs
-      .map((log: any) => {
-        try {
-          return trexFactoryContract.interface.parseLog({ topics: log.topics as string[], data: log.data });
-        } catch {
-          return null;
-        }
-      })
-      .filter((e: any) => e && e.name === "TREXSuiteDeployed");
+    const factoryArtifact = await hre.artifacts.readArtifact("TREXFactory");
 
-    if (suiteEvents.length === 0) {
-      throw new Error("TREXSuiteDeployed event not found in receipt");
+    for (const log of suiteReceipt.logs) {
+      try {
+        const event = decodeEventLog({
+          abi: factoryArtifact.abi,
+          data: log.data,
+          topics: log.topics,
+        });
+        if (event.eventName === "TREXSuiteDeployed") {
+          const a = event.args as unknown as Record<string, Address>;
+          addresses.token = a._token;
+          addresses.identityRegistry = a._ir;
+          addresses.identityRegistryStorage = a._irs;
+          addresses.trustedIssuersRegistry = a._tir;
+          addresses.claimTopicsRegistry = a._ctr;
+          addresses.modularCompliance = a._mc;
+          break;
+        }
+      } catch {
+        // Not a TREXFactory event
+      }
     }
 
-    const suiteEvent = suiteEvents[0]!;
-    addresses.token = suiteEvent.args[0];
-    addresses.identityRegistry = suiteEvent.args[1];
-    addresses.identityRegistryStorage = suiteEvent.args[2];
-    addresses.trustedIssuersRegistry = suiteEvent.args[3];
-    addresses.claimTopicsRegistry = suiteEvent.args[4];
-    addresses.modularCompliance = suiteEvent.args[5];
+    if (!addresses.token) {
+      throw new Error("TREXSuiteDeployed event not found in receipt");
+    }
 
     console.log(`  Token: ${addresses.token}`);
     console.log(`  IdentityRegistry: ${addresses.identityRegistry}`);
@@ -248,9 +290,9 @@ async function main() {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`\n=== Deployment complete in ${elapsed}s ===`);
     console.log("All addresses saved to deployments/deployed-addresses.json");
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("\n!!! Deployment failed !!!");
-    console.error(error.message || error);
+    console.error(error instanceof Error ? error.message : String(error));
     saveAddresses(addresses);
     console.log("Partial addresses saved for debugging.");
     process.exit(1);

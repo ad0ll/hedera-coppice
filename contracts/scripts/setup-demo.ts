@@ -1,6 +1,22 @@
-import { ethers } from "hardhat";
+import hre from "hardhat";
 import OnchainID from "@onchain-id/solidity";
+import {
+  type Address,
+  type Hex,
+  createWalletClient,
+  encodeAbiParameters,
+  formatEther,
+  getAddress,
+  getContract,
+  http,
+  keccak256,
+  parseEther,
+  toHex,
+  zeroAddress,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { loadAddresses } from "./helpers";
+import type { WalletClient } from "@nomicfoundation/hardhat-viem/types";
 
 // Demo wallet config — on testnet these come from .env,
 // on local Hardhat network we use Hardhat's signers
@@ -11,14 +27,14 @@ const DEMO_WALLETS = {
 };
 
 // Claim topics: 1=KYC, 2=AML, 7=ACCREDITED
-const CLAIM_TOPICS = [1, 2, 7];
+const CLAIM_TOPICS = [1n, 2n, 7n];
 
 async function retry<T>(fn: () => Promise<T>, retries = 3, delayMs = 5000): Promise<T> {
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
-    } catch (err: any) {
-      const msg = err?.message || "";
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       if (i < retries - 1 && (msg.includes("502") || msg.includes("ETIMEDOUT") || msg.includes("rate limit"))) {
         console.log(`    Retrying (${i + 1}/${retries}) after error: ${msg.slice(0, 80)}`);
         await new Promise(r => setTimeout(r, delayMs));
@@ -31,102 +47,105 @@ async function retry<T>(fn: () => Promise<T>, retries = 3, delayMs = 5000): Prom
 }
 
 async function deployIdentityProxy(
-  implAuthorityAddress: string,
-  walletAddress: string,
-  deployer: any
-): Promise<string> {
+  implAuthorityAddress: Address,
+  walletAddress: Address
+): Promise<Address> {
   return retry(async () => {
-    const identity = await new ethers.ContractFactory(
-      OnchainID.contracts.IdentityProxy.abi,
-      OnchainID.contracts.IdentityProxy.bytecode,
-      deployer
-    ).deploy(implAuthorityAddress, walletAddress);
-    await identity.waitForDeployment();
-    return identity.getAddress();
+    const [deployer] = await hre.viem.getWalletClients();
+    const publicClient = await hre.viem.getPublicClient();
+
+    const hash = await deployer.deployContract({
+      abi: OnchainID.contracts.IdentityProxy.abi,
+      bytecode: OnchainID.contracts.IdentityProxy.bytecode as Hex,
+      args: [implAuthorityAddress, walletAddress],
+    });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (!receipt.contractAddress) {
+      throw new Error("IdentityProxy deployment failed — no address in receipt");
+    }
+    return getAddress(receipt.contractAddress);
   });
 }
 
 async function issueClaim(
-  identityAddress: string,
-  topic: number,
-  claimIssuerAddress: string,
-  claimIssuerSigningKey: ethers.Wallet,
-  walletSigner: any
+  identityAddress: Address,
+  topic: bigint,
+  claimIssuerAddress: Address,
+  claimIssuerPrivateKey: Hex,
+  ownerWalletClient: WalletClient
 ): Promise<void> {
   await retry(async () => {
-    const identity = await ethers.getContractAt(
-      OnchainID.contracts.Identity.abi,
-      identityAddress
-    );
+    const publicClient = await hre.viem.getPublicClient();
+    const claimIssuerAccount = privateKeyToAccount(claimIssuerPrivateKey);
 
-    const data = ethers.hexlify(ethers.toUtf8Bytes("Verified"));
-
-    // Sign: keccak256(abi.encode(identity, topic, data))
-    const dataHash = ethers.keccak256(
-      ethers.AbiCoder.defaultAbiCoder().encode(
-        ["address", "uint256", "bytes"],
+    const data = toHex("Verified");
+    const dataHash = keccak256(
+      encodeAbiParameters(
+        [{ type: "address" }, { type: "uint256" }, { type: "bytes" }],
         [identityAddress, topic, data]
       )
     );
-    const signature = await claimIssuerSigningKey.signMessage(ethers.getBytes(dataHash));
+    const signature = await claimIssuerAccount.signMessage({ message: { raw: dataHash } });
 
-    // The wallet owner adds the claim to their own ONCHAINID
-    const tx = await identity.connect(walletSigner).addClaim(
-      topic,
-      1, // scheme: ECDSA
-      claimIssuerAddress,
-      signature,
-      data,
-      ""
-    );
-    await tx.wait();
+    const hash = await ownerWalletClient.writeContract({
+      address: identityAddress,
+      abi: OnchainID.contracts.Identity.abi,
+      functionName: "addClaim",
+      args: [topic, 1n, claimIssuerAddress, signature, data, "0x"],
+    });
+    await publicClient.waitForTransactionReceipt({ hash });
   });
 }
 
 async function main() {
   const addresses = loadAddresses();
-  const signers = await ethers.getSigners();
-  const deployer = signers[0];
+  const publicClient = await hre.viem.getPublicClient();
+  const walletClients = await hre.viem.getWalletClients();
+  const deployer = walletClients[0];
 
-  console.log("Deployer:", deployer.address);
+  console.log("Deployer:", deployer.account.address);
   console.log("Loading deployed addresses...");
 
-  // Get wallet signers — on Hardhat local, use signers[1-4]
+  // Get wallet signers — on Hardhat local, use signers[1-3]
   // On testnet, these would be loaded from .env private keys
-  const network = (await ethers.provider.getNetwork()).name;
-  let aliceSigner: any, charlieSigner: any, dianaSigner: any;
+  const chainId = await publicClient.getChainId();
+  const isLocal = chainId === 31337;
 
-  if (network === "hardhat" || network === "unknown") {
-    // Local network: use Hardhat signers
-    aliceSigner = signers[1];
-    charlieSigner = signers[2];
-    dianaSigner = signers[3];
+  let aliceWallet: WalletClient;
+  let charlieWallet: WalletClient;
+  let dianaWallet: WalletClient;
+
+  if (isLocal) {
+    aliceWallet = walletClients[1];
+    charlieWallet = walletClients[2];
+    dianaWallet = walletClients[3];
   } else {
-    // Testnet: load from .env
     const aliceKey = process.env.ALICE_PRIVATE_KEY;
     const charlieKey = process.env.CHARLIE_PRIVATE_KEY;
     const dianaKey = process.env.DIANA_PRIVATE_KEY;
     if (!aliceKey || !charlieKey || !dianaKey) {
       throw new Error("Missing ALICE/CHARLIE/DIANA_PRIVATE_KEY in .env");
     }
-    aliceSigner = new ethers.Wallet(aliceKey, ethers.provider);
-    charlieSigner = new ethers.Wallet(charlieKey, ethers.provider);
-    dianaSigner = new ethers.Wallet(dianaKey, ethers.provider);
+    const chain = publicClient.chain;
+    const transport = http(chain?.rpcUrls?.default?.http?.[0]);
+    aliceWallet = createWalletClient({ account: privateKeyToAccount(aliceKey as Hex), chain: chain!, transport });
+    charlieWallet = createWalletClient({ account: privateKeyToAccount(charlieKey as Hex), chain: chain!, transport });
+    dianaWallet = createWalletClient({ account: privateKeyToAccount(dianaKey as Hex), chain: chain!, transport });
   }
 
-  const walletSigners = {
-    alice: aliceSigner,
-    charlie: charlieSigner,
-    diana: dianaSigner,
+  const walletSigners: Record<string, WalletClient> = {
+    alice: aliceWallet,
+    charlie: charlieWallet,
+    diana: dianaWallet,
   };
 
-  // Reconstruct the claim issuer signing key from saved private key
-  const claimIssuerSigningKey = new ethers.Wallet(addresses.claimIssuerSigningKey);
-  console.log(`ClaimIssuer signing key: ${claimIssuerSigningKey.address}`);
+  // Reconstruct the claim issuer signing key
+  const claimIssuerAccount = privateKeyToAccount(addresses.claimIssuerSigningKey);
+  console.log(`ClaimIssuer signing key: ${claimIssuerAccount.address}`);
 
   // Connect to deployed contracts
-  const token = await ethers.getContractAt("Token", addresses.token);
-  const identityRegistry = await ethers.getContractAt("IdentityRegistry", addresses.identityRegistry);
+  const token = await hre.viem.getContractAt("Token", addresses.token);
+  const identityRegistry = await hre.viem.getContractAt("IdentityRegistry", addresses.identityRegistry);
 
   // ================================================================
   // Phase 1: Deploy ONECHAINIDs for deployer + demo wallets
@@ -134,39 +153,41 @@ async function main() {
   // ================================================================
   console.log("\n=== Phase 1: Deploy Identity Proxies ===");
 
-  // Check if deployer is already registered
-  let deployerIdentity: string;
-  let identities: Record<string, string> = {};
+  let deployerIdentity: Address;
+  const identities: Record<string, Address> = {};
 
-  const deployerAlreadyRegistered = await retry(() => identityRegistry.contains(deployer.address));
+  const deployerAlreadyRegistered = await retry(() =>
+    identityRegistry.read.contains([deployer.account.address])
+  );
+
   if (deployerAlreadyRegistered) {
     console.log("  Deployer already registered, fetching existing identity...");
-    deployerIdentity = await retry(() => identityRegistry.identity(deployer.address));
-    for (const [name, signer] of Object.entries(walletSigners)) {
-      const addr = await signer.getAddress();
-      const registered = await retry(() => identityRegistry.contains(addr));
+    deployerIdentity = await retry(() =>
+      identityRegistry.read.identity([deployer.account.address])
+    );
+    for (const [name, wallet] of Object.entries(walletSigners)) {
+      const addr = wallet.account!.address;
+      const registered = await retry(() => identityRegistry.read.contains([addr]));
       if (registered) {
-        identities[name] = await retry(() => identityRegistry.identity(addr));
+        identities[name] = await retry(() => identityRegistry.read.identity([addr]));
         console.log(`  ${DEMO_WALLETS[name as keyof typeof DEMO_WALLETS].label} already registered: ${identities[name]}`);
       }
     }
   } else {
     // Deploy fresh identities
-    console.log(`  Deploying ONCHAINID for Deployer (${deployer.address})...`);
+    console.log(`  Deploying ONCHAINID for Deployer (${deployer.account.address})...`);
     deployerIdentity = await deployIdentityProxy(
       addresses.identityImplAuthority,
-      deployer.address,
-      deployer
+      deployer.account.address
     );
     console.log(`  Identity: ${deployerIdentity}`);
 
-    for (const [name, signer] of Object.entries(walletSigners)) {
-      const addr = await signer.getAddress();
+    for (const [name, wallet] of Object.entries(walletSigners)) {
+      const addr = wallet.account!.address;
       console.log(`  Deploying ONCHAINID for ${DEMO_WALLETS[name as keyof typeof DEMO_WALLETS].label} (${addr})...`);
       identities[name] = await deployIdentityProxy(
         addresses.identityImplAuthority,
-        addr,
-        deployer
+        addr
       );
       console.log(`  Identity: ${identities[name]}`);
     }
@@ -178,11 +199,12 @@ async function main() {
 
     // Add token as agent on identity registry
     try {
-      const isTokenAgent = await identityRegistry.isAgent(addresses.token);
+      const isTokenAgent = await identityRegistry.read.isAgent([addresses.token]);
       if (!isTokenAgent) {
         console.log("  Adding token as IR agent...");
         await retry(async () => {
-          await (await identityRegistry.addAgent(addresses.token)).wait();
+          const hash = await identityRegistry.write.addAgent([addresses.token]);
+          await publicClient.waitForTransactionReceipt({ hash });
         });
       }
     } catch {
@@ -190,12 +212,12 @@ async function main() {
     }
 
     // Batch register identities (including deployer)
-    const walletAddresses = [deployer.address];
-    const identityAddresses = [deployerIdentity];
-    const countryCodes = [276]; // deployer = DE
+    const walletAddresses: Address[] = [deployer.account.address];
+    const identityAddresses: Address[] = [deployerIdentity];
+    const countryCodes: number[] = [276]; // deployer = DE
 
-    for (const [name, signer] of Object.entries(walletSigners)) {
-      const addr = await signer.getAddress();
+    for (const [name, wallet] of Object.entries(walletSigners)) {
+      const addr = wallet.account!.address;
       const config = DEMO_WALLETS[name as keyof typeof DEMO_WALLETS];
       walletAddresses.push(addr);
       identityAddresses.push(identities[name]);
@@ -204,12 +226,12 @@ async function main() {
 
     console.log("  Batch registering identities...");
     await retry(async () => {
-      const regTx = await identityRegistry.batchRegisterIdentity(
+      const hash = await identityRegistry.write.batchRegisterIdentity([
         walletAddresses,
         identityAddresses,
-        countryCodes
-      );
-      await regTx.wait();
+        countryCodes,
+      ]);
+      await publicClient.waitForTransactionReceipt({ hash });
     });
     console.log("  Identities registered.");
   }
@@ -220,15 +242,15 @@ async function main() {
   // ================================================================
   console.log("\n=== Phase 3: Issue Claims ===");
 
-  // Helper to check if a claim already exists for a given topic
-  async function hasClaimForTopic(identityAddr: string, topic: number): Promise<boolean> {
+  async function hasClaimForTopic(identityAddr: Address, topic: bigint): Promise<boolean> {
     try {
-      const identity = await ethers.getContractAt(
-        OnchainID.contracts.Identity.abi,
-        identityAddr
-      );
-      const claimIds = await identity.getClaimIdsByTopic(topic);
-      return claimIds.length > 0;
+      const identity = getContract({
+        address: identityAddr,
+        abi: OnchainID.contracts.Identity.abi,
+        client: { public: publicClient },
+      });
+      const claimIds = await identity.read.getClaimIdsByTopic([topic]);
+      return (claimIds as unknown[]).length > 0;
     } catch {
       return false;
     }
@@ -237,7 +259,7 @@ async function main() {
   // Issue claims for deployer
   console.log(`  Issuing claims for Deployer...`);
   for (const topic of CLAIM_TOPICS) {
-    const topicLabel = topic === 1 ? "KYC" : topic === 2 ? "AML" : "ACCREDITED";
+    const topicLabel = topic === 1n ? "KYC" : topic === 2n ? "AML" : "ACCREDITED";
     process.stdout.write(`    Topic ${topic} (${topicLabel})... `);
 
     const alreadyHas = await retry(() => hasClaimForTopic(deployerIdentity, topic));
@@ -250,19 +272,19 @@ async function main() {
       deployerIdentity,
       topic,
       addresses.claimIssuer,
-      claimIssuerSigningKey,
+      addresses.claimIssuerSigningKey,
       deployer
     );
     console.log("done");
   }
 
   // Issue claims for demo wallets
-  for (const [name, signer] of Object.entries(walletSigners)) {
+  for (const [name, wallet] of Object.entries(walletSigners)) {
     const config = DEMO_WALLETS[name as keyof typeof DEMO_WALLETS];
     console.log(`  Issuing claims for ${config.label}...`);
 
     for (const topic of CLAIM_TOPICS) {
-      const topicLabel = topic === 1 ? "KYC" : topic === 2 ? "AML" : "ACCREDITED";
+      const topicLabel = topic === 1n ? "KYC" : topic === 2n ? "AML" : "ACCREDITED";
       process.stdout.write(`    Topic ${topic} (${topicLabel})... `);
 
       const alreadyHas = await retry(() => hasClaimForTopic(identities[name], topic));
@@ -275,8 +297,8 @@ async function main() {
         identities[name],
         topic,
         addresses.claimIssuer,
-        claimIssuerSigningKey,
-        signer
+        addresses.claimIssuerSigningKey,
+        wallet
       );
       console.log("done");
     }
@@ -287,21 +309,23 @@ async function main() {
   // ================================================================
   console.log("\n=== Phase 4: Mint & Unpause ===");
 
-  const currentSupply = await retry(() => token.totalSupply());
+  const currentSupply = await retry(() => token.read.totalSupply());
   if (currentSupply === 0n) {
     console.log("  Minting 100,000 CPC to deployer...");
     await retry(async () => {
-      await (await token.mint(deployer.address, ethers.parseEther("100000"))).wait();
+      const hash = await token.write.mint([deployer.account.address, parseEther("100000")]);
+      await publicClient.waitForTransactionReceipt({ hash });
     });
   } else {
-    console.log(`  Already minted: ${ethers.formatEther(currentSupply)} CPC`);
+    console.log(`  Already minted: ${formatEther(currentSupply)} CPC`);
   }
 
-  const isPaused = await retry(() => token.paused());
+  const isPaused = await retry(() => token.read.paused());
   if (isPaused) {
     console.log("  Unpausing token...");
     await retry(async () => {
-      await (await token.unpause()).wait();
+      const hash = await token.write.unpause();
+      await publicClient.waitForTransactionReceipt({ hash });
     });
   } else {
     console.log("  Token already unpaused.");
@@ -312,42 +336,46 @@ async function main() {
   // ================================================================
   console.log("\n=== Phase 5: Verification ===");
 
-  const aliceAddr = await aliceSigner.getAddress();
-  const charlieAddr = await charlieSigner.getAddress();
+  const aliceAddr = aliceWallet.account!.address;
+  const charlieAddr = charlieWallet.account!.address;
 
   // Bob is NOT registered — use a random address as stand-in on local
-  const bobAddr = network === "hardhat" || network === "unknown"
-    ? (await signers[4].getAddress())
-    : (process.env.BOB_ADDRESS || ethers.ZeroAddress);
+  const bobAddr: Address = isLocal
+    ? walletClients[4].account.address
+    : ((process.env.BOB_ADDRESS || zeroAddress) as Address);
 
-  const aliceVerified = await retry(() => identityRegistry.isVerified(aliceAddr));
+  const aliceVerified = await retry(() => identityRegistry.read.isVerified([aliceAddr]));
   console.log(`  Alice isVerified: ${aliceVerified} (expected: true)`);
 
   let bobVerified = false;
   try {
-    bobVerified = await retry(() => identityRegistry.isVerified(bobAddr));
+    bobVerified = await retry(() => identityRegistry.read.isVerified([bobAddr]));
   } catch {
     bobVerified = false;
   }
   console.log(`  Bob isVerified: ${bobVerified} (expected: false)`);
 
-  const charlieVerified = await retry(() => identityRegistry.isVerified(charlieAddr));
+  const charlieVerified = await retry(() => identityRegistry.read.isVerified([charlieAddr]));
   console.log(`  Charlie isVerified: ${charlieVerified} (expected: true)`);
 
   // Check compliance (canTransfer)
-  const compliance = await ethers.getContractAt("ModularCompliance", addresses.modularCompliance);
+  const compliance = await hre.viem.getContractAt("ModularCompliance", addresses.modularCompliance);
 
-  const canTransferAlice = await retry(() => compliance.canTransfer(deployer.address, aliceAddr, ethers.parseEther("500")));
+  const canTransferAlice = await retry(() =>
+    compliance.read.canTransfer([deployer.account.address, aliceAddr, parseEther("500")])
+  );
   console.log(`  canTransfer(deployer->Alice, 500): ${canTransferAlice} (expected: true)`);
 
-  const canTransferCharlie = await retry(() => compliance.canTransfer(deployer.address, charlieAddr, ethers.parseEther("500")));
+  const canTransferCharlie = await retry(() =>
+    compliance.read.canTransfer([deployer.account.address, charlieAddr, parseEther("500")])
+  );
   console.log(`  canTransfer(deployer->Charlie, 500): ${canTransferCharlie} (expected: false)`);
 
   // Check token state
-  const totalSupply = await retry(() => token.totalSupply());
-  console.log(`  Total supply: ${ethers.formatEther(totalSupply)} CPC`);
+  const totalSupply = await retry(() => token.read.totalSupply());
+  console.log(`  Total supply: ${formatEther(totalSupply)} CPC`);
 
-  const finalPaused = await retry(() => token.paused());
+  const finalPaused = await retry(() => token.read.paused());
   console.log(`  Paused: ${finalPaused} (expected: false)`);
 
   // Verify checks pass
