@@ -1,93 +1,123 @@
-import { useState, useCallback } from "react";
-import { useWallet } from "../providers/WalletProvider";
-import { getTokenContract } from "../lib/contracts";
-import { readProvider } from "../lib/provider";
+import { useReadContract, useWriteContract, usePublicClient } from "wagmi";
+import { type Address } from "viem";
+import { tokenAbi } from "@coppice/abi";
+import { CONTRACT_ADDRESSES } from "../lib/constants";
 
-export function useToken() {
-  const { signer } = useWallet();
-  const [loading, setLoading] = useState(false);
+const tokenAddress = CONTRACT_ADDRESSES.token;
 
-  const readContract = getTokenContract(readProvider);
+export function useTokenRead() {
+  const totalSupply = useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "totalSupply",
+    query: { refetchInterval: 10_000 },
+  });
 
-  const balanceOf = useCallback(async (address: string): Promise<bigint> => {
-    return readContract.balanceOf(address);
-  }, []);
+  const paused = useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "paused",
+    query: { refetchInterval: 10_000 },
+  });
 
-  const totalSupply = useCallback(async (): Promise<bigint> => {
-    return readContract.totalSupply();
-  }, []);
+  return { totalSupply, paused };
+}
 
-  const paused = useCallback(async (): Promise<boolean> => {
-    return readContract.paused();
-  }, []);
+export function useTokenBalance(address: Address | undefined) {
+  return useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "balanceOf",
+    args: address ? [address] : undefined,
+    query: {
+      enabled: !!address,
+      refetchInterval: 10_000,
+    },
+  });
+}
 
-  const isFrozen = useCallback(async (address: string): Promise<boolean> => {
-    return readContract.isFrozen(address);
-  }, []);
+export function useIsAgent(address: Address | undefined) {
+  return useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "isAgent",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  });
+}
 
-  const isAgent = useCallback(async (address: string): Promise<boolean> => {
-    return readContract.isAgent(address);
-  }, []);
+export function useIsFrozen(address: Address | undefined) {
+  return useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "isFrozen",
+    args: address ? [address] : undefined,
+    query: { enabled: !!address },
+  });
+}
 
-  const transfer = useCallback(async (to: string, amount: bigint) => {
-    if (!signer) throw new Error("Wallet not connected");
-    setLoading(true);
-    try {
-      const contract = getTokenContract(signer);
-      const tx = await contract.transfer(to, amount);
-      await tx.wait();
-    } finally {
-      setLoading(false);
+export function useTokenWrite() {
+  const { writeContractAsync, isPending } = useWriteContract();
+  const publicClient = usePublicClient();
+
+  const waitForTx = async (hash: `0x${string}`) => {
+    if (publicClient) {
+      await publicClient.waitForTransactionReceipt({ hash });
     }
-  }, [signer]);
+  };
 
-  const mint = useCallback(async (to: string, amount: bigint) => {
-    if (!signer) throw new Error("Wallet not connected");
-    setLoading(true);
-    try {
-      const contract = getTokenContract(signer);
-      const tx = await contract.mint(to, amount);
-      await tx.wait();
-    } finally {
-      setLoading(false);
-    }
-  }, [signer]);
+  const mint = async (to: Address, amount: bigint) => {
+    const hash = await writeContractAsync({
+      address: tokenAddress,
+      abi: tokenAbi,
+      functionName: "mint",
+      args: [to, amount],
+    });
+    await waitForTx(hash);
+    return hash;
+  };
 
-  const pause = useCallback(async () => {
-    if (!signer) throw new Error("Wallet not connected");
-    setLoading(true);
-    try {
-      const contract = getTokenContract(signer);
-      const tx = await contract.pause();
-      await tx.wait();
-    } finally {
-      setLoading(false);
-    }
-  }, [signer]);
+  const pause = async () => {
+    const hash = await writeContractAsync({
+      address: tokenAddress,
+      abi: tokenAbi,
+      functionName: "pause",
+    });
+    await waitForTx(hash);
+    return hash;
+  };
 
-  const unpause = useCallback(async () => {
-    if (!signer) throw new Error("Wallet not connected");
-    setLoading(true);
-    try {
-      const contract = getTokenContract(signer);
-      const tx = await contract.unpause();
-      await tx.wait();
-    } finally {
-      setLoading(false);
-    }
-  }, [signer]);
+  const unpause = async () => {
+    const hash = await writeContractAsync({
+      address: tokenAddress,
+      abi: tokenAbi,
+      functionName: "unpause",
+    });
+    await waitForTx(hash);
+    return hash;
+  };
 
-  const setAddressFrozen = useCallback(async (addr: string, freeze: boolean) => {
-    if (!signer) throw new Error("Wallet not connected");
-    setLoading(true);
-    try {
-      const contract = getTokenContract(signer);
-      const tx = await contract.setAddressFrozen(addr, freeze);
-      await tx.wait();
-    } finally {
-      setLoading(false);
-    }
-  }, [signer]);
+  const setAddressFrozen = async (addr: Address, freeze: boolean) => {
+    const hash = await writeContractAsync({
+      address: tokenAddress,
+      abi: tokenAbi,
+      functionName: "setAddressFrozen",
+      args: [addr, freeze],
+    });
+    await waitForTx(hash);
+    return hash;
+  };
 
-  return { balanceOf, totalSupply, paused, isFrozen, isAgent, transfer, mint, pause, unpause, setAddressFrozen, loading };
+  const transfer = async (to: Address, amount: bigint) => {
+    const hash = await writeContractAsync({
+      address: tokenAddress,
+      abi: tokenAbi,
+      functionName: "transfer",
+      args: [to, amount],
+    });
+    await waitForTx(hash);
+    return hash;
+  };
+
+  return { mint, pause, unpause, setAddressFrozen, transfer, loading: isPending };
 }

@@ -1,17 +1,24 @@
-import { useCallback } from "react";
-import { getComplianceContract } from "../lib/contracts";
-import { readProvider } from "../lib/provider";
+import { usePublicClient } from "wagmi";
+import { type Address } from "viem";
+import { modularComplianceAbi } from "@coppice/abi";
+import { CONTRACT_ADDRESSES } from "../lib/constants";
 
 export function useCompliance() {
-  const readContract = getComplianceContract(readProvider);
+  const publicClient = usePublicClient();
 
-  const canTransfer = useCallback(async (from: string, to: string, amount: bigint): Promise<boolean> => {
+  const canTransfer = async (from: Address, to: Address, amount: bigint): Promise<boolean> => {
+    if (!publicClient) return false;
     try {
-      return await readContract.canTransfer(from, to, amount);
+      return await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.compliance,
+        abi: modularComplianceAbi,
+        functionName: "canTransfer",
+        args: [from, to, amount],
+      });
     } catch {
       return false;
     }
-  }, []);
+  };
 
   return { canTransfer };
 }

@@ -1,42 +1,66 @@
-import { useCallback } from "react";
-import { ethers } from "ethers";
-import { getIdentityRegistryContract } from "../lib/contracts";
-import { readProvider } from "../lib/provider";
+import { usePublicClient } from "wagmi";
+import { type Address, zeroAddress } from "viem";
+import { identityRegistryAbi } from "@coppice/abi";
+import { CONTRACT_ADDRESSES } from "../lib/constants";
 
 export function useIdentity() {
-  const readContract = getIdentityRegistryContract(readProvider);
+  const publicClient = usePublicClient();
 
-  const isVerified = useCallback(async (address: string): Promise<boolean> => {
+  const isVerified = async (address: Address): Promise<boolean> => {
+    if (!publicClient) return false;
     try {
-      return await readContract.isVerified(address);
+      return await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.identityRegistry,
+        abi: identityRegistryAbi,
+        functionName: "isVerified",
+        args: [address],
+      });
     } catch {
       return false;
     }
-  }, []);
+  };
 
-  const getCountry = useCallback(async (address: string): Promise<number> => {
+  const getCountry = async (address: Address): Promise<number> => {
+    if (!publicClient) return 0;
     try {
-      return Number(await readContract.investorCountry(address));
+      return await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.identityRegistry,
+        abi: identityRegistryAbi,
+        functionName: "investorCountry",
+        args: [address],
+      });
     } catch {
       return 0;
     }
-  }, []);
+  };
 
-  const getIdentity = useCallback(async (address: string): Promise<string> => {
+  const getIdentity = async (address: Address): Promise<Address> => {
+    if (!publicClient) return zeroAddress;
     try {
-      return await readContract.identity(address);
+      return await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.identityRegistry,
+        abi: identityRegistryAbi,
+        functionName: "identity",
+        args: [address],
+      });
     } catch {
-      return ethers.ZeroAddress;
+      return zeroAddress;
     }
-  }, []);
+  };
 
-  const isRegistered = useCallback(async (address: string): Promise<boolean> => {
+  const isRegistered = async (address: Address): Promise<boolean> => {
+    if (!publicClient) return false;
     try {
-      return await readContract.contains(address);
+      return await publicClient.readContract({
+        address: CONTRACT_ADDRESSES.identityRegistry,
+        abi: identityRegistryAbi,
+        functionName: "contains",
+        args: [address],
+      });
     } catch {
       return false;
     }
-  }, []);
+  };
 
   return { isVerified, getCountry, getIdentity, isRegistered };
 }
