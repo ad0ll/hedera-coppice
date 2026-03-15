@@ -72,7 +72,7 @@
 **No.** There is no single SDK function that "listens to EVM events and writes to HCS." This is a custom integration pattern. The approaches are:
 
 1. **Off-chain polling** (what we do): Poll `eth_getLogs`, parse events, submit to HCS via SDK
-2. **HIP-478 system contracts** (future): Would allow smart contracts to write to HCS natively from Solidity. Status: Proposed/Draft as of early 2026 — NOT yet live on mainnet/testnet
+2. **HIP-1208 system contracts** (future): Would allow smart contracts to write to HCS natively from Solidity. Status: Proposed/Draft as of early 2026 — NOT yet live on mainnet/testnet. Note: HIP-478 is about oracle integration, not HCS precompiles.
 3. **Hashport bridge pattern**: LimeChain's hashport-validator does exactly this pattern at scale
 
 ### Best practice per Hedera docs
