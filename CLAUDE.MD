@@ -87,7 +87,6 @@ cd e2e && npx playwright test
 ### Testing standards
 
 - For each test, you MUST be able to name the specific code change that would make this test fail. If you can't, don't write it.
-- After writing a test, you MUST break the code it guards, run the test, confirm it fails, then revert. This is non-negotiable. A test that passes with broken code is worse than no test.
 - Mock dependencies, NEVER the subject under test. If testing component X, you may mock X's dependencies — you must NOT mock X itself.
 - If every assertion checks a mock return value you set up yourself, the test verifies nothing. Rewrite it.
 - Test the critical user path first, not whatever was built most recently.

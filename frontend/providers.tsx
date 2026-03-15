@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type State, WagmiProvider } from "wagmi";
 import { getConfig } from "@/lib/wagmi";
+import { ErrorBoundary } from "@/components/error-boundary";
 import { useState, type ReactNode } from "react";
 
 export function Providers({
@@ -18,7 +19,9 @@ export function Providers({
   return (
     <WagmiProvider config={config} initialState={initialState}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </QueryClientProvider>
     </WagmiProvider>
   );

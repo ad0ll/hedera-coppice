@@ -20,12 +20,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const [eligible, setEligible] = useState(false);
 
   useEffect(() => {
-    if (!address) {
-      setChecks([]);
-      setEligible(false);
-      onEligibilityChange?.(false);
-      return;
-    }
+    if (!address) return;
 
     async function runChecks() {
       if (!address) return;
@@ -96,7 +91,12 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
     runChecks();
     const interval = setInterval(runChecks, 15000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      setChecks([]);
+      setEligible(false);
+      onEligibilityChange?.(false);
+    };
   }, [address, isVerified, isRegistered, getCountry, canTransfer, onEligibilityChange]);
 
   if (!address) {

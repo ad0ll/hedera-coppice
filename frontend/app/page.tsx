@@ -21,18 +21,24 @@ export default function InvestorPortal() {
     : "--";
 
   useEffect(() => {
-    if (!address) {
-      setEusdBalance("--");
-      return;
-    }
+    if (!address) return;
+    let cancelled = false;
     const load = async () => {
       const eusd = await getEusdBalance(address);
-      setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+      if (!cancelled) {
+        setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+      }
     };
     load();
     const interval = setInterval(load, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [address, getEusdBalance]);
+
+  // Reset eUSD balance display when wallet disconnects
+  const displayEusdBalance = address ? eusdBalance : "--";
 
   return (
     <div className="space-y-6">
@@ -58,7 +64,7 @@ export default function InvestorPortal() {
                 </div>
                 <div className="bg-surface-3/70 rounded-lg p-4 border border-border/30">
                   <p className="text-[11px] text-text-muted uppercase tracking-widest mb-1">eUSD Balance</p>
-                  <p className="text-2xl font-mono font-semibold text-bond-green">{eusdBalance}</p>
+                  <p className="text-2xl font-mono font-semibold text-bond-green">{displayEusdBalance}</p>
                   <p className="text-xs text-text-muted mt-1">Coppice USD (HTS)</p>
                 </div>
               </div>

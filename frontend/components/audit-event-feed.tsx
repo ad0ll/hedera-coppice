@@ -77,7 +77,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           <div className="space-y-1 max-h-96 overflow-y-auto">
             {sorted.map((event, i) => (
               <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/20 last:border-0">
-                <span className={`text-[10px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGES[event.type] || "bg-surface-3 text-text-muted"}`}>
+                <span className={`text-[11px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGES[event.type] || "bg-surface-3 text-text-muted"}`}>
                   {event.type}
                 </span>
                 <div className="flex-1 min-w-0">
