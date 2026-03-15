@@ -5,8 +5,21 @@
  *
  * Events: Transfer, Paused, Unpaused, AddressFrozen
  */
-import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
-import { ethers } from "ethers";
+import {
+  TopicMessageSubmitTransaction,
+  TopicId,
+  Client,
+  PrivateKey,
+} from "@hashgraph/sdk";
+import {
+  createPublicClient,
+  http,
+  parseAbi,
+  decodeEventLog,
+  formatEther,
+  zeroAddress,
+} from "viem";
+import { hederaTestnet } from "viem/chains";
 import { getClient, getOperatorKey, JSON_RPC_URL } from "./config.js";
 import * as dotenv from "dotenv";
 import * as path from "path";
@@ -15,12 +28,12 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, "../../.env") });
 
-const TOKEN_ABI = [
+const TOKEN_ABI = parseAbi([
   "event Transfer(address indexed from, address indexed to, uint256 value)",
   "event Paused(address account)",
   "event Unpaused(address account)",
   "event AddressFrozen(address indexed addr, bool indexed isFrozen, address indexed owner)",
-];
+]);
 
 const POLL_INTERVAL_MS = 5000; // 5 seconds
 
@@ -31,14 +44,10 @@ interface AuditEvent {
   data: Record<string, string>;
 }
 
-function abbreviateAddress(addr: string): string {
-  return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-}
-
 async function submitToHCS(
-  client: any,
+  client: Client,
   topicId: TopicId,
-  submitKey: any,
+  submitKey: PrivateKey,
   payload: AuditEvent
 ): Promise<void> {
   const message = JSON.stringify(payload);
@@ -68,8 +77,10 @@ async function main() {
   const operatorKey = getOperatorKey();
   const auditTopicId = TopicId.fromString(auditTopicIdStr);
 
-  const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
-  const iface = new ethers.Interface(TOKEN_ABI);
+  const publicClient = createPublicClient({
+    chain: hederaTestnet,
+    transport: http(JSON_RPC_URL),
+  });
 
   console.log(`Event Logger started`);
   console.log(`  Token: ${tokenAddress}`);
@@ -77,48 +88,52 @@ async function main() {
   console.log(`  Poll interval: ${POLL_INTERVAL_MS}ms`);
 
   // Start from current block
-  let lastBlock = await provider.getBlockNumber();
+  let lastBlock = await publicClient.getBlockNumber();
   console.log(`  Starting from block: ${lastBlock}`);
   console.log(`  Listening for events...\n`);
 
   const seenTxs = new Set<string>();
 
+  // Narrow tokenAddress to `0x${string}` once for viem's strict hex typing
+  const tokenAddr = tokenAddress as `0x${string}`; // viem requires branded hex type for addresses
+
   async function poll() {
     try {
-      const currentBlock = await provider.getBlockNumber();
+      const currentBlock = await publicClient.getBlockNumber();
       if (currentBlock <= lastBlock) return;
 
-      const logs = await provider.getLogs({
-        address: tokenAddress,
-        fromBlock: lastBlock + 1,
+      const logs = await publicClient.getLogs({
+        address: tokenAddr,
+        fromBlock: lastBlock + 1n,
         toBlock: currentBlock,
       });
 
       for (const log of logs) {
         // Deduplicate by tx hash + log index
-        const logKey = `${log.transactionHash}-${log.index}`;
+        const logKey = `${log.transactionHash}-${log.logIndex}`;
         if (seenTxs.has(logKey)) continue;
         seenTxs.add(logKey);
 
         let payload: AuditEvent | null = null;
 
         try {
-          const parsed = iface.parseLog({ topics: log.topics as string[], data: log.data });
-          if (!parsed) continue;
+          const decoded = decodeEventLog({
+            abi: TOKEN_ABI,
+            data: log.data,
+            topics: log.topics,
+          });
 
-          switch (parsed.name) {
+          switch (decoded.eventName) {
             case "Transfer": {
-              const from = parsed.args[0] as string;
-              const to = parsed.args[1] as string;
-              const value = parsed.args[2] as bigint;
+              const { from, to, value } = decoded.args;
               payload = {
-                type: from === ethers.ZeroAddress ? "MINT" : "TRANSFER",
+                type: from === zeroAddress ? "MINT" : "TRANSFER",
                 ts: Date.now(),
                 tx: log.transactionHash,
                 data: {
-                  from: abbreviateAddress(from),
-                  to: abbreviateAddress(to),
-                  amount: ethers.formatEther(value),
+                  from,
+                  to,
+                  amount: formatEther(value),
                 },
               };
               break;
@@ -128,7 +143,7 @@ async function main() {
                 type: "TOKEN_PAUSED",
                 ts: Date.now(),
                 tx: log.transactionHash,
-                data: { by: abbreviateAddress(parsed.args[0] as string) },
+                data: { by: decoded.args.account },
               };
               break;
             }
@@ -137,21 +152,19 @@ async function main() {
                 type: "TOKEN_UNPAUSED",
                 ts: Date.now(),
                 tx: log.transactionHash,
-                data: { by: abbreviateAddress(parsed.args[0] as string) },
+                data: { by: decoded.args.account },
               };
               break;
             }
             case "AddressFrozen": {
-              const addr = parsed.args[0] as string;
-              const isFrozen = parsed.args[1] as boolean;
-              const owner = parsed.args[2] as string;
+              const { addr, isFrozen, owner } = decoded.args;
               payload = {
                 type: isFrozen ? "WALLET_FROZEN" : "WALLET_UNFROZEN",
                 ts: Date.now(),
                 tx: log.transactionHash,
                 data: {
-                  wallet: abbreviateAddress(addr),
-                  by: abbreviateAddress(owner),
+                  wallet: addr,
+                  by: owner,
                 },
               };
               break;
@@ -167,15 +180,17 @@ async function main() {
           try {
             await submitToHCS(client, auditTopicId, operatorKey, payload);
             console.log(`    -> HCS submitted`);
-          } catch (err: any) {
-            console.error(`    -> HCS error: ${err.message?.slice(0, 100)}`);
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "unknown";
+            console.error(`    -> HCS error: ${message.slice(0, 100)}`);
           }
         }
       }
 
       lastBlock = currentBlock;
-    } catch (err: any) {
-      console.error(`  Poll error: ${err.message?.slice(0, 100)}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "unknown";
+      console.error(`  Poll error: ${message.slice(0, 100)}`);
     }
   }
 

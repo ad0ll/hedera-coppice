@@ -9,14 +9,25 @@ import {
   TopicId,
   Status,
 } from "@hashgraph/sdk";
-import { ethers } from "ethers";
+import {
+  createPublicClient,
+  createWalletClient,
+  http,
+  parseAbi,
+  parseEther,
+} from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { hederaTestnet } from "viem/chains";
 import { getClient, getOperatorKey, JSON_RPC_URL, MIRROR_NODE_URL } from "./config.js";
 
-const TOKEN_ABI = ["function mint(address to, uint256 amount)"];
+const TOKEN_ABI = parseAbi(["function mint(address to, uint256 amount)"]);
 
 const EUSD_TOKEN_ID = process.env.EUSD_TOKEN_ID!;
 const TOKEN_ADDRESS = process.env.TOKEN_ADDRESS!;
 const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY!;
+
+// Narrow to viem's branded hex type once for reuse
+const tokenAddr = TOKEN_ADDRESS as `0x${string}`; // viem requires branded hex type for addresses
 
 // Map EVM addresses to Hedera account IDs + private keys for demo wallets
 const WALLET_KEYS: Record<string, { accountId: string; privateKey: string }> = {};
@@ -45,8 +56,8 @@ function loadWalletKeys() {
     const pk = process.env[`${w.env}_PRIVATE_KEY`];
     if (pk && w.accountId) {
       const keyHex = pk.startsWith("0x") ? pk : `0x${pk}`;
-      const wallet = new ethers.Wallet(keyHex);
-      WALLET_KEYS[wallet.address.toLowerCase()] = {
+      const account = privateKeyToAccount(keyHex as `0x${string}`); // viem requires branded hex for private keys
+      WALLET_KEYS[account.address.toLowerCase()] = {
         accountId: w.accountId,
         privateKey: pk,
       };
@@ -159,16 +170,32 @@ app.post("/api/purchase", requireApiKey, async (req, res) => {
       console.log(`  eUSD transfer: ${transferReceipt.status} (${amount} eUSD from ${investorAccountId} to treasury)`);
 
       // 4. Mint CPC tokens to investor via EVM
-      let mintReceipt: ethers.TransactionReceipt | null;
+      let mintTxHash: string | undefined;
       try {
-        const deployerKeyHex = DEPLOYER_KEY.startsWith("0x") ? DEPLOYER_KEY : `0x${DEPLOYER_KEY}`;
-        const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
-        const deployerWallet = new ethers.Wallet(deployerKeyHex, provider);
-        const tokenContract = new ethers.Contract(TOKEN_ADDRESS, TOKEN_ABI, deployerWallet);
+        const deployerKeyHex = (DEPLOYER_KEY.startsWith("0x") ? DEPLOYER_KEY : `0x${DEPLOYER_KEY}`) as `0x${string}`; // viem requires branded hex for private keys
+        const deployerAccount = privateKeyToAccount(deployerKeyHex);
 
-        const mintTx = await tokenContract.mint(investorAddress, ethers.parseEther(String(amount)));
-        mintReceipt = await mintTx.wait();
-        console.log(`  CPC mint: ${mintReceipt?.hash} (${amount} CPC to ${investorAddress})`);
+        const walletClient = createWalletClient({
+          account: deployerAccount,
+          chain: hederaTestnet,
+          transport: http(JSON_RPC_URL),
+        });
+
+        const publicClient = createPublicClient({
+          chain: hederaTestnet,
+          transport: http(JSON_RPC_URL),
+        });
+
+        const hash = await walletClient.writeContract({
+          address: tokenAddr,
+          abi: TOKEN_ABI,
+          functionName: "mint",
+          args: [investorAddress as `0x${string}`, parseEther(String(amount))], // viem requires branded hex for addresses
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({ hash });
+        mintTxHash = receipt.transactionHash;
+        console.log(`  CPC mint: ${mintTxHash} (${amount} CPC to ${investorAddress})`);
       } catch (mintErr: unknown) {
         // Mint failed after eUSD was already transferred — refund eUSD
         console.error("  CPC mint failed, refunding eUSD...");
@@ -193,8 +220,8 @@ app.post("/api/purchase", requireApiKey, async (req, res) => {
 
       res.json({
         success: true,
-        eusdTxId: transferReceipt.transactionId?.toString(),
-        mintTxHash: mintReceipt?.hash,
+        eusdTxId: transferResult.transactionId.toString(),
+        mintTxHash,
       });
     } finally {
       client.close();
