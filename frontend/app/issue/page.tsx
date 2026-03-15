@@ -6,6 +6,8 @@ import { useConnection, useConfig } from "wagmi";
 import { useTokenRead, useTokenWrite, useIsAgent } from "@/hooks/use-token";
 import { ProjectAllocation } from "@/components/project-allocation";
 import { signAuthMessage } from "@/lib/auth";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Card } from "@/components/ui/card";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -114,22 +116,18 @@ export default function IssuerDashboard() {
 
   if (!address) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-surface-3 flex items-center justify-center">
-          <svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
-          </svg>
-        </div>
-        <h1 className="text-xl font-semibold text-white mb-2">Issuer Dashboard</h1>
-        <p className="text-text-muted text-sm">Connect your issuer wallet to manage the bond.</p>
-      </div>
+      <EmptyState
+        icon={<svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>}
+        title="Issuer Dashboard"
+        description="Connect your issuer wallet to manage the bond."
+      />
     );
   }
 
   if (isCheckingAgent) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
-        <span className="inline-block w-6 h-6 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" role="status" aria-label="Checking authorization" />
+      <div className="card p-12 text-center">
+        <span className="spinner w-6 h-6" role="status" aria-label="Checking authorization" />
         <p className="text-text-muted text-sm mt-4">Checking authorization...</p>
       </div>
     );
@@ -137,77 +135,72 @@ export default function IssuerDashboard() {
 
   if (!isAuthorized) {
     return (
-      <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
-        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-bond-red/10 flex items-center justify-center">
-          <svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-          </svg>
-        </div>
-        <h1 className="text-xl font-semibold text-white mb-2">Not Authorized</h1>
-        <p className="text-text-muted text-sm">Only the bond issuer can access this dashboard.</p>
-      </div>
+      <EmptyState
+        variant="danger"
+        icon={<svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>}
+        title="Not Authorized"
+        description="Only the bond issuer can access this dashboard."
+      />
     );
   }
 
-  const inputClass = "w-full bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-text-muted/60 focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20 transition-colors";
-
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold text-white">Issuer Dashboard</h1>
+      <h1 className="page-title">Issuer Dashboard</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mint Section */}
-        <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-          <h3 className="text-lg font-semibold text-white mb-4">Mint Tokens</h3>
+        <Card>
+          <h3 className="card-title">Mint Tokens</h3>
           <div className="space-y-3">
             <label className="sr-only" htmlFor="mint-to">Recipient address</label>
             <input id="mint-to" type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
-              placeholder="Recipient address (0x...)" className={inputClass} />
+              placeholder="Recipient address (0x...)" className="input" />
             <label className="sr-only" htmlFor="mint-amount">Mint amount</label>
             <input id="mint-amount" type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
-              placeholder="Amount (CPC)" min="0" className={inputClass} />
+              placeholder="Amount (CPC)" min="0" className="input" />
             <button onClick={handleMint} disabled={loading || !mintTo || !mintAmount}
-              className="w-full bg-bond-green text-black py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/90 disabled:opacity-40 transition-all shadow-[0_0_12px_rgba(34,197,94,0.1)]">
+              className="w-full btn-primary">
               {loading ? "Minting..." : "Mint"}
             </button>
             {mintStatus && (
-              <p className={`text-xs ${mintStatus.type === "success" ? "text-bond-green" : "text-bond-red"}`}>
+              <p className={mintStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
                 {mintStatus.msg}
               </p>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Freeze / Unfreeze */}
-        <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-          <h3 className="text-lg font-semibold text-white mb-4">Freeze / Unfreeze Wallet</h3>
+        <Card>
+          <h3 className="card-title">Freeze / Unfreeze Wallet</h3>
           <div className="space-y-3">
             <label className="sr-only" htmlFor="freeze-addr">Wallet address to freeze/unfreeze</label>
             <input id="freeze-addr" type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
-              placeholder="Wallet address (0x...)" className={inputClass} />
+              placeholder="Wallet address (0x...)" className="input" />
             <div className="flex gap-2">
               <button onClick={() => handleFreeze("freeze")}
                 disabled={loading || !freezeAddr}
-                className="flex-1 bg-bond-red/15 text-bond-red border border-bond-red/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-red/25 disabled:opacity-40 transition-colors">
+                className="flex-1 btn-outline-red">
                 Freeze
               </button>
               <button onClick={() => handleFreeze("unfreeze")}
                 disabled={loading || !freezeAddr}
-                className="flex-1 bg-bond-green/15 text-bond-green border border-bond-green/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/25 disabled:opacity-40 transition-colors">
+                className="flex-1 btn-outline-green">
                 Unfreeze
               </button>
             </div>
             {freezeStatus && (
-              <p className={`text-xs ${freezeStatus.type === "success" ? "text-bond-green" : "text-bond-red"}`}>
+              <p className={freezeStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
                 {freezeStatus.msg}
               </p>
             )}
           </div>
-        </div>
+        </Card>
 
         {/* Pause / Unpause */}
-        <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-          <h3 className="text-lg font-semibold text-white mb-4">Token Pause Control</h3>
+        <Card>
+          <h3 className="card-title">Token Pause Control</h3>
           <div className="flex items-center justify-between mb-4 bg-surface-3/50 rounded-lg px-4 py-3">
             <span className="text-sm text-text-muted">Current Status</span>
             <span className={`text-sm font-medium flex items-center gap-2 ${isPaused ? "text-bond-red" : "text-bond-green"}`}>
@@ -216,29 +209,25 @@ export default function IssuerDashboard() {
             </span>
           </div>
           <button onClick={handlePauseToggle} disabled={loading}
-            className={`w-full py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-colors ${
-              isPaused
-                ? "bg-bond-green/15 text-bond-green border border-bond-green/20 hover:bg-bond-green/25"
-                : "bg-bond-red/15 text-bond-red border border-bond-red/20 hover:bg-bond-red/25"
-            }`}>
+            className={`w-full ${isPaused ? "btn-outline-green" : "btn-outline-red"}`}>
             {isPaused ? "Unpause Token" : "Pause Token"}
           </button>
           {pauseStatus && (
-            <p className={`text-xs mt-2 ${pauseStatus.type === "success" ? "text-bond-green" : "text-bond-red"}`}>
+            <p className={`mt-2 ${pauseStatus.type === "success" ? "status-msg-success" : "status-msg-error"}`}>
               {pauseStatus.msg}
             </p>
           )}
-        </div>
+        </Card>
 
         {/* Proceeds Allocation */}
-        <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-          <h3 className="text-lg font-semibold text-white mb-4">Allocate Proceeds</h3>
+        <Card>
+          <h3 className="card-title">Allocate Proceeds</h3>
           <div className="space-y-3">
             <label className="sr-only" htmlFor="project-name">Project name</label>
             <input id="project-name" type="text" value={project} onChange={(e) => setProject(e.target.value)}
-              placeholder="Project name" className={inputClass} />
+              placeholder="Project name" className="input" />
             <label className="sr-only" htmlFor="project-category">Category</label>
-            <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
+            <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input">
               <option>Renewable Energy</option>
               <option>Energy Efficiency</option>
               <option>Clean Transportation</option>
@@ -247,18 +236,18 @@ export default function IssuerDashboard() {
             </select>
             <label className="sr-only" htmlFor="proceeds-amount">Amount in USD</label>
             <input id="proceeds-amount" type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
-              placeholder="Amount (USD)" min="0" className={inputClass} />
+              placeholder="Amount (USD)" min="0" className="input" />
             <button onClick={handleAllocateProceeds} disabled={!project || !proceedsAmount}
-              className="w-full bg-bond-amber/15 text-bond-amber border border-bond-amber/20 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-amber/25 disabled:opacity-40 transition-colors">
+              className="w-full btn-outline-amber">
               Allocate to HCS
             </button>
             {proceedsStatus && (
-              <p className={`text-xs ${proceedsStatus.type === "success" ? "text-bond-green" : "text-bond-red"}`}>
+              <p className={proceedsStatus.type === "success" ? "status-msg-success" : "status-msg-error"}>
                 {proceedsStatus.msg}
               </p>
             )}
           </div>
-        </div>
+        </Card>
       </div>
 
       <ProjectAllocation />

@@ -129,8 +129,8 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   }
 
   return (
-    <div className="bg-surface-2 border border-border rounded-xl p-6 card-glow">
-      <h3 className="text-lg font-semibold text-white mb-4">Purchase Bond Tokens</h3>
+    <div className="card">
+      <h3 className="card-title">Purchase Bond Tokens</h3>
 
       {!enabled && (
         <p className="text-sm text-text-muted mb-4">
@@ -148,12 +148,12 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
           placeholder="Amount (CPC)"
           min="0"
           disabled={!enabled || running}
-          className="flex-1 bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm placeholder:text-text-muted/60 focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20 disabled:opacity-40 transition-colors"
+          className="input flex-1"
         />
         <button
           onClick={handlePurchase}
           disabled={!enabled || running || !amount}
-          className="bg-bond-green text-black px-6 py-2.5 rounded-lg text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-[0_0_12px_rgba(34,197,94,0.15)]"
+          className="btn-primary px-6 disabled:cursor-not-allowed"
         >
           {running ? "Processing..." : "Purchase"}
         </button>
@@ -174,7 +174,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
                   <div className="w-2 h-2 rounded-full bg-text-muted/30" />
                 )}
                 {step.status === "active" && (
-                  <span className="inline-block w-4 h-4 border-2 border-bond-amber/40 border-t-bond-amber rounded-full animate-spin" role="status" aria-label="Processing" />
+                  <span className="spinner-amber" role="status" aria-label="Processing" />
                 )}
                 {step.status === "success" && (
                   <svg className="w-5 h-5 text-bond-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
