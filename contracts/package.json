@@ -9,14 +9,14 @@
     "setup-demo": "hardhat run scripts/setup-demo.ts"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "hardhat": "^2.22.0",
-    "dotenv": "^16.4.0"
+    "@nomicfoundation/hardhat-toolbox-viem": "^3.0.0",
+    "dotenv": "^16.4.0",
+    "hardhat": "^2.22.0"
   },
   "dependencies": {
-    "@tokenysolutions/t-rex": "4.1.6",
     "@onchain-id/solidity": "2.0.0",
     "@openzeppelin/contracts": "^4.9.6",
-    "@openzeppelin/contracts-upgradeable": "^4.9.6"
+    "@openzeppelin/contracts-upgradeable": "^4.9.6",
+    "@tokenysolutions/t-rex": "4.1.6"
   }
 }
