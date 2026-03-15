@@ -9,6 +9,7 @@
     "contracts",
     "middleware",
     "frontend",
+    "frontend-next",
     "e2e"
   ]
 }
