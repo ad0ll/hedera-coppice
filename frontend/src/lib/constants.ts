@@ -1,14 +1,19 @@
-export const HEDERA_CHAIN_ID = 296;
-export const HEDERA_CHAIN_ID_HEX = "0x128";
-export const JSON_RPC_URL = import.meta.env.VITE_HEDERA_JSON_RPC || "https://testnet.hashio.io/api";
+import type { Address } from "viem";
+import {
+  tokenAddress as deployedTokenAddress,
+  identityRegistryAddress as deployedIrAddress,
+  modularComplianceAddress as deployedMcAddress,
+} from "@coppice/abi";
+
 export const MIRROR_NODE_URL = import.meta.env.VITE_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
 export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 export const API_KEY = import.meta.env.VITE_API_KEY || "";
 
-export const CONTRACT_ADDRESSES = {
-  token: import.meta.env.VITE_TOKEN_ADDRESS || "",
-  identityRegistry: import.meta.env.VITE_IDENTITY_REGISTRY_ADDRESS || "",
-  compliance: import.meta.env.VITE_COMPLIANCE_ADDRESS || "",
+// Contract addresses: env vars override, else fall back to @coppice/abi baked-in testnet addresses
+export const CONTRACT_ADDRESSES: Record<"token" | "identityRegistry" | "compliance", Address> = {
+  token: (import.meta.env.VITE_TOKEN_ADDRESS || deployedTokenAddress[296]) as Address,
+  identityRegistry: (import.meta.env.VITE_IDENTITY_REGISTRY_ADDRESS || deployedIrAddress[296]) as Address,
+  compliance: (import.meta.env.VITE_COMPLIANCE_ADDRESS || deployedMcAddress[296]) as Address,
 };
 
 export const TOPIC_IDS = {
