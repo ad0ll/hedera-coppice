@@ -9,11 +9,9 @@ const allocateBodySchema = z.object({
   category: z.string().nonempty(),
   amount: z.number().positive(),
   currency: z.string().optional().default("USD"),
-  message: z.string().nonempty().optional(),
-  signature: z.string().nonempty().optional(),
+  message: z.string().nonempty(),
+  signature: z.string().nonempty(),
 });
-
-type AllocateBody = z.infer<typeof allocateBodySchema>;
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
@@ -27,9 +25,6 @@ export async function POST(request: NextRequest) {
   const deployerAddress = process.env.DEPLOYER_ADDRESS;
   if (!deployerAddress) {
     return NextResponse.json({ error: "DEPLOYER_ADDRESS not configured" }, { status: 500 });
-  }
-  if (!authMessage || !signature) {
-    return NextResponse.json({ error: "Missing authentication signature" }, { status: 401 });
   }
   try {
     await verifyAuth(authMessage, signature, deployerAddress);
