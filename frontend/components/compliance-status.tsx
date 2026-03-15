@@ -11,9 +11,7 @@ import { countryRestrictModuleAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/constants";
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
-import { CheckIcon, XIcon, Spinner } from "@/components/ui/icons";
-import { StepProgress } from "@/components/ui/step-progress";
-import type { Step } from "@/components/ui/step-progress";
+import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
 
 interface CheckResult {
   label: string;
@@ -25,6 +23,15 @@ interface CheckResult {
 const ONBOARD_COUNTRIES = Object.entries(COUNTRY_NAMES)
   .map(([code, name]) => ({ code: Number(code), name }))
   .sort((a, b) => a.name.localeCompare(b.name));
+
+/** Format camelCase transaction keys to human-readable labels */
+function formatTxLabel(key: string): string {
+  return key
+    // Insert space before uppercase runs: "claimKYC" → "claim KYC", "deployIdentity" → "deploy Identity"
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/^./, (c) => c.toUpperCase())
+    .trim();
+}
 
 interface OnboardResult {
   identityAddress: string;
@@ -43,7 +50,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   // Demo onboarding state
   const [selectedCountry, setSelectedCountry] = useState(840);
   const [onboarding, setOnboarding] = useState(false);
-  const [onboardSteps, setOnboardSteps] = useState<Step[]>([]);
   const [onboardResult, setOnboardResult] = useState<OnboardResult | null>(null);
   const [onboardError, setOnboardError] = useState<string | null>(null);
   const runChecksRef = useRef<(() => void) | null>(null);
@@ -155,13 +161,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     setOnboardError(null);
     setOnboardResult(null);
 
-    const steps: Step[] = [
-      { label: "Deploying identity contract...", status: "active" },
-      { label: "Registering in identity registry...", status: "pending" },
-      { label: "Issuing compliance claims...", status: "pending" },
-    ];
-    setOnboardSteps([...steps]);
-
     try {
       const { message, signature } = await signAuthMessage(config, address, "Demo Onboarding");
 
@@ -187,12 +186,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         throw new Error(data.error || "Onboarding failed");
       }
 
-      // All steps succeeded
-      steps[0] = { label: "Identity contract deployed", status: "success" };
-      steps[1] = { label: "Registered in identity registry", status: "success" };
-      steps[2] = { label: "Compliance claims issued", status: "success" };
-      setOnboardSteps([...steps]);
-
       if (data.identityAddress && data.transactions) {
         setOnboardResult({
           identityAddress: data.identityAddress,
@@ -205,11 +198,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     } catch (err: unknown) {
       const msg = getErrorMessage(err, 100, "Onboarding failed");
       setOnboardError(msg);
-      const failIndex = steps.findIndex((s) => s.status === "active");
-      if (failIndex >= 0) {
-        steps[failIndex] = { ...steps[failIndex], status: "error", detail: msg };
-        setOnboardSteps([...steps]);
-      }
     } finally {
       setOnboarding(false);
     }
@@ -270,8 +258,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
       {/* Demo onboarding — shown when compliance checks fail */}
       {allDone && !eligible && (
-        <div className="px-6 py-4 border-t border-border/30">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="px-6 py-6 border-t border-border/50 bg-surface-2/40">
+          <div className="flex items-center gap-2 mb-4">
             <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-bond-amber/15 text-bond-amber font-medium">
               Demo
             </span>
@@ -281,52 +269,67 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           </div>
 
           {!onboardResult && (
-            <div className="flex gap-3 items-end mb-3">
-              <div className="flex-1">
-                <label htmlFor="onboard-country" className="sr-only">Select jurisdiction</label>
-                <select
-                  id="onboard-country"
-                  value={selectedCountry}
-                  onChange={(e) => setSelectedCountry(Number(e.target.value))}
+            <>
+              <div className="flex gap-3 items-end mb-3">
+                <div className="flex-1">
+                  <label htmlFor="onboard-country" className="sr-only">Select jurisdiction</label>
+                  <select
+                    id="onboard-country"
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(Number(e.target.value))}
+                    disabled={onboarding}
+                    className="input w-full text-sm"
+                  >
+                    {ONBOARD_COUNTRIES.map(({ code, name }) => (
+                      <option key={code} value={code}>
+                        {name} ({code}){code === 999 ? " — Restricted" : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={handleOnboard}
                   disabled={onboarding}
-                  className="input w-full text-sm"
+                  className="btn-outline-amber px-4 whitespace-nowrap disabled:cursor-not-allowed"
                 >
-                  {ONBOARD_COUNTRIES.map(({ code, name }) => (
-                    <option key={code} value={code}>
-                      {name} ({code}){code === 999 ? " — Restricted" : ""}
-                    </option>
-                  ))}
-                </select>
+                  {onboarding ? "Registering..." : "Register Identity"}
+                </button>
               </div>
-              <button
-                onClick={handleOnboard}
-                disabled={onboarding}
-                className="btn-outline-amber px-4 whitespace-nowrap disabled:cursor-not-allowed"
-              >
-                {onboarding ? "Registering..." : "Register Identity"}
-              </button>
+
+              {selectedCountry === 999 && !onboarding && (
+                <div className="flex items-start gap-2 mb-3 p-2.5 rounded-lg bg-bond-amber/8 border border-bond-amber/20">
+                  <WarningIcon className="w-4 h-4 text-bond-amber shrink-0 mt-0.5" />
+                  <p className="text-xs text-bond-amber/90">
+                    Narnia is a restricted jurisdiction. Your identity will be registered, but the jurisdiction compliance check will still fail.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
+          {onboarding && (
+            <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-surface-3/50">
+              <Spinner variant="amber" aria-label="Registering identity" />
+              <span className="text-sm text-white">Deploying identity and issuing claims on-chain...</span>
             </div>
           )}
 
-          {onboardSteps.length > 0 && (
-            <div className="mb-3">
-              <StepProgress steps={onboardSteps} />
-            </div>
-          )}
-
-          {onboardError && !onboardSteps.some((s) => s.status === "error") && (
+          {onboardError && (
             <p className="text-xs text-bond-red mb-3">{onboardError}</p>
           )}
 
           {onboardResult && (
             <div className="bg-surface-3/50 rounded-lg p-3 space-y-2">
-              <p className="text-xs text-bond-green font-medium">Identity registered on-chain</p>
-              <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <CheckIcon className="w-4 h-4 text-bond-green" />
+                <p className="text-xs text-bond-green font-medium">Identity registered on-chain</p>
+              </div>
+              <div className="space-y-1 pl-6">
                 <a
                   href={`https://hashscan.io/testnet/contract/${onboardResult.identityAddress}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-bond-green/80 hover:text-bond-green underline underline-offset-2 block"
+                  className="text-xs text-bond-green hover:text-bond-green/80 underline underline-offset-2 block"
                 >
                   View identity contract on HashScan
                 </a>
@@ -336,9 +339,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                     href={`https://hashscan.io/testnet/transaction/${hash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-text-muted hover:text-white underline underline-offset-2 block"
+                    className="text-xs text-white/70 hover:text-white underline underline-offset-2 block"
                   >
-                    {label}: {hash.slice(0, 10)}...{hash.slice(-6)}
+                    {formatTxLabel(label)}: {hash.slice(0, 10)}...{hash.slice(-6)}
                   </a>
                 ))}
               </div>
