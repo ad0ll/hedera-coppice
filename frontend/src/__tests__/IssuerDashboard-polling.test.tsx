@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, act } from "@testing-library/react";
 
 const mockPaused = vi.fn();
+const mockIsAgent = vi.fn();
 
 vi.mock("../hooks/useToken", () => ({
   useToken: () => ({
@@ -10,7 +11,7 @@ vi.mock("../hooks/useToken", () => ({
     unpause: vi.fn(),
     paused: mockPaused,
     setAddressFrozen: vi.fn(),
-    isAgent: vi.fn(),
+    isAgent: mockIsAgent,
     loading: false,
   }),
 }));
@@ -32,6 +33,7 @@ describe("IssuerDashboard polling", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     mockPaused.mockResolvedValue(false);
+    mockIsAgent.mockResolvedValue(true);
   });
 
   afterEach(() => {

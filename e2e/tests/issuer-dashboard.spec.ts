@@ -2,11 +2,24 @@ import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
 
 const DEPLOYER_KEY = "DEPLOYER_PRIVATE_KEY_REDACTED";
+const ALICE_KEY = "ALICE_PRIVATE_KEY_REDACTED";
 
 test.describe("Issuer Dashboard", () => {
   test("should require wallet connection", async ({ page }) => {
     await page.goto("/issue");
     await expect(page.getByText("Connect your issuer wallet")).toBeVisible();
+  });
+
+  test("should show Not Authorized for non-agent wallet (Alice)", async ({ page }) => {
+    await injectWalletMock(page, ALICE_KEY);
+    await page.goto("/issue");
+
+    await page.getByRole("button", { name: "Connect Wallet" }).click();
+
+    await expect(page.getByText("Not Authorized")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Only the bond issuer")).toBeVisible();
+    // Should NOT show issuer controls
+    await expect(page.getByText("Mint Tokens")).not.toBeVisible();
   });
 
   test("should show issuer controls when connected", async ({ page }) => {

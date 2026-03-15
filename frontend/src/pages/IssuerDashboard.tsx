@@ -6,14 +6,15 @@ import { ProjectAllocation } from "../components/ProjectAllocation";
 
 export function IssuerDashboard() {
   const { account } = useWallet();
-  const { mint, pause, unpause, paused, setAddressFrozen, loading } = useToken();
+  const { mint, pause, unpause, paused, setAddressFrozen, isAgent, loading } = useToken();
+
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   const [mintTo, setMintTo] = useState("");
   const [mintAmount, setMintAmount] = useState("");
   const [mintStatus, setMintStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const [freezeAddr, setFreezeAddr] = useState("");
-  const [freezeAction, setFreezeAction] = useState<"freeze" | "unfreeze">("freeze");
   const [freezeStatus, setFreezeStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
 
   const [isPaused, setIsPaused] = useState<boolean | null>(null);
@@ -32,6 +33,14 @@ export function IssuerDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (!account) {
+      setIsAuthorized(null);
+      return;
+    }
+    isAgent(account).then(setIsAuthorized).catch(() => setIsAuthorized(false));
+  }, [account]);
+
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
     setMintStatus(null);
@@ -47,7 +56,6 @@ export function IssuerDashboard() {
 
   async function handleFreeze(action: "freeze" | "unfreeze") {
     if (!freezeAddr) return;
-    setFreezeAction(action);
     setFreezeStatus(null);
     try {
       await setAddressFrozen(freezeAddr, action === "freeze");
@@ -99,6 +107,29 @@ export function IssuerDashboard() {
         </div>
         <h1 className="text-xl font-semibold text-white mb-2">Issuer Dashboard</h1>
         <p className="text-text-muted text-sm">Connect your issuer wallet to manage the bond.</p>
+      </div>
+    );
+  }
+
+  if (isAuthorized === null) {
+    return (
+      <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
+        <span className="inline-block w-6 h-6 border-2 border-text-muted/40 border-t-text-muted rounded-full animate-spin" />
+        <p className="text-text-muted text-sm mt-4">Checking authorization...</p>
+      </div>
+    );
+  }
+
+  if (isAuthorized === false) {
+    return (
+      <div className="bg-surface-2 border border-border rounded-xl p-12 text-center">
+        <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-bond-red/10 flex items-center justify-center">
+          <svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+          </svg>
+        </div>
+        <h1 className="text-xl font-semibold text-white mb-2">Not Authorized</h1>
+        <p className="text-text-muted text-sm">Only the bond issuer can access this dashboard.</p>
       </div>
     );
   }
