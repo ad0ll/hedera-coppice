@@ -142,7 +142,7 @@ npx hardhat hashscan-verify <ADDRESS> --contract contracts/X.sol:X --network tes
 ### In Our Codebase
 - `create-diana.ts:18` — uses `.setKey()` (deprecated)
 - `create-diana.ts:20` — uses `.setAlias()` (deprecated)
-- No other deprecated methods found in middleware/config/hcs-setup/hts-setup/event-logger
+- No other deprecated methods found in services/config/scripts/hcs-setup/hts-setup/event-logger
 
 ## Hiero Transition
 - Hedera SDKs are being rebranded under "Hiero" (e.g., `hiero-sdk-js`)

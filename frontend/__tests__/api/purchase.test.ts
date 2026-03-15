@@ -40,8 +40,8 @@ vi.mock("@/lib/wagmi", () => ({
   hederaTestnet: { id: 296, name: "Hedera Testnet" },
 }));
 
-// Mock @coppice/abi
-vi.mock("@coppice/abi", () => ({
+// Mock @coppice/common
+vi.mock("@coppice/common", () => ({
   tokenAbi: [],
 }));
 

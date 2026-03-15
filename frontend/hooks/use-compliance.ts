@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { usePublicClient } from "wagmi";
 import { type Address } from "viem";
-import { modularComplianceAbi } from "@coppice/abi";
+import { modularComplianceAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES } from "@/lib/constants";
 
 export function useCompliance() {

@@ -238,7 +238,7 @@ Before you hit record:
 - [ ] Close all other tabs, notifications off, clean desktop
 - [ ] Test the full flow once before recording — make sure all transactions go through
 - [ ] Audio levels tested — clear voiceover, no background noise
-- [ ] Event logger middleware is running (`cd middleware && npx tsx src/event-logger.ts`)
+- [ ] Event logger is running (`cd services && npx tsx src/event-logger.ts`)
   so that actions during recording appear in the Compliance Monitor
 
 ## Timing Breakdown

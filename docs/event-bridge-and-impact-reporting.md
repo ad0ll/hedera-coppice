@@ -6,7 +6,7 @@ Research compiled March 14, 2026. Read this after structural repo changes are co
 
 ## Part 1: Event Bridge Pattern (EVM -> HCS)
 
-Our event-logger middleware polls `eth_getLogs` every 5s, parses EVM events (Transfer, Paused, Unpaused, AddressFrozen), and submits structured JSON to an HCS audit topic. This is a well-established Hedera pattern.
+Our event-logger service polls `eth_getLogs` every 5s, parses EVM events (Transfer, Paused, Unpaused, AddressFrozen), and submits structured JSON to an HCS audit topic. This is a well-established Hedera pattern.
 
 ### Confirmed Precedents
 
@@ -37,7 +37,7 @@ Our event-logger middleware polls `eth_getLogs` every 5s, parses EVM events (Tra
 
 - **HIP-478**: Oracle integration (external data feeds into Hedera). NOT system contracts for HCS.
 - **HIP-1208**: The actual HCS precompile proposal (allowing Solidity to write to HCS natively). Status: Proposed/Draft. NOT live on testnet or mainnet.
-- Until HIP-1208 ships, off-chain middleware is the only way to bridge EVM events to HCS.
+- Until HIP-1208 ships, an off-chain service is the only way to bridge EVM events to HCS.
 
 ---
 

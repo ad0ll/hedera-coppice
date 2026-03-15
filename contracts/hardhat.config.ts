@@ -2,7 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox-viem";
 import * as dotenv from "dotenv";
 
-dotenv.config({ path: "../.env" });
+dotenv.config();
 
 const config: HardhatUserConfig = {
   solidity: {

@@ -138,7 +138,7 @@ Add payload size check in `/api/allocate` before submitting to HCS. Return 400 e
 
 ### 4b. Contract address duplication (#9)
 
-Document in README that `@coppice/abi` baked-in addresses are source of truth. Env vars are overrides for non-standard deployments. No code change.
+Document in README that `@coppice/common` baked-in addresses are source of truth. Env vars are overrides for non-standard deployments. No code change.
 
 **Files**: `README.md`
 
@@ -152,7 +152,7 @@ Track whether refund succeeded and return accurate error message to client.
 
 Add 3-attempt retry for failed HCS submissions in event logger.
 
-**Files**: `middleware/src/event-logger.ts`
+**Files**: `services/src/event-logger.ts`
 
 ---
 

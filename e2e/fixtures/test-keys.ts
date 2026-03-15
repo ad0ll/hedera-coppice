@@ -1,8 +1,7 @@
 import { config } from "dotenv";
 import { resolve } from "path";
 
-// Load from root .env (shared with frontend/middleware)
-config({ path: resolve(__dirname, "../../.env") });
+config({ path: resolve(__dirname, "../.env") });
 
 function requireEnv(name: string): string {
   const value = process.env[name];

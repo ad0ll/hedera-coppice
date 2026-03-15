@@ -2,7 +2,7 @@
 
 import { useReadContract, useWriteContract, usePublicClient } from "wagmi";
 import { type Address } from "viem";
-import { tokenAbi } from "@coppice/abi";
+import { tokenAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES } from "@/lib/constants";
 
 const tokenAddress = CONTRACT_ADDRESSES.token;

@@ -1,17 +1,15 @@
 {
-  "name": "coppice-middleware",
+  "name": "coppice-scripts",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "hcs-setup": "tsx src/hcs-setup.ts",
-    "hts-setup": "tsx src/hts-setup.ts",
-    "event-logger": "tsx src/event-logger.ts"
+    "hcs-setup": "tsx hcs-setup.ts",
+    "hts-setup": "tsx hts-setup.ts"
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.51.0",
-    "dotenv": "^16.4.0",
-    "viem": "^2.47.4"
+    "dotenv": "^16.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

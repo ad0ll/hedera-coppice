@@ -3,7 +3,7 @@ import {
   tokenAddress as deployedTokenAddress,
   identityRegistryAddress as deployedIrAddress,
   modularComplianceAddress as deployedMcAddress,
-} from "@coppice/abi";
+} from "@coppice/common";
 
 // eUSD HTS token EVM address (long-zero format per HIP-218)
 // HTS token 0.0.8214937 → 8214937 decimal → 0x7D5999 hex → padded to 20 bytes
@@ -15,7 +15,7 @@ export const COUNTRY_RESTRICT_MODULE_ADDRESS: Address = "0xfeafC271237D5fbe90dC2
 export const MIRROR_NODE_URL =
   process.env.NEXT_PUBLIC_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
 
-// Contract addresses: env vars override, else fall back to @coppice/abi baked-in testnet addresses
+// Contract addresses: env vars override, else fall back to @coppice/common baked-in testnet addresses
 // Typecast required: env vars are string | undefined but viem Address requires `0x${string}`.
 // The env var IS an address at runtime; this cast bridges the compile-time gap.
 export const CONTRACT_ADDRESSES: Record<"token" | "identityRegistry" | "compliance", Address> = {
