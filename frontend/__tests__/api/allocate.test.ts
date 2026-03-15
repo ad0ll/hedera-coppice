@@ -115,16 +115,16 @@ describe("POST /api/allocate", () => {
     expect(res.status).toBe(400);
   });
 
-  it("rejects missing auth signature", async () => {
+  it("rejects missing auth fields", async () => {
     const { POST } = await import("@/app/api/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
       amount: 1000,
     }));
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toMatch(/authentication/i);
+    expect(data.error).toBe("Missing fields");
   });
 
   it("returns 500 when DEPLOYER_ADDRESS is not configured", async () => {
