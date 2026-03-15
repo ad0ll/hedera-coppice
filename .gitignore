@@ -9,6 +9,7 @@ contracts/typechain-types/
 
 # Frontend
 frontend/dist/
+.next/
 
 # E2E
 e2e/test-results/

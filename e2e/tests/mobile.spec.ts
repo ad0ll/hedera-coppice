@@ -104,7 +104,8 @@ test.describe("Mobile Responsive Design", () => {
 
   test("should have adequate touch targets on filter buttons", async ({ page }) => {
     await page.goto("/monitor");
-    await expect(page.getByText(/\d+ events/)).toBeVisible({ timeout: 15000 });
+    // Wait for non-zero events — mirror node can lag 5-15s, hook polls every 5s
+    await expect(page.getByText(/[1-9]\d* events/)).toBeVisible({ timeout: 30000 });
 
     // Filter buttons should exist and be tappable
     const allButton = page.getByRole("button", { name: "ALL", exact: true });

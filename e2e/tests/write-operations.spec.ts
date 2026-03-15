@@ -174,8 +174,10 @@ test.describe("Write Operations (Testnet)", () => {
     // The compliance monitor should display real HCS events and support filtering
     await page.goto("/monitor");
 
-    // Wait for events to load from mirror node
-    await expect(page.getByText(/\d+ events/)).toBeVisible({ timeout: 15000 });
+    // Wait for events to load from mirror node — must be non-zero.
+    // Mirror node has 5-15s lag after transactions, and the hook polls every 5s,
+    // so we need a generous timeout to avoid flakes.
+    await expect(page.getByText(/[1-9]\d* events/)).toBeVisible({ timeout: 30000 });
 
     // Verify stats cards show non-zero values
     const totalText = await page.locator('.text-3xl').first().textContent();
