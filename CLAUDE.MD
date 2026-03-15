@@ -7,8 +7,9 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 ## Architecture
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
-- **middleware/**: Node.js scripts for HCS topics, HTS eUSD stablecoin, event logger.
-- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via wagmi v3 + viem v2. API routes handle purchase/allocate (no separate middleware server needed).
+- **scripts/**: One-time Hedera setup scripts (HCS topics, HTS eUSD stablecoin).
+- **services/**: Long-running background services (event logger).
+- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via wagmi v3 + viem v2. API routes handle purchase/allocate.
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
 ## Critical Constraints
@@ -29,9 +30,9 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Frontend rebuild plan: docs/plans/2026-03-14-frontend-rebuild.md
 - Audit docs: docs/audit-*.md
 - Reference fixture: reference/deploy-full-suite.fixture.ts
-- Accounts & keys: .env
+- Accounts & keys: each workspace has its own .env (contracts, frontend, services, scripts, e2e)
 - Wagmi config: frontend/lib/wagmi.ts
-- Shared ABIs: packages/abi/ (generated via wagmi CLI from contract artifacts)
+- Shared ABIs: packages/common/ (generated via wagmi CLI from contract artifacts)
 - Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/allocate/route.ts
 - Hedera server utils: frontend/lib/hedera.ts
 
@@ -71,10 +72,12 @@ cd contracts && npx hardhat test
 cd contracts && npx hardhat run scripts/deploy.ts --network hederaTestnet
 cd contracts && npx hardhat run scripts/verify-contracts.ts --network hederaTestnet
 
-# Middleware (setup scripts + event logger only — purchase/allocate are now API routes)
-cd middleware && npx tsx src/hcs-setup.ts
-cd middleware && npx tsx src/hts-setup.ts
-cd middleware && npm run event-logger
+# Scripts (one-time Hedera setup)
+cd scripts && npx tsx hcs-setup.ts
+cd scripts && npx tsx hts-setup.ts
+
+# Services (background daemons)
+cd services && npm run event-logger
 
 # Frontend (Next.js — includes API routes for purchase/allocate)
 cd frontend && npm run dev
@@ -131,12 +134,13 @@ cd e2e && npx playwright test
 
 ### Other standards
 
+- When you make a change to what environment variables are supported, be sure to update .env.example for the relevant code, and if you have access, update the relevant code's .env too
 - CLAUDE.MD and README.MD are living docs that should be reviewed for accuracy after major changes. Do not fill these with fluff, just make sure they're current.
 - The year is 2026. If you search for "recent" information in the web and choose to include the year in your search, you should use the year 2025 or 2026. Avoid using 2024, 2023, or other years before 2025 when searching for up to date information
 - According to <https://github.com/anthropics/claude-code/issues/13137>, bash permission wildcards don't match commands with redirects or special shell characters. To avoid me having to manually approve commands excessively, structure your commands to avoid the use of special characters when possible (esp ">", "&&", "||")
 - You should always write e2e tests and unit tests for your work. When relevant, e2e tests should be configurable to run against, or should just outright run against real chains/frontends/backends/agents etc, and you should always test against real systems before claiming work is complete. Aim for high test coverage.
 - Avoid using inline environment variables in commands you run, as this requires me to manually approve the command. Everything has a .env file you can source, or use dotenv or similar to load, for secrets
-- Always opt out of optional telemetry. Don't remove code that disables it
+- Always opt out of optional telemetry. Don't remove code that disables it. Whenever you set up a new project or onboard a new package, search web to see if it has telemetry enabled, and take action to deprecate
 - When deprecating code, you don't have to worry about backwards compatibility or leaving a comment trail unless explicitly instructed otherwise, just remove the code.
 - Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 - Always think and do research to make sure you're confident before taking action, it's important for you to not code reflexively

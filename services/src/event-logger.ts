@@ -26,7 +26,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, "../../.env") });
+dotenv.config({ path: path.join(__dirname, "../.env") });
 
 const TOKEN_ABI = parseAbi([
   "event Transfer(address indexed from, address indexed to, uint256 value)",

@@ -9,7 +9,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { z } from "zod";
-import { tokenAbi } from "@coppice/abi";
+import { tokenAbi } from "@coppice/common";
 import { MIRROR_NODE_URL, JSON_RPC_URL } from "@/lib/hedera";
 import { hederaTestnet } from "@/lib/wagmi";
 import { verifyAuth } from "@/lib/auth";

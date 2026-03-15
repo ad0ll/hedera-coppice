@@ -4,7 +4,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, "../../.env") });
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 export function getClient(): Client {
   const accountId = process.env.HEDERA_ACCOUNT_ID;
@@ -42,4 +42,3 @@ export function getOperatorAccountId(): AccountId {
 }
 
 export const MIRROR_NODE_URL = process.env.HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
-export const JSON_RPC_URL = process.env.HEDERA_JSON_RPC || "https://testnet.hashio.io/api";

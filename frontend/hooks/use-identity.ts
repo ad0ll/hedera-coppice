@@ -3,7 +3,7 @@
 import { useCallback } from "react";
 import { usePublicClient } from "wagmi";
 import { type Address, zeroAddress } from "viem";
-import { identityRegistryAbi } from "@coppice/abi";
+import { identityRegistryAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES } from "@/lib/constants";
 
 export function useIdentity() {
