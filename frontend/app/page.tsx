@@ -39,12 +39,11 @@ export default function InvestorPortal() {
   const displayEusdBalance = address ? eusdBalance : "--";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>
         <BondDetails />
       </div>
 
-      <div className="border-b border-border/30 my-2" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
