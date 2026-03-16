@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "ERC-3643 compliant green bond tokenization on Hedera",
-  "license": "GPL-3.0",
+  "license": "SEE LICENSE IN LICENSE",
   "packageManager": "npm@11.7.0",
   "workspaces": [
     "packages/*",

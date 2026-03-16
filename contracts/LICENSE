@@ -1,0 +1,5 @@
+This directory is licensed under the GNU General Public License v3.0 (GPL-3.0),
+as required by its dependency on @tokenysolutions/t-rex v4.1.6 which is
+GPL-3.0 licensed.
+
+See https://www.gnu.org/licenses/gpl-3.0.en.html for the full license text.

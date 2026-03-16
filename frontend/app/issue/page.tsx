@@ -93,7 +93,7 @@ export default function IssuerDashboard() {
     try {
       const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
 
-      const res = await fetch("/api/allocate", {
+      const res = await fetch("/api/issuer/allocate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

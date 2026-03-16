@@ -37,14 +37,14 @@ vi.mock("@/lib/auth", () => ({
 const originalEnv = { ...process.env };
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
-  return new NextRequest("http://localhost:3000/api/allocate", {
+  return new NextRequest("http://localhost:3000/api/issuer/allocate", {
     method: "POST",
     body: JSON.stringify(body),
     headers: { "Content-Type": "application/json" },
   });
 }
 
-describe("POST /api/allocate", () => {
+describe("POST /api/issuer/allocate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.IMPACT_TOPIC_ID = "0.0.8214935";
@@ -57,7 +57,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects missing project field", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       category: "Renewable Energy",
       amount: 1000,
@@ -70,7 +70,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects missing category field", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       amount: 1000,
@@ -81,7 +81,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects missing amount field", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
@@ -92,7 +92,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects non-string project", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: 123,
       category: "Renewable Energy",
@@ -104,7 +104,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects non-number amount", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
@@ -116,7 +116,7 @@ describe("POST /api/allocate", () => {
   });
 
   it("rejects missing auth fields", async () => {
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
@@ -130,7 +130,7 @@ describe("POST /api/allocate", () => {
   it("returns 500 when DEPLOYER_ADDRESS is not configured", async () => {
     delete process.env.DEPLOYER_ADDRESS;
     vi.resetModules();
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
@@ -146,7 +146,7 @@ describe("POST /api/allocate", () => {
   it("returns 500 when IMPACT_TOPIC_ID is not configured", async () => {
     delete process.env.IMPACT_TOPIC_ID;
     vi.resetModules();
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm",
       category: "Renewable Energy",
@@ -161,7 +161,7 @@ describe("POST /api/allocate", () => {
 
   it("rejects payload exceeding 1KB", async () => {
     vi.resetModules();
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "A".repeat(1500),
       category: "Renewable Energy",
@@ -176,7 +176,7 @@ describe("POST /api/allocate", () => {
 
   it("succeeds with valid inputs", async () => {
     vi.resetModules();
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest({
       project: "Solar Farm Alpha",
       category: "Renewable Energy",
@@ -194,7 +194,7 @@ describe("POST /api/allocate", () => {
   it("defaults currency to USD when not provided", async () => {
     setMessageCalls.length = 0;
     vi.resetModules();
-    const { POST } = await import("@/app/api/allocate/route");
+    const { POST } = await import("@/app/api/issuer/allocate/route");
     await POST(makeRequest({
       project: "Wind Farm",
       category: "Renewable Energy",

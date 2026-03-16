@@ -33,7 +33,7 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Accounts & keys: each workspace has its own .env (contracts, frontend, services, scripts, e2e)
 - Wagmi config: frontend/lib/wagmi.ts
 - Shared ABIs: packages/common/ (generated via wagmi CLI from contract artifacts)
-- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/allocate/route.ts
+- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/issuer/allocate/route.ts
 - Hedera server utils: frontend/lib/hedera.ts
 
 ## Deployed Contracts & Topics
@@ -144,3 +144,27 @@ cd e2e && npx playwright test
 - When deprecating code, you don't have to worry about backwards compatibility or leaving a comment trail unless explicitly instructed otherwise, just remove the code.
 - Always use Context7 MCP when I need library/API documentation, code generation, setup or configuration steps without me having to explicitly ask.
 - Always think and do research to make sure you're confident before taking action, it's important for you to not code reflexively
+
+## Design Context
+
+### Users
+Institutional investors (portfolio managers, fund analysts) evaluating compliant green bond instruments. They need confidence, precision, and trust from the interface. Secondary audience: Hedera hackathon judges evaluating technical depth and UX polish — the interface should demonstrate Hedera integration naturally through the UI (HCS event feeds, HTS balances, HashScan links) without heavy-handed branding.
+
+### Brand Personality
+**Trustworthy, precise, calm.** Institutional finance meets sustainability. Confidence communicated through restraint, data clarity, and visual consistency — not through decoration or excess.
+
+### Aesthetic Direction
+- **Visual tone:** Dark, minimal, precise. Inspired by Linear and Vercel — clean typography, subtle animations, generous spacing, data-forward layouts.
+- **Theme:** Dark-only. Layered surface system (`surface` → `surface-2` → `surface-3`) creates depth without borders. Green accent (`#10b981`, emerald) used sparingly for active/success states and the brand leaf motif.
+- **Typography:** Instrument Serif for display/headings, Bricolage Grotesque for body/UI, Geist Mono for data values (balances, addresses, timestamps). Uppercase tracked labels for stat categories.
+- **Cards:** Flush cards for data-heavy sections (no padding on header), padded cards for forms. Hover glow only on interactive cards (forms), not display-only cards.
+- **Color semantics:** Green = pass/active/approval. Red = fail/restriction/freeze. Amber = pending/allocation/warning. Never use color alone to convey status — always pair with icons (checkmark/X) or text.
+- **Anti-references:** Avoid generic "crypto dashboard" aesthetics — no neon gradients, no excessive glassmorphism, no particle effects, no oversized hero sections. This is a financial instrument, not a meme coin.
+- **Hackathon consideration:** Let Hedera integration speak through functionality (HCS feeds, HTS balances, Mirror Node data, HashScan transaction links) rather than logos or badges.
+
+### Design Principles
+1. **Data first** — Every pixel should serve the investor's decision. Show balances, compliance status, and event history with clarity and precision. Decoration that doesn't aid comprehension gets cut.
+2. **Earned trust** — Use consistent visual patterns, predictable interactions, and clear status communication. The interface should feel like it was built by people who understand regulated finance.
+3. **Quiet confidence** — Restrained color palette, subtle hover effects, minimal animation. Let the quality of the typography and spacing communicate craftsmanship.
+4. **Progressive disclosure** — Don't overwhelm. Show summary states, reveal detail on interaction. Compliance checks load sequentially. Purchase flow shows step-by-step progress.
+5. **Accessibility as baseline** — WCAG AA compliance. Focus-visible outlines, reduced-motion support, semantic HTML, aria-live for dynamic content. Shape + text always accompanies color for status indicators.
