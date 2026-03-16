@@ -68,6 +68,7 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
             abi: associateTokenAbi,
             functionName: "associateToken",
             args: [address, EUSD_EVM_ADDRESS],
+            gas: BigInt(800_000),
           });
         } catch (err: unknown) {
           const msg = getErrorMessage(err, 100, "Token association failed");
@@ -100,7 +101,7 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
   const isActive = state !== "idle" && state !== "success";
 
   return (
-    <div className="mt-2" aria-live="polite">
+    <div className="inline-block mt-2" aria-live="polite">
       <button
         onClick={handleClaim}
         disabled={isActive}

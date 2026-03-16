@@ -76,9 +76,12 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         abi: erc20Abi,
         functionName: "approve",
         args: [deployerAddress, eusdAmount],
-        gas: BigInt(100_000),
+        gas: BigInt(800_000),
       });
-      await waitForTransactionReceipt(config, { hash: approveHash });
+      const approveReceipt = await waitForTransactionReceipt(config, { hash: approveHash });
+      if (approveReceipt.status === "reverted") {
+        throw new Error("eUSD approval transaction reverted");
+      }
 
       // Batch: mark approve as success and purchase as active in one setState
       newSteps[2] = { label: "eUSD spending approved", status: "success" };
