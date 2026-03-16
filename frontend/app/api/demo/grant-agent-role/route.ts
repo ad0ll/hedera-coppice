@@ -13,6 +13,12 @@ const bodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
+export const grantAgentRoleResponseSchema = z.object({
+  success: z.literal(true),
+  txHash: z.string(),
+});
+export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema>;
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {

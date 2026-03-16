@@ -2,8 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { useConnection, useWriteContract } from "wagmi";
-import { EUSD_EVM_ADDRESS, EUSD_TOKEN_ID, MIRROR_NODE_URL } from "@/lib/constants";
+import { EUSD_EVM_ADDRESS, EUSD_TOKEN_ID } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/format";
+import { fetchAPI } from "@/lib/api-client";
+import { faucetResponseSchema } from "@/app/api/faucet/route";
+import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
 const HTS_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000167" as const;
 
@@ -31,17 +34,9 @@ const BUTTON_LABELS: Record<FaucetState, string> = {
 
 async function checkTokenAssociation(evmAddress: string): Promise<boolean> {
   try {
-    const accountRes = await fetch(`${MIRROR_NODE_URL}/api/v1/accounts/${evmAddress}`);
-    if (!accountRes.ok) return false;
-    const accountData: { account: string } = await accountRes.json();
-    const accountId = accountData.account;
-
-    const res = await fetch(
-      `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${EUSD_TOKEN_ID}`
-    );
-    if (!res.ok) return false;
-    const data: { tokens?: unknown[] } = await res.json();
-    return (data.tokens?.length ?? 0) > 0;
+    const accountId = await getHederaAccountId(evmAddress);
+    const balance = await getHtsTokenBalance(accountId, EUSD_TOKEN_ID);
+    return balance > 0;
   } catch {
     return false;
   }
@@ -84,16 +79,11 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
 
       // Claim eUSD from faucet
       setState("claiming");
-      const res = await fetch("/api/faucet", {
+      await fetchAPI("/api/faucet", faucetResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ walletAddress: address }),
       });
-
-      const data: { success?: boolean; error?: string } = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Faucet request failed");
-      }
 
       setState("success");
       onSuccess?.();

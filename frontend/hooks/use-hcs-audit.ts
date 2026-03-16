@@ -2,6 +2,10 @@
 
 import { useState, useEffect, useRef } from "react";
 import { MIRROR_NODE_URL, TOPIC_IDS } from "@/lib/constants";
+import {
+  mirrorTopicMessagesResponseSchema,
+  type MirrorTopicMessage,
+} from "@/lib/mirror-node";
 
 export interface AuditEvent {
   type: string;
@@ -12,7 +16,7 @@ export interface AuditEvent {
   consensusTimestamp: string;
 }
 
-function parseMessages(messages: { sequence_number: number; message: string; consensus_timestamp: string }[]): AuditEvent[] {
+function parseMessages(messages: MirrorTopicMessage[]): AuditEvent[] {
   const events: AuditEvent[] = [];
   for (const msg of messages) {
     try {
@@ -54,7 +58,7 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
           const res: Response = await fetch(`${MIRROR_NODE_URL}${nextPath}`);
           if (!res.ok) break;
 
-          const data: { messages?: { sequence_number: number; message: string; consensus_timestamp: string }[]; links?: { next?: string } } = await res.json();
+          const data = mirrorTopicMessagesResponseSchema.parse(await res.json());
           const parsed = parseMessages(data.messages || []);
           allEvents.push(...parsed);
 
@@ -83,7 +87,7 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
         const response = await fetch(url);
         if (!response.ok) return;
 
-        const data = await response.json();
+        const data = mirrorTopicMessagesResponseSchema.parse(await response.json());
         const newEvents = parseMessages(data.messages || []);
 
         if (newEvents.length > 0 && !cancelled) {

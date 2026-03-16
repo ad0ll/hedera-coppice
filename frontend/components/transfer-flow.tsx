@@ -7,6 +7,8 @@ import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
+import { fetchAPI } from "@/lib/api-client";
+import { purchaseResponseSchema } from "@/app/api/purchase/route";
 import { EUSD_EVM_ADDRESS, DEMO_WALLETS } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/format";
 import { StepProgress } from "@/components/ui/step-progress";
@@ -86,7 +88,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       // Step 4: Sign auth message and call purchase API
       const { message, signature } = await signAuthMessage(config, address, "Purchase Bond Tokens");
 
-      const purchaseRes = await fetch("/api/purchase", {
+      await fetchAPI("/api/purchase", purchaseResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,17 +98,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
           signature,
         }),
       });
-
-      let purchaseData: { error?: string; success?: boolean };
-      try {
-        purchaseData = await purchaseRes.json();
-      } catch {
-        throw new Error(`Server error (${purchaseRes.status})`);
-      }
-
-      if (!purchaseRes.ok) {
-        throw new Error(purchaseData.error || "Purchase failed");
-      }
 
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);

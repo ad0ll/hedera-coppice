@@ -12,6 +12,12 @@ const faucetBodySchema = z.object({
   walletAddress: z.string().nonempty(),
 });
 
+export const faucetResponseSchema = z.object({
+  success: z.literal(true),
+  amount: z.number(),
+});
+export type FaucetResponse = z.infer<typeof faucetResponseSchema>;
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
