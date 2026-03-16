@@ -52,7 +52,7 @@ Research notes included so any issue can be picked up without re-investigation.
 **Sources**: HIP-218, HIP-336, HIP-376, HIP-719, HIP-904
 
 ### 2. No authentication on write API routes
-- **Files**: `frontend/app/api/purchase/route.ts`, `frontend/app/api/allocate/route.ts`
+- **Files**: `frontend/app/api/purchase/route.ts`, `frontend/app/api/issuer/allocate/route.ts`
 - **Issue**: No auth on either endpoint. `API_KEY=coppice-demo-key` is defined in `.env` but never checked. Issuer dashboard checks `isAgent` client-side only — the API itself is wide open. Anyone can mint tokens or write fake impact data to HCS.
 
 #### Research: Auth Approach
@@ -86,7 +86,7 @@ const isValid = await verifyMessage({
 ```
 
 For `/api/purchase`: verify `signerAddress === investorAddress` (proves caller is the investor).
-For `/api/allocate`: verify `signerAddress === process.env.DEPLOYER_ADDRESS` (proves caller is the issuer).
+For `/api/issuer/allocate`: verify `signerAddress === process.env.DEPLOYER_ADDRESS` (proves caller is the issuer).
 
 **Rejected alternatives**:
 - Simple API key: doesn't prove wallet ownership, key visible in frontend code
@@ -164,8 +164,8 @@ const url = `${MIRROR_NODE_URL}/api/v1/topics/${topicId}/messages?order=asc&limi
 
 ### 6. Silent HCS message drop on size overflow
 - **Files**: `services/src/event-logger.ts:55-57`
-- **Issue**: Messages >1KB silently skipped with `console.warn`. In practice, audit events are ~200 bytes so this won't fire for normal operations. Could affect `/api/allocate` if someone enters a very long project name.
-- **Fix**: Either chunk messages (HCS supports multi-part), or truncate the payload, or return an error from `/api/allocate` if the payload would exceed 1KB.
+- **Issue**: Messages >1KB silently skipped with `console.warn`. In practice, audit events are ~200 bytes so this won't fire for normal operations. Could affect `/api/issuer/allocate` if someone enters a very long project name.
+- **Fix**: Either chunk messages (HCS supports multi-part), or truncate the payload, or return an error from `/api/issuer/allocate` if the payload would exceed 1KB.
 
 ### 7. Transfer-flow UI has fake 500ms delay
 - **Files**: `frontend/components/transfer-flow.tsx:84`
@@ -173,7 +173,7 @@ const url = `${MIRROR_NODE_URL}/api/v1/topics/${topicId}/messages?order=asc&limi
 - **Fix**: Resolves automatically with #1 — step 3 becomes a real client-side `approve()` tx, step 4 becomes the API call for `transferFrom()` + `mint()`. The delay becomes unnecessary.
 
 ### 8. Allocate API — anyone can write to HCS impact topic
-- **Files**: `frontend/app/api/allocate/route.ts:5-17`
+- **Files**: `frontend/app/api/issuer/allocate/route.ts:5-17`
 - **Issue**: No auth. Issuer dashboard gates via `isAgent` client-side, but the API endpoint accepts any POST. Anyone with the URL can submit fake impact data to the HCS topic.
 - **Fix**: Add wallet signature verification (same as #2). Verify `signerAddress === process.env.DEPLOYER_ADDRESS`.
 

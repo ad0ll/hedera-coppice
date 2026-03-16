@@ -33,7 +33,7 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Accounts & keys: each workspace has its own .env (contracts, frontend, services, scripts, e2e)
 - Wagmi config: frontend/lib/wagmi.ts
 - Shared ABIs: packages/common/ (generated via wagmi CLI from contract artifacts)
-- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/allocate/route.ts
+- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/issuer/allocate/route.ts
 - Hedera server utils: frontend/lib/hedera.ts
 
 ## Deployed Contracts & Topics
