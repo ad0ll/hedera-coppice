@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "tsx src/event-logger.ts",
+    "dev": "tsx watch src/event-logger.ts",
     "event-logger": "tsx src/event-logger.ts"
   },
   "dependencies": {
