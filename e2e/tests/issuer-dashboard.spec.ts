@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { injectWalletMock } from "../fixtures/wallet-mock";
-import { DEPLOYER_KEY, ALICE_KEY } from "../fixtures/test-keys";
+import { DEPLOYER_KEY, ALICE_KEY, BOB_KEY } from "../fixtures/test-keys";
 
 test.describe("Issuer Dashboard", () => {
   test("should require wallet connection", async ({ page }) => {
@@ -8,14 +8,15 @@ test.describe("Issuer Dashboard", () => {
     await expect(page.getByText("Connect your issuer wallet")).toBeVisible();
   });
 
-  test("should show Not Authorized for non-agent wallet (Alice)", async ({ page }) => {
+  test("should show self-promotion UI for non-agent wallet (Alice)", async ({ page }) => {
     await injectWalletMock(page, ALICE_KEY);
     await page.goto("/issue");
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    await expect(page.getByText("Not Authorized")).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText("Only the bond issuer")).toBeVisible();
+    await expect(page.getByText("Become an Issuer")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole("button", { name: "Grant Agent Role" })).toBeVisible();
+    await expect(page.getByText("Demo only")).toBeVisible();
     // Should NOT show issuer controls
     await expect(page.getByText("Mint Tokens")).not.toBeVisible();
   });
@@ -73,6 +74,45 @@ test.describe("Issuer Dashboard", () => {
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
     await expect(page.getByPlaceholder("Project name")).toBeVisible({ timeout: 10000 });
-    await expect(page.getByRole("button", { name: "Allocate to HCS" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Record Allocation" })).toBeVisible();
+  });
+
+  test("deployer should NOT see demo banner", async ({ page }) => {
+    await injectWalletMock(page, DEPLOYER_KEY);
+    await page.goto("/issue");
+
+    await page.getByRole("button", { name: "Connect Wallet" }).click();
+
+    await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText("You have the agent role for this demo session")).not.toBeVisible();
+  });
+
+  test("self-promotion flow grants agent role (Bob)", async ({ page }) => {
+    await injectWalletMock(page, BOB_KEY);
+    await page.goto("/issue");
+
+    await page.getByRole("button", { name: "Connect Wallet" }).click();
+
+    // Bob may already be an agent from a previous test run
+    const promoteButton = page.getByRole("button", { name: "Grant Agent Role" });
+    const dashboard = page.getByText("Issuer Dashboard");
+
+    // Wait for either the promote CTA or the dashboard to appear
+    await expect(promoteButton.or(dashboard)).toBeVisible({ timeout: 30000 });
+
+    if (await promoteButton.isVisible()) {
+      // Bob is not yet an agent — trigger the self-promotion flow
+      await promoteButton.click();
+
+      // Wait for the dashboard to appear after promotion
+      await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 60000 });
+    }
+
+    // Bob should see the demo banner (not the owner)
+    await expect(page.getByText("You have the agent role for this demo session")).toBeVisible();
+    // Bob should see mint/freeze/pause but NOT allocate
+    await expect(page.getByText("Mint Tokens")).toBeVisible();
+    await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
+    await expect(page.getByText("Allocate Proceeds")).not.toBeVisible();
   });
 });

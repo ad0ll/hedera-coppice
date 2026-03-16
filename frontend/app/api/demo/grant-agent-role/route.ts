@@ -14,7 +14,12 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
+  }
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
@@ -64,6 +69,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, txHash: receipt.transactionHash });
   } catch (err: unknown) {
     const message = getErrorMessage(err, 200, "Failed to grant agent role");
+    // Handle race condition: addAgent reverts with "already has role" if
+    // a concurrent request promoted the same address between our isAgent check and addAgent call
+    if (message.includes("already has role")) {
+      return NextResponse.json({ error: "Address is already an agent" }, { status: 409 });
+    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

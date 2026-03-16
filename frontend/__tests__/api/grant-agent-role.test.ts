@@ -73,6 +73,19 @@ describe("POST /api/demo/grant-agent-role", () => {
     mockReadContract.mockResolvedValue(false);
   });
 
+  it("rejects invalid JSON body", async () => {
+    const { POST } = await import("@/app/api/demo/grant-agent-role/route");
+    const req = new NextRequest("http://localhost:3000/api/demo/grant-agent-role", {
+      method: "POST",
+      body: "not json",
+      headers: { "Content-Type": "application/json" },
+    });
+    const res = await POST(req);
+    expect(res.status).toBe(400);
+    const data = await res.json();
+    expect(data.error).toBe("Invalid JSON");
+  });
+
   it("rejects missing investorAddress", async () => {
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({ message: "test", signature: "0xsig" }));
@@ -104,6 +117,19 @@ describe("POST /api/demo/grant-agent-role", () => {
 
   it("returns 409 when address is already an agent", async () => {
     mockReadContract.mockResolvedValueOnce(true);
+    const { POST } = await import("@/app/api/demo/grant-agent-role/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ADDRESS,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(409);
+    const data = await res.json();
+    expect(data.error).toMatch(/already/i);
+  });
+
+  it("returns 409 when addAgent reverts with 'already has role' (TOCTOU race)", async () => {
+    mockWriteContract.mockRejectedValueOnce(new Error("Roles: account already has role"));
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_ADDRESS,

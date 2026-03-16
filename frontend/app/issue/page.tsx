@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { isAddress, parseEther } from "viem";
 import { useConnection, useConfig } from "wagmi";
 import { useTokenRead, useTokenWrite, useIsAgent, useTokenOwner } from "@/hooks/use-token";
@@ -43,7 +43,7 @@ export default function IssuerDashboard() {
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
 
-  const handlePromote = useCallback(async () => {
+  async function handlePromote() {
     if (!address || promoting) return;
     setPromoting(true);
     promoteOp.clear();
@@ -63,7 +63,7 @@ export default function IssuerDashboard() {
     } finally {
       setPromoting(false);
     }
-  }, [address, config, promoting, promoteOp, refetchIsAgent]);
+  }
 
   const indexOffset = isOwner ? 0 : 1;
 
@@ -176,6 +176,7 @@ export default function IssuerDashboard() {
             <button
               onClick={handlePromote}
               disabled={promoting}
+              aria-busy={promoting}
               className="w-full btn-primary"
             >
               {promoting ? "Granting role..." : "Grant Agent Role"}
@@ -196,19 +197,19 @@ export default function IssuerDashboard() {
   return (
     <div className="space-y-6">
       {!isOwner && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": 0 }}>
           <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider shrink-0 mt-0.5" />
           <p className="text-xs text-text-muted">
             You have the agent role for this demo session. In production, agent roles are managed by the token owner.
           </p>
         </div>
       )}
-      <h1 className="page-title animate-entrance" style={{ "--index": indexOffset } as React.CSSProperties}>Issuer Dashboard</h1>
+      <h1 className="page-title animate-entrance" style={{ "--index": indexOffset }}>Issuer Dashboard</h1>
 
       <div className="space-y-4">
-        <p className="stat-label animate-entrance" style={{ "--index": 1 + indexOffset } as React.CSSProperties}>Token Operations</p>
+        <p className="stat-label animate-entrance" style={{ "--index": 1 + indexOffset }}>Token Operations</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-entrance" style={{ "--index": 2 + indexOffset } as React.CSSProperties}>
+          <div className="animate-entrance" style={{ "--index": 2 + indexOffset }}>
             <Card>
               <h3 className="card-title">Mint Tokens</h3>
               <div className="space-y-3">
@@ -228,7 +229,7 @@ export default function IssuerDashboard() {
           </div>
 
           {isOwner && (
-          <div className="animate-entrance" style={{ "--index": 3 + indexOffset } as React.CSSProperties}>
+          <div className="animate-entrance" style={{ "--index": 3 + indexOffset }}>
             <Card>
               <h3 className="card-title">Allocate Proceeds</h3>
               <div className="space-y-3">
@@ -255,9 +256,9 @@ export default function IssuerDashboard() {
       </div>
 
       <div className="space-y-4">
-        <p className="stat-label animate-entrance" style={{ "--index": 4 + indexOffset } as React.CSSProperties}>Risk Controls</p>
+        <p className="stat-label animate-entrance" style={{ "--index": 4 + indexOffset }}>Risk Controls</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-entrance" style={{ "--index": 5 + indexOffset } as React.CSSProperties}>
+          <div className="animate-entrance" style={{ "--index": 5 + indexOffset }}>
             <Card>
               <h3 className="card-title">Freeze / Unfreeze Wallet</h3>
               <div className="space-y-3">
@@ -281,7 +282,7 @@ export default function IssuerDashboard() {
             </Card>
           </div>
 
-          <div className="animate-entrance" style={{ "--index": 6 + indexOffset } as React.CSSProperties}>
+          <div className="animate-entrance" style={{ "--index": 6 + indexOffset }}>
             <Card>
               <h3 className="card-title">Token Pause Control</h3>
               <div className="flex items-center justify-between mb-4 bg-surface-3/50 rounded-lg px-4 py-3">
@@ -301,7 +302,7 @@ export default function IssuerDashboard() {
         </div>
       </div>
 
-      <div className="animate-entrance" style={{ "--index": 7 + indexOffset } as React.CSSProperties}>
+      <div className="animate-entrance" style={{ "--index": 7 + indexOffset }}>
         <ProjectAllocation />
       </div>
     </div>
