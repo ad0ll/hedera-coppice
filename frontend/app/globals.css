@@ -24,6 +24,26 @@ body {
   background-color: var(--color-surface);
 }
 
+/* Background atmosphere — vignette + noise grain */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
+  pointer-events: none;
+  z-index: 50;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  opacity: 0.02;
+  pointer-events: none;
+  z-index: 50;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+}
+
 /* Focus indicators for keyboard navigation */
 :focus-visible {
   outline: 2px solid var(--color-bond-green);
@@ -144,6 +164,95 @@ body {
   @apply text-xs text-bond-red;
 }
 
+/* -- Animation system ---------------------------------------- */
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-entrance {
+  opacity: 0;
+  animation: fade-in-up 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation-delay: calc(var(--index, 0) * 80ms);
+}
+
+@keyframes check-flash-green {
+  from { background-color: rgba(34, 197, 94, 0.08); }
+  to { background-color: transparent; }
+}
+@keyframes check-flash-red {
+  from { background-color: rgba(239, 68, 68, 0.08); }
+  to { background-color: transparent; }
+}
+
+.animate-check-pass {
+  animation: check-flash-green 600ms ease-out;
+}
+.animate-check-fail {
+  animation: check-flash-red 600ms ease-out;
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-icon-enter {
+  animation: slide-in-left 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes badge-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-badge-enter {
+  animation: badge-enter 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slide-in-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-feed-enter {
+  animation: slide-in-down 350ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes event-highlight {
+  from { background-color: rgba(34, 197, 94, 0.06); }
+  to { background-color: transparent; }
+}
+
+.animate-event-new {
+  animation: event-highlight 1.5s ease-out;
+}
+
 /* Respect reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -151,5 +260,9 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+  .animate-entrance {
+    opacity: 1;
+    animation: none;
   }
 }
