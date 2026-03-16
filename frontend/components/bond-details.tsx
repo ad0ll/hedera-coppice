@@ -14,9 +14,9 @@ export function BondDetails() {
 
   return (
     <div className="card-flush">
-      <div className="bg-gradient-to-r from-bond-green/8 to-transparent px-6 py-4 border-b border-border/50 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-bond-green/8 to-transparent px-6 py-6 border-b border-border/50 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-bond-green/15 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-lg bg-bond-green/15 flex items-center justify-center">
             <svg viewBox="0 0 24 24" className="w-5 h-5 text-bond-green" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2L2 7l10 5 10-5-10-5z" />
               <path d="M2 17l10 5 10-5" />
@@ -24,7 +24,7 @@ export function BondDetails() {
             </svg>
           </div>
           <div>
-            <h1 className="text-lg font-semibold text-white">{BOND_DETAILS.name}</h1>
+            <h1 className="font-display text-2xl text-white">{BOND_DETAILS.name}</h1>
             <p className="text-xs text-text-muted">{BOND_DETAILS.issuer}</p>
           </div>
         </div>
@@ -34,7 +34,7 @@ export function BondDetails() {
           </span>
         )}
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-6 py-5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-6 py-6">
         <div>
           <p className="stat-label mb-1">Symbol</p>
           <p className="text-lg font-mono font-semibold text-white">{BOND_DETAILS.symbol}</p>
