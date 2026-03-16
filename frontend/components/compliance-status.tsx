@@ -126,6 +126,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       if (!address) return;
 
       const isFirstRun = hasRunForRef.current !== address;
+      // Mark early so transient RPC errors don't re-trigger loading spinners
+      hasRunForRef.current = address;
 
       // On first run, show loading state with sequential reveal
       if (isFirstRun) {
@@ -149,7 +151,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         setChecks(notRegisteredResults);
         setEligible(false);
         onEligibilityChange?.(false);
-        hasRunForRef.current = address;
         return;
       }
 
@@ -184,7 +185,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       const allPass = results.every((r) => r.status === "pass");
       setEligible(allPass);
       onEligibilityChange?.(allPass);
-      hasRunForRef.current = address;
     }
 
     runChecksRef.current = runChecks;
@@ -193,6 +193,10 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     return () => {
       clearInterval(interval);
       runChecksRef.current = null;
+      hasRunForRef.current = null;
+      setChecks([]);
+      setEligible(false);
+      onEligibilityChange?.(false);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getClaimStatus, canTransfer are useCallback-wrapped with [publicClient] deps, so they are stable when publicClient is stable
   }, [address, publicClient, onEligibilityChange]);
