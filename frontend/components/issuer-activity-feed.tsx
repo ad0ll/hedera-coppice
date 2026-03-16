@@ -1,0 +1,89 @@
+"use client";
+
+import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
+import { abbreviateAddress } from "@/lib/format";
+import { ExternalLinkIcon, Spinner } from "@/components/ui/icons";
+import type { AuditEvent } from "@/hooks/use-hcs-audit";
+
+function formatTimestamp(ts: number | string): string {
+  if (typeof ts === "string") {
+    const secs = parseFloat(ts);
+    return new Date(secs * 1000).toLocaleString("en-US", {
+      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+    });
+  }
+  return new Date(ts).toLocaleString("en-US", {
+    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+  });
+}
+
+function eventSummary(event: AuditEvent): string {
+  const d = event.data;
+  switch (event.type) {
+    case "MINT":
+      return `Minted ${d.amount ?? "?"} CPC to ${abbreviateAddress(d.to ?? "", 6, 4)}`;
+    case "TRANSFER":
+      return `${abbreviateAddress(d.from ?? "", 6, 4)} sent ${d.amount ?? "?"} CPC to ${abbreviateAddress(d.to ?? "", 6, 4)}`;
+    case "TOKEN_PAUSED":
+      return `Token paused by ${abbreviateAddress(d.by ?? "", 6, 4)}`;
+    case "TOKEN_UNPAUSED":
+      return `Token unpaused by ${abbreviateAddress(d.by ?? "", 6, 4)}`;
+    case "WALLET_FROZEN":
+      return `Froze ${abbreviateAddress(d.address ?? d.wallet ?? "", 6, 4)}`;
+    case "WALLET_UNFROZEN":
+      return `Unfroze ${abbreviateAddress(d.address ?? d.wallet ?? "", 6, 4)}`;
+    default:
+      return event.type;
+  }
+}
+
+export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; loading: boolean }) {
+  const recent = [...events].reverse().slice(0, 20);
+
+  return (
+    <div className="card-flush">
+      <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+        <span className="text-xs text-text-muted font-mono">{events.length} total events</span>
+      </div>
+
+      <div className="px-6 py-4">
+        {loading ? (
+          <div className="flex items-center gap-3 text-text-muted text-sm py-4 justify-center" role="status">
+            <Spinner aria-hidden />
+            Loading events...
+          </div>
+        ) : recent.length === 0 ? (
+          <p className="text-sm text-text-muted py-4 text-center">No activity recorded yet.</p>
+        ) : (
+          <div className="space-y-0.5 max-h-80 overflow-y-auto">
+            {recent.map((event) => (
+              <div key={event.sequenceNumber} className="flex items-center gap-3 py-2 border-b border-border/20 last:border-0">
+                <span className={`text-[10px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
+                  {event.type}
+                </span>
+                <span className="text-xs text-text-muted flex-1 truncate">
+                  {eventSummary(event)}
+                </span>
+                <span className="text-[11px] text-text-muted/60 shrink-0">
+                  {formatTimestamp(event.consensusTimestamp || event.ts)}
+                </span>
+                {event.tx && (
+                  <a
+                    href={`https://hashscan.io/testnet/transaction/${event.tx}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-text-muted hover:text-bond-green transition-colors shrink-0"
+                    title={event.tx}
+                  >
+                    <ExternalLinkIcon />
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

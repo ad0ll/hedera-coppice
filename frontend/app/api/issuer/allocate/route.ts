@@ -10,6 +10,7 @@ const allocateBodySchema = z.object({
   category: z.string().nonempty(),
   amount: z.number().positive(),
   currency: z.string().optional().default("USD"),
+  signerAddress: z.string().nonempty(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
@@ -26,15 +27,11 @@ export async function POST(request: NextRequest) {
   if (!parsed.success) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
-  const { project, category, amount, currency, message: authMessage, signature } = parsed.data;
+  const { project, category, amount, currency, signerAddress, message: authMessage, signature } = parsed.data;
 
-  // Verify wallet signature — only the deployer (issuer) can allocate proceeds
-  const deployerAddress = process.env.DEPLOYER_ADDRESS;
-  if (!deployerAddress) {
-    return NextResponse.json({ error: "DEPLOYER_ADDRESS not configured" }, { status: 500 });
-  }
+  // Verify wallet signature — any agent can allocate proceeds (frontend gates via useIsAgent)
   try {
-    await verifyAuth(authMessage, signature, deployerAddress);
+    await verifyAuth(authMessage, signature, signerAddress);
   } catch (err: unknown) {
     const msg = getErrorMessage(err, 0, "Auth failed");
     return NextResponse.json({ error: msg }, { status: 401 });

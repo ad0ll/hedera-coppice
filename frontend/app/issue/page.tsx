@@ -4,6 +4,11 @@ import { useState } from "react";
 import { isAddress, parseEther } from "viem";
 import { useConnection, useConfig } from "wagmi";
 import { useTokenRead, useTokenWrite, useIsAgent, useTokenOwner } from "@/hooks/use-token";
+import { useHolders } from "@/hooks/use-holders";
+import { useHCSAudit } from "@/hooks/use-hcs-audit";
+import { IssuerStats } from "@/components/issuer-stats";
+import { HoldersTable } from "@/components/holders-table";
+import { IssuerActivityFeed } from "@/components/issuer-activity-feed";
 import { ProjectAllocation } from "@/components/project-allocation";
 import { signAuthMessage } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -13,7 +18,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, getErrorMessage } from "@/lib/format";
-import { BOND_CATEGORIES } from "@/lib/event-types";
+import { BOND_CATEGORIES, EVENT_TYPES } from "@/lib/event-types";
 import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
@@ -21,14 +26,26 @@ import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 export default function IssuerDashboard() {
   const { address } = useConnection();
   const config = useConfig();
-  const { paused: pausedQuery } = useTokenRead();
+  const { totalSupply, paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
   const { data: isAuthorized, isLoading: isCheckingAgent, refetch: refetchIsAgent } = useIsAgent(address);
   const { data: tokenOwner } = useTokenOwner();
   const isOwner = address && tokenOwner ? address.toLowerCase() === tokenOwner.toLowerCase() : false;
 
-  const isPaused = pausedQuery.data ?? null;
+  // HCS events — used for holders table and activity feed
+  const { events: auditEvents, loading: auditLoading } = useHCSAudit("audit");
+  const { events: impactEvents } = useHCSAudit("impact");
+  const { holders, loading: holdersLoading } = useHolders(auditEvents);
 
+  const isPaused = pausedQuery.data ?? null;
+  const supply = totalSupply.data;
+
+  // Calculate total allocated from impact events
+  const totalAllocated = impactEvents
+    .filter((e) => e.type === EVENT_TYPES.PROCEEDS_ALLOCATED)
+    .reduce((sum, e) => sum + parseFloat(e.data.amount || "0"), 0);
+
+  // Form state
   const [mintTo, setMintTo] = useState("");
   const [mintAmount, setMintAmount] = useState("");
   const mintOp = useOperationStatus();
@@ -65,8 +82,6 @@ export default function IssuerDashboard() {
       setPromoting(false);
     }
   }
-
-  const indexOffset = isOwner ? 0 : 1;
 
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
@@ -132,11 +147,12 @@ export default function IssuerDashboard() {
           category,
           amount: Number(proceedsAmount),
           currency: "USD",
+          signerAddress: address,
           message: authMessage,
           signature,
         }),
       });
-      proceedsOp.setStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
+      proceedsOp.setStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project}` });
       setProject("");
       setProceedsAmount("");
     } catch (err: unknown) {
@@ -144,12 +160,14 @@ export default function IssuerDashboard() {
     }
   }
 
+  // --- Render gates ---
+
   if (!address) {
     return (
       <EmptyState
         icon={<ShieldCheckIcon className="w-6 h-6 text-text-muted" />}
         title="Issuer Dashboard"
-        description="Connect your issuer wallet to mint tokens, allocate proceeds, freeze wallets, and pause trading."
+        description="Connect your issuer wallet to manage tokens, view holders, allocate proceeds, and control trading."
       />
     );
   }
@@ -168,16 +186,11 @@ export default function IssuerDashboard() {
       <EmptyState
         icon={<ShieldCheckIcon className="w-6 h-6 text-bond-amber" />}
         title="Become an Issuer"
-        description="Grant yourself the agent role to mint tokens, freeze wallets, and pause trading. This demonstrates ERC-3643 role-based access control."
+        description="Grant yourself the agent role to manage tokens, view holders, and control trading. This demonstrates ERC-3643 role-based access control."
         variant="default"
         action={
           <div className="space-y-3 max-w-sm mx-auto">
-            <button
-              onClick={handlePromote}
-              disabled={promoting}
-              aria-busy={promoting}
-              className="w-full btn-primary"
-            >
+            <button onClick={handlePromote} disabled={promoting} aria-busy={promoting} className="w-full btn-primary">
               {promoting ? "Granting role..." : "Grant Agent Role"}
             </button>
             <StatusMessage status={promoteOp.status} />
@@ -193,22 +206,39 @@ export default function IssuerDashboard() {
     );
   }
 
+  // --- Main dashboard ---
+
+  let idx = 0;
+
   return (
     <div className="space-y-6">
       {!isOwner && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": 0 }}>
+        <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
           <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider shrink-0 mt-0.5" />
           <p className="text-xs text-text-muted">
             You have the agent role for this demo session. In production, agent roles are managed by the token owner.
           </p>
         </div>
       )}
-      <h1 className="page-title animate-entrance" style={{ "--index": indexOffset }}>Issuer Dashboard</h1>
 
+      <h1 className="page-title animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Issuer Dashboard</h1>
+
+      {/* Stats Banner */}
+      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
+      </div>
+
+      {/* Holders Table */}
+      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <HoldersTable holders={holders} loading={holdersLoading} />
+      </div>
+
+      {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
-        <p className="stat-label animate-entrance" style={{ "--index": 1 + indexOffset }}>Token Operations</p>
+        <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-entrance" style={{ "--index": 2 + indexOffset }}>
+          {/* Mint */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>
               <h3 className="card-title">Mint Tokens</h3>
               <div className="space-y-3">
@@ -227,8 +257,8 @@ export default function IssuerDashboard() {
             </Card>
           </div>
 
-          {isOwner && (
-          <div className="animate-entrance" style={{ "--index": 3 + indexOffset }}>
+          {/* Allocate Proceeds — visible to all agents */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>
               <h3 className="card-title">Allocate Proceeds</h3>
               <div className="space-y-3">
@@ -250,14 +280,9 @@ export default function IssuerDashboard() {
               </div>
             </Card>
           </div>
-          )}
-        </div>
-      </div>
 
-      <div className="space-y-4">
-        <p className="stat-label animate-entrance" style={{ "--index": 4 + indexOffset }}>Risk Controls</p>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="animate-entrance" style={{ "--index": 5 + indexOffset }}>
+          {/* Freeze/Unfreeze */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>
               <h3 className="card-title">Freeze / Unfreeze Wallet</h3>
               <div className="space-y-3">
@@ -281,7 +306,8 @@ export default function IssuerDashboard() {
             </Card>
           </div>
 
-          <div className="animate-entrance" style={{ "--index": 6 + indexOffset }}>
+          {/* Pause Control */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>
               <h3 className="card-title">Token Pause Control</h3>
               <div className="flex items-center justify-between mb-4 bg-surface-3/50 rounded-lg px-4 py-3">
@@ -301,8 +327,14 @@ export default function IssuerDashboard() {
         </div>
       </div>
 
-      <div className="animate-entrance" style={{ "--index": 7 + indexOffset }}>
+      {/* Use of Proceeds */}
+      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
         <ProjectAllocation />
+      </div>
+
+      {/* Activity Feed */}
+      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <IssuerActivityFeed events={auditEvents} loading={auditLoading} />
       </div>
     </div>
   );
