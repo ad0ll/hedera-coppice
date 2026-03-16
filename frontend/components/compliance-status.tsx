@@ -53,6 +53,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const [onboardResult, setOnboardResult] = useState<OnboardResult | null>(null);
   const [onboardError, setOnboardError] = useState<string | null>(null);
   const runChecksRef = useRef<(() => void) | null>(null);
+  const minDelay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   useEffect(() => {
     if (!address) return;
@@ -75,6 +76,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         detail: registered ? "ONCHAINID linked" : "No identity found",
       };
       setChecks([...results]);
+      await minDelay(300);
 
       if (!registered) {
         results[1] = { label: "KYC / AML / Accredited", status: "fail", detail: "Not registered" };
@@ -205,9 +207,18 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
   if (!address) {
     return (
-      <div className="card">
-        <h3 className="card-title">Compliance Status</h3>
-        <p className="text-text-muted text-sm">Connect your wallet to check compliance status.</p>
+      <div className="card-flush">
+        <div className="px-6 py-4 border-b border-border/50">
+          <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
+        </div>
+        <div className="px-6 py-4 space-y-1">
+          {["Identity Registered", "KYC / AML / Accredited", "Jurisdiction Check", "Compliance Module"].map((label) => (
+            <div key={label} className="flex items-center gap-3 py-2.5 border-b border-border/30 last:border-0 opacity-40">
+              <div className="w-5 h-5 rounded-full bg-surface-3" />
+              <span className="text-sm text-text-muted">{label}</span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -217,12 +228,12 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
   return (
     <div className="card-flush">
-      <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between ${
+      <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between transition-all duration-300 ${
         allDone && eligible ? "bg-gradient-to-r from-bond-green/8 to-transparent" : allDone ? "bg-gradient-to-r from-bond-red/8 to-transparent" : ""
       }`}>
         <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
         {allDone && (
-          <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+          <span className={`animate-badge-enter text-xs px-3 py-1 rounded-full font-medium ${
             eligible ? "bg-bond-green/15 text-bond-green" : "bg-bond-red/15 text-bond-red"
           }`}>
             {eligible ? "Eligible to Invest" : "Not Eligible"}
@@ -240,9 +251,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 {check.status === "loading" ? (
                   <Spinner aria-label="Checking" />
                 ) : check.status === "pass" ? (
-                  <CheckIcon className="w-5 h-5 text-bond-green" />
+                  <span className="animate-icon-enter"><CheckIcon className="w-5 h-5 text-bond-green" /></span>
                 ) : (
-                  <XIcon className="w-5 h-5 text-bond-red" />
+                  <span className="animate-icon-enter"><XIcon className="w-5 h-5 text-bond-red" /></span>
                 )}
               </div>
               <span className="text-sm text-white">{check.label}</span>
@@ -258,7 +269,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
       {/* Demo onboarding — shown when compliance checks fail */}
       {allDone && !eligible && (
-        <div className="px-6 py-6 border-t border-border/50 bg-surface-2/40">
+        <div className="px-6 py-6 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5">
           <div className="flex items-center gap-2 mb-4">
             <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-bond-amber/15 text-bond-amber font-medium">
               Demo
@@ -290,7 +301,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 <button
                   onClick={handleOnboard}
                   disabled={onboarding}
-                  className="btn-outline-amber px-4 whitespace-nowrap disabled:cursor-not-allowed"
+                  className="btn-primary px-4 whitespace-nowrap disabled:cursor-not-allowed"
                 >
                   {onboarding ? "Registering..." : "Register Identity"}
                 </button>
@@ -319,32 +330,41 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           )}
 
           {onboardResult && (
-            <div className="bg-surface-3/50 rounded-lg p-3 space-y-2">
+            <div className="bg-surface-3/50 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <CheckIcon className="w-4 h-4 text-bond-green" />
-                <p className="text-xs text-bond-green font-medium">Identity registered on-chain</p>
+                <CheckIcon className="w-5 h-5 text-bond-green" />
+                <p className="text-sm text-bond-green font-medium">You're now eligible to invest in Coppice Green Bonds</p>
               </div>
-              <div className="space-y-1 pl-6">
-                <a
-                  href={`https://hashscan.io/testnet/contract/${onboardResult.identityAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-bond-green hover:text-bond-green/80 underline underline-offset-2 block"
-                >
-                  View identity contract on HashScan
-                </a>
-                {Object.entries(onboardResult.transactions).map(([label, hash]) => (
+              <p className="text-xs text-text-muted pl-7">
+                Your compliance checks are updating above. Once complete, scroll down to purchase.
+              </p>
+              <details className="pl-7">
+                <summary className="text-xs text-text-muted cursor-pointer hover:text-white transition-colors">
+                  View on-chain transaction details
+                </summary>
+                <div className="mt-2 space-y-1">
                   <a
-                    key={label}
-                    href={`https://hashscan.io/testnet/transaction/${hash}`}
+                    href={`https://hashscan.io/testnet/contract/${onboardResult.identityAddress}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-white/70 hover:text-white underline underline-offset-2 block"
+                    className="text-xs text-bond-green hover:text-bond-green/80 underline underline-offset-2 block"
                   >
-                    {formatTxLabel(label)}: {hash.slice(0, 10)}...{hash.slice(-6)}
+                    Identity contract on HashScan
                   </a>
-                ))}
-              </div>
+                  {Object.entries(onboardResult.transactions).map(([label, hash]) => (
+                    <a
+                      key={label}
+                      href={`https://hashscan.io/testnet/transaction/${hash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-white/70 hover:text-white underline underline-offset-2 block"
+                      title={hash}
+                    >
+                      {formatTxLabel(label)}: {hash.slice(0, 10)}...{hash.slice(-6)}
+                    </a>
+                  ))}
+                </div>
+              </details>
             </div>
           )}
         </div>
