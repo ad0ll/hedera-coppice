@@ -281,4 +281,4 @@ Investor connects wallet
 
 ## License
 
-MIT — except `contracts/`, which is GPL-3.0 as required by the [T-REX dependency](https://github.com/ERC-3643/ERC-3643). The frontend and services communicate with deployed contracts via JSON-RPC (not linking) and are independent works under GPL Section 0.
+**Proprietary** — All rights reserved, except `contracts/`, which is GPL-3.0 as required by the [T-REX dependency](https://github.com/ERC-3643/ERC-3643). The frontend and services communicate with deployed contracts via JSON-RPC (not linking) and are independent works under GPL Section 0.

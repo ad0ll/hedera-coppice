@@ -7,7 +7,7 @@ import {
 import { headers } from "next/headers";
 import { cookieToInitialState } from "wagmi";
 import { getConfig } from "@/lib/wagmi";
-import { Providers } from "@/providers";
+import { Providers } from "@/components/providers";
 import { Nav } from "@/components/nav";
 import "./globals.css";
 
