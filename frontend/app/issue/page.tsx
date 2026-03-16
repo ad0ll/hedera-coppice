@@ -14,6 +14,9 @@ import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, getErrorMessage } from "@/lib/format";
 import { BOND_CATEGORIES } from "@/lib/event-types";
+import { fetchAPI } from "@/lib/api-client";
+import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
+import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -49,13 +52,11 @@ export default function IssuerDashboard() {
     promoteOp.clear();
     try {
       const { message, signature } = await signAuthMessage(config, address, "Grant Agent Role");
-      const res = await fetch("/api/demo/grant-agent-role", {
+      await fetchAPI("/api/demo/grant-agent-role", grantAgentRoleResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ investorAddress: address, message, signature }),
       });
-      const data: { error?: string; txHash?: string } = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to grant agent role");
       promoteOp.setStatus({ type: "success", msg: "Agent role granted — loading dashboard..." });
       await refetchIsAgent();
     } catch (err: unknown) {
@@ -123,7 +124,7 @@ export default function IssuerDashboard() {
     try {
       const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
 
-      const res = await fetch("/api/issuer/allocate", {
+      await fetchAPI("/api/issuer/allocate", allocateResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -135,8 +136,6 @@ export default function IssuerDashboard() {
           signature,
         }),
       });
-      const data: { error?: string } = await res.json();
-      if (!res.ok) throw new Error(data.error || "Allocation failed");
       proceedsOp.setStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project} (submitted to HCS)` });
       setProject("");
       setProceedsAmount("");

@@ -49,15 +49,16 @@ function getEnvAddress(name: string): Address {
 }
 
 /** SSE event types streamed to the client during onboarding. */
-export interface OnboardEvent {
-  type: "step" | "complete" | "error";
-  step?: string;
-  label?: string;
-  txHash?: string;
-  identityAddress?: string;
-  transactions?: Record<string, string>;
-  error?: string;
-}
+export const onboardEventSchema = z.object({
+  type: z.enum(["step", "complete", "error"]),
+  step: z.string().optional(),
+  label: z.string().optional(),
+  txHash: z.string().optional(),
+  identityAddress: z.string().optional(),
+  transactions: z.record(z.string(), z.string()).optional(),
+  error: z.string().optional(),
+});
+export type OnboardEvent = z.infer<typeof onboardEventSchema>;
 
 function sseEncode(event: OnboardEvent): string {
   return `data: ${JSON.stringify(event)}\n\n`;

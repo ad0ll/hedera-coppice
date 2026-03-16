@@ -13,7 +13,8 @@ import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
-import type { OnboardEvent } from "@/app/api/onboard/route";
+import { z } from "zod";
+import { onboardEventSchema, type OnboardEvent } from "@/app/api/onboard/route";
 
 interface CheckResult {
   label: string;
@@ -227,8 +228,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
       // Non-streaming error responses (validation, auth, already registered)
       if (res.headers.get("content-type")?.includes("application/json")) {
-        const data = await res.json();
-        throw new Error(data.error || "Onboarding failed");
+        const body: unknown = await res.json();
+        const parsed = z.object({ error: z.string().optional() }).safeParse(body);
+        throw new Error(parsed.success ? (parsed.data.error || "Onboarding failed") : "Onboarding failed");
       }
 
       if (!res.body) {
@@ -255,7 +257,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
           let event: OnboardEvent;
           try {
-            event = JSON.parse(json);
+            event = onboardEventSchema.parse(JSON.parse(json));
           } catch {
             continue;
           }

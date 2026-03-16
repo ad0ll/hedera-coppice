@@ -19,6 +19,13 @@ const purchaseBodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
+export const purchaseResponseSchema = z.object({
+  success: z.literal(true),
+  transferTxHash: z.string(),
+  mintTxHash: z.string(),
+});
+export type PurchaseResponse = z.infer<typeof purchaseResponseSchema>;
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = purchaseBodySchema.safeParse(body);

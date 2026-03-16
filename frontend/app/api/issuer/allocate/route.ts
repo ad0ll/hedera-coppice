@@ -14,6 +14,12 @@ const allocateBodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
+export const allocateResponseSchema = z.object({
+  success: z.literal(true),
+  status: z.string(),
+});
+export type AllocateResponse = z.infer<typeof allocateResponseSchema>;
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = allocateBodySchema.safeParse(body);
