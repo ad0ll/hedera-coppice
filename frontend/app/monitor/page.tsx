@@ -14,18 +14,20 @@ export default function ComplianceMonitor() {
     <div className="space-y-6">
       <h1 className="page-title animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>Compliance Monitor</h1>
 
-      <div className="bg-surface-2 border border-border rounded-xl flex divide-x divide-border animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
-        <div className="flex-1 px-6 py-5">
-          <p className="stat-label mb-2">Total Events</p>
-          <p className="font-display text-3xl text-white">{events.length}</p>
-        </div>
-        <div className="flex-1 px-6 py-5">
-          <p className="stat-label mb-2">Approvals</p>
-          <p className="font-display text-3xl text-bond-green">{approvals}</p>
-        </div>
-        <div className="flex-1 px-6 py-5">
-          <p className="stat-label mb-2">Restrictions</p>
-          <p className="font-display text-3xl text-bond-red">{restrictions}</p>
+      <div className="bg-surface-2 border-y border-border -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
+        <div className="max-w-7xl mx-auto flex divide-x divide-border">
+          <div className="flex-1 py-6 pr-6">
+            <p className="stat-label mb-2">Total Events</p>
+            <p className="font-display text-5xl text-white">{events.length}</p>
+          </div>
+          <div className="flex-1 py-6 px-6">
+            <p className="stat-label mb-2">Approvals</p>
+            <p className="font-display text-5xl text-bond-green">{approvals}</p>
+          </div>
+          <div className="flex-1 py-6 pl-6">
+            <p className="stat-label mb-2">Restrictions</p>
+            <p className="font-display text-5xl text-bond-red">{restrictions}</p>
+          </div>
         </div>
       </div>
 
