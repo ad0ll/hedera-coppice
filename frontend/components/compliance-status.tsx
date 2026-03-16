@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { zeroAddress, parseEther } from "viem";
 import { useConnection, useConfig } from "wagmi";
 import { usePublicClient } from "wagmi";
-import { useIdentity } from "@/hooks/use-identity";
+import { useIdentity, type ClaimStatus } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
 import { countryRestrictModuleAbi } from "@coppice/common";
@@ -69,7 +69,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const { address } = useConnection();
   const config = useConfig();
   const publicClient = usePublicClient();
-  const { isVerified, isRegistered, getCountry } = useIdentity();
+  const { isRegistered, getCountry, getClaimStatus } = useIdentity();
   const { canTransfer } = useCompliance();
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [eligible, setEligible] = useState(false);
@@ -81,44 +81,81 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const [onboardResult, setOnboardResult] = useState<OnboardResult | null>(null);
   const [onboardError, setOnboardError] = useState<string | null>(null);
   const runChecksRef = useRef<(() => void) | null>(null);
+  const hasRunForRef = useRef<string | null>(null);
   const minDelay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+  const CHECK_LABELS = [
+    "On-Chain Identity",
+    "KYC Credential",
+    "AML Credential",
+    "Accredited Credential",
+    "Jurisdiction Check",
+    "Transfer Eligibility",
+  ] as const;
 
   useEffect(() => {
     if (!address) return;
 
+    function buildResults(claims: ClaimStatus, registered: boolean, countryResult: { country: number; isRestricted: boolean; countryCheckFailed: boolean }, transferAllowed: boolean): CheckResult[] {
+      const countryLabel = COUNTRY_NAMES[countryResult.country] || `Code ${countryResult.country}`;
+      return [
+        { label: "On-Chain Identity", status: registered ? "pass" : "fail", detail: registered ? "Identity contract linked" : "No identity found" },
+        { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing" },
+        { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing" },
+        { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing" },
+        {
+          label: "Jurisdiction Check",
+          status: countryResult.countryCheckFailed ? "fail" : countryResult.isRestricted ? "fail" : "pass",
+          detail: countryResult.countryCheckFailed
+            ? `${countryLabel} - Could not verify (try again)`
+            : countryResult.isRestricted
+              ? `${countryLabel} - Restricted`
+              : `${countryLabel} - Approved`,
+        },
+        { label: "Transfer Eligibility", status: transferAllowed ? "pass" : "fail", detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance" },
+      ];
+    }
+
+    const notRegisteredResults: CheckResult[] = CHECK_LABELS.map((label) => ({
+      label,
+      status: "fail" as const,
+      detail: label === "On-Chain Identity" ? "No identity found" : "Not registered",
+    }));
+
     async function runChecks() {
       if (!address) return;
 
-      const results: CheckResult[] = [
-        { label: "On-Chain Identity", status: "loading" },
-        { label: "KYC / AML / Accredited", status: "loading" },
-        { label: "Jurisdiction Check", status: "loading" },
-        { label: "Transfer Eligibility", status: "loading" },
-      ];
-      setChecks([...results]);
+      const isFirstRun = hasRunForRef.current !== address;
+
+      // On first run, show loading state with sequential reveal
+      if (isFirstRun) {
+        const loadingResults: CheckResult[] = CHECK_LABELS.map((label) => ({ label, status: "loading" as const }));
+        setChecks([...loadingResults]);
+      }
 
       const registered = await isRegistered(address);
-      results[0] = {
-        label: "On-Chain Identity",
-        status: registered ? "pass" : "fail",
-        detail: registered ? "Identity contract linked" : "No identity found",
-      };
-      setChecks([...results]);
-      await minDelay(300);
+
+      if (isFirstRun) {
+        const partial: CheckResult[] = CHECK_LABELS.map((label, i) => (
+          i === 0
+            ? { label, status: registered ? "pass" as const : "fail" as const, detail: registered ? "Identity contract linked" : "No identity found" }
+            : { label, status: "loading" as const }
+        ));
+        setChecks([...partial]);
+        await minDelay(300);
+      }
 
       if (!registered) {
-        results[1] = { label: "KYC / AML / Accredited", status: "fail", detail: "Not registered" };
-        results[2] = { label: "Jurisdiction Check", status: "fail", detail: "Not registered" };
-        results[3] = { label: "Transfer Eligibility", status: "fail", detail: "Not registered" };
-        setChecks([...results]);
+        setChecks(notRegisteredResults);
         setEligible(false);
         onEligibilityChange?.(false);
+        hasRunForRef.current = address;
         return;
       }
 
-      // Checks 2-4 are independent once registration is confirmed — run in parallel
-      const [verified, countryResult, transferAllowed] = await Promise.all([
-        isVerified(address),
+      // All remaining checks are independent — run in parallel
+      const [claims, countryResult, transferAllowed] = await Promise.all([
+        getClaimStatus(address),
         (async () => {
           const country = await getCountry(address);
           let isRestricted = false;
@@ -141,34 +178,13 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         canTransfer(zeroAddress, address, parseEther("1")),
       ]);
 
-      results[1] = {
-        label: "KYC / AML / Accredited",
-        status: verified ? "pass" : "fail",
-        detail: verified ? "All credentials verified" : "Missing required credentials",
-      };
-
-      const { country, isRestricted, countryCheckFailed } = countryResult;
-      const countryLabel = COUNTRY_NAMES[country] || `Code ${country}`;
-      results[2] = {
-        label: "Jurisdiction Check",
-        status: countryCheckFailed ? "fail" : isRestricted ? "fail" : "pass",
-        detail: countryCheckFailed
-          ? `${countryLabel} - Could not verify (try again)`
-          : isRestricted
-            ? `${countryLabel} - Restricted`
-            : `${countryLabel} - Approved`,
-      };
-
-      results[3] = {
-        label: "Transfer Eligibility",
-        status: transferAllowed ? "pass" : "fail",
-        detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance",
-      };
-      setChecks([...results]);
+      const results = buildResults(claims, registered, countryResult, transferAllowed);
+      setChecks(results);
 
       const allPass = results.every((r) => r.status === "pass");
       setEligible(allPass);
       onEligibilityChange?.(allPass);
+      hasRunForRef.current = address;
     }
 
     runChecksRef.current = runChecks;
@@ -177,11 +193,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     return () => {
       clearInterval(interval);
       runChecksRef.current = null;
-      setChecks([]);
-      setEligible(false);
-      onEligibilityChange?.(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isVerified, isRegistered, getCountry, canTransfer are useCallback-wrapped with [publicClient] deps, so they are stable when publicClient is stable
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getClaimStatus, canTransfer are useCallback-wrapped with [publicClient] deps, so they are stable when publicClient is stable
   }, [address, publicClient, onEligibilityChange]);
 
   const handleOnboard = useCallback(async () => {
@@ -309,7 +322,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
         </div>
         <div className="px-6 py-4 space-y-1">
-          {["On-Chain Identity", "KYC / AML / Accredited", "Jurisdiction Check", "Transfer Eligibility"].map((label) => (
+          {["On-Chain Identity", "KYC Credential", "AML Credential", "Accredited Credential", "Jurisdiction Check", "Transfer Eligibility"].map((label) => (
             <div key={label} className="flex items-center gap-3 py-2.5 border-b border-border/30 last:border-0 opacity-40">
               <div className="w-5 h-5 rounded-full bg-surface-3" />
               <span className="text-sm text-text-muted">{label}</span>
