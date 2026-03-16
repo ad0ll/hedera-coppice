@@ -61,7 +61,7 @@ export const mirrorTopicMessageSchema = z.object({
 
 export const mirrorTopicMessagesResponseSchema = z.object({
   messages: z.array(mirrorTopicMessageSchema).optional(),
-  links: z.object({ next: z.string().optional() }).optional(),
+  links: z.object({ next: z.string().nullish() }).optional(),
 });
 export type MirrorTopicMessage = z.infer<typeof mirrorTopicMessageSchema>;
 export type MirrorTopicMessagesResponse = z.infer<

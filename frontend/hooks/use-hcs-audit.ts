@@ -80,7 +80,7 @@ export function useHCSAudit(topicType: "audit" | "impact" = "audit") {
     }
 
     async function pollNewMessages() {
-      if (!initialLoadDone.current) return;
+      if (!initialLoadDone.current || lastSequenceRef.current === 0) return;
 
       try {
         const url = `${MIRROR_NODE_URL}/api/v1/topics/${topicId}/messages?order=asc&limit=100&sequencenumber=gt:${lastSequenceRef.current}`;
