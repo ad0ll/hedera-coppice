@@ -333,7 +333,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
             <div className="bg-surface-3/50 rounded-lg p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <CheckIcon className="w-5 h-5 text-bond-green" />
-                <p className="text-sm text-bond-green font-medium">You're now eligible to invest in Coppice Green Bonds</p>
+                <p className="text-sm text-bond-green font-medium">You&apos;re now eligible to invest in Coppice Green Bonds</p>
               </div>
               <p className="text-xs text-text-muted pl-7">
                 Your compliance checks are updating above. Once complete, scroll down to purchase.
