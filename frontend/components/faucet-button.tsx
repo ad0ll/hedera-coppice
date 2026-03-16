@@ -33,21 +33,25 @@ async function checkTokenAssociation(evmAddress: string): Promise<boolean> {
   try {
     const accountRes = await fetch(`${MIRROR_NODE_URL}/api/v1/accounts/${evmAddress}`);
     if (!accountRes.ok) return false;
-    const accountData = await accountRes.json();
+    const accountData: { account: string } = await accountRes.json();
     const accountId = accountData.account;
 
     const res = await fetch(
       `${MIRROR_NODE_URL}/api/v1/accounts/${accountId}/tokens?token.id=${EUSD_TOKEN_ID}`
     );
     if (!res.ok) return false;
-    const data = await res.json();
+    const data: { tokens?: unknown[] } = await res.json();
     return (data.tokens?.length ?? 0) > 0;
   } catch {
     return false;
   }
 }
 
-export function FaucetButton() {
+interface FaucetButtonProps {
+  onSuccess?: () => void;
+}
+
+export function FaucetButton({ onSuccess }: FaucetButtonProps) {
   const { address } = useConnection();
   const [state, setState] = useState<FaucetState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -86,29 +90,31 @@ export function FaucetButton() {
         body: JSON.stringify({ walletAddress: address }),
       });
 
-      const data = await res.json();
+      const data: { success?: boolean; error?: string } = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Faucet request failed");
       }
 
       setState("success");
+      onSuccess?.();
       setTimeout(() => setState("idle"), 3000);
     } catch (err: unknown) {
       const msg = getErrorMessage(err, 100, "Failed to claim eUSD");
       setError(msg);
       setState("idle");
     }
-  }, [address, state, writeContractAsync]);
+  }, [address, state, writeContractAsync, onSuccess]);
 
   if (!address) return null;
 
   const isActive = state !== "idle" && state !== "success";
 
   return (
-    <div className="mt-2">
+    <div className="mt-2" aria-live="polite">
       <button
         onClick={handleClaim}
         disabled={isActive}
+        aria-busy={isActive}
         className={`text-xs font-medium px-3 py-1.5 rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green ${
           state === "success"
             ? "text-bond-green bg-bond-green/10 border border-bond-green/20"

@@ -73,5 +73,7 @@ export async function POST(request: NextRequest) {
   } catch (err: unknown) {
     const message = getErrorMessage(err, 200, "Faucet failed");
     return NextResponse.json({ error: message }, { status: 500 });
+  } finally {
+    client.close();
   }
 }

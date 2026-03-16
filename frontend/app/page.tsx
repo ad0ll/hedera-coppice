@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useConnection } from "wagmi";
 import { formatBalance } from "@/lib/format";
 import { BondDetails } from "@/components/bond-details";
@@ -20,6 +20,12 @@ export default function InvestorPortal() {
   const [eusdBalance, setEusdBalance] = useState<string>("--");
 
   const cpcBalance = cpcBalanceRaw != null ? formatBalance(cpcBalanceRaw) : "--";
+
+  const refreshEusdBalance = useCallback(async () => {
+    if (!address) return;
+    const eusd = await getEusdBalance(address);
+    setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+  }, [address, getEusdBalance]);
 
   useEffect(() => {
     if (!address) return;
@@ -76,7 +82,7 @@ export default function InvestorPortal() {
                 <p className="stat-label mb-1">eUSD Balance</p>
                 <p className="font-display text-3xl text-bond-green">{displayEusdBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice USD</p>
-                <FaucetButton />
+                <FaucetButton onSuccess={refreshEusdBalance} />
               </div>
             </div>
           </div>
