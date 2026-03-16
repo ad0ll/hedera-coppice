@@ -4,10 +4,13 @@ interface StatusMessageProps {
 }
 
 export function StatusMessage({ status, className = "" }: StatusMessageProps) {
-  if (!status) return null;
   return (
-    <p className={`${status.type === "success" ? "status-msg-success" : "status-msg-error"} ${className}`}>
-      {status.msg}
-    </p>
+    <div role="status" aria-live="polite" className={className}>
+      {status && (
+        <p className={status.type === "success" ? "status-msg-success" : "status-msg-error"}>
+          {status.msg}
+        </p>
+      )}
+    </div>
   );
 }

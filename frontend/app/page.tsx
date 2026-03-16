@@ -42,22 +42,22 @@ export default function InvestorPortal() {
 
   return (
     <div className="space-y-8">
-      <div className="animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>
+      <div className="animate-entrance" style={{ "--index": 0 }}>
         <BondDetails />
       </div>
 
 
-      <div className="animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
+      <div className="animate-entrance" style={{ "--index": 1 }}>
         <ComplianceStatus onEligibilityChange={setEligible} />
       </div>
 
       {address && (
-        <div className="animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+        <div className="animate-entrance" style={{ "--index": 2 }}>
           <TransferFlow enabled={eligible} />
         </div>
       )}
 
-      <div className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
+      <div className="animate-entrance" style={{ "--index": 3 }}>
         {!address ? (
           <EmptyState
             icon={<WalletIcon className="w-6 h-6 text-text-muted" />}

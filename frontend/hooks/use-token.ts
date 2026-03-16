@@ -58,6 +58,14 @@ export function useIsFrozen(address: Address | undefined) {
   });
 }
 
+export function useTokenOwner() {
+  return useReadContract({
+    address: tokenAddress,
+    abi: tokenAbi,
+    functionName: "owner",
+  });
+}
+
 export function useTokenWrite() {
   const { writeContractAsync, isPending } = useWriteContract();
   const publicClient = usePublicClient();
