@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
+import type { OnboardEvent } from "@/app/api/onboard/route";
 
 // Mock deployer utilities — the onboard route imports from @/lib/deployer
 const mockWriteContract = vi.fn().mockResolvedValue("0xtxhash");
@@ -26,7 +27,7 @@ vi.mock("@/lib/deployer", () => ({
   }),
 }));
 
-// Mock viem — need real getAddress and encoding utils, mock signMessage
+// Mock viem — need real getAddress and encoding utils
 vi.mock("viem", async () => {
   const actual = await vi.importActual<typeof import("viem")>("viem");
   return { ...actual };
@@ -93,10 +94,22 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
   });
 }
 
+/** Parse SSE events from a Response body stream. */
+async function parseSSEEvents(res: Response): Promise<OnboardEvent[]> {
+  const text = await res.text();
+  const events: OnboardEvent[] = [];
+  for (const line of text.split("\n\n")) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("data: ")) {
+      events.push(JSON.parse(trimmed.slice(6)));
+    }
+  }
+  return events;
+}
+
 describe("POST /api/onboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: address not yet registered
     mockReadContract.mockResolvedValue(false);
     mockWriteContract.mockResolvedValue("0xtxhash");
     mockDeployContract.mockResolvedValue("0xdeployhash");
@@ -193,7 +206,7 @@ describe("POST /api/onboard", () => {
     expect(data.identityAddress).toBe("0xExistingIdentity");
   });
 
-  it("succeeds with valid inputs — deploys identity, registers, issues claims", async () => {
+  it("streams SSE events for successful onboarding", async () => {
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_INVESTOR,
@@ -202,27 +215,42 @@ describe("POST /api/onboard", () => {
       signature: "0xsig",
     }));
     expect(res.status).toBe(200);
-    const data = await res.json();
-    expect(data.success).toBe(true);
-    expect(data.identityAddress).toBeDefined();
-    expect(data.transactions).toBeDefined();
-    expect(data.transactions.deployIdentity).toBe("0xtxhash");
-    expect(data.transactions.registerIdentity).toBe("0xtxhash");
-    expect(data.transactions.claimKYC).toBe("0xtxhash");
-    expect(data.transactions.claimAML).toBe("0xtxhash");
-    expect(data.transactions.claimAccredited).toBe("0xtxhash");
+    expect(res.headers.get("content-type")).toBe("text/event-stream");
 
-    // Verify deployContract was called (identity deployment)
+    const events = await parseSSEEvents(res);
+
+    // Should have step events for each transaction + complete event
+    const stepEvents = events.filter((e) => e.type === "step");
+    const completeEvents = events.filter((e) => e.type === "complete");
+
+    // 5 steps, each emits 2 events (start + done with txHash) = 10 step events
+    expect(stepEvents.length).toBe(10);
+    expect(completeEvents.length).toBe(1);
+
+    // Verify completed steps have tx hashes
+    const completedSteps = stepEvents.filter((e) => e.txHash);
+    expect(completedSteps.length).toBe(5);
+
+    // Verify complete event has all data
+    const complete = completeEvents[0];
+    expect(complete.identityAddress).toBeDefined();
+    expect(complete.transactions).toBeDefined();
+    expect(complete.transactions?.deployIdentity).toBe("0xtxhash");
+    expect(complete.transactions?.registerIdentity).toBe("0xtxhash");
+    expect(complete.transactions?.claimKYC).toBe("0xtxhash");
+    expect(complete.transactions?.claimAML).toBe("0xtxhash");
+    expect(complete.transactions?.claimAccredited).toBe("0xtxhash");
+
+    // Verify contract calls
     expect(mockDeployContract).toHaveBeenCalledTimes(1);
-    // Verify writeContract was called 4 times (register + 3 claims)
     expect(mockWriteContract).toHaveBeenCalledTimes(4);
   });
 
-  it("returns 500 when identity deployment fails (no contract address)", async () => {
+  it("streams error event when identity deployment fails", async () => {
     mockWaitForTransactionReceipt.mockResolvedValueOnce({
       transactionHash: "0xtxhash",
       status: "success",
-      contractAddress: null, // no contract deployed
+      contractAddress: null,
     });
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
@@ -231,9 +259,14 @@ describe("POST /api/onboard", () => {
       message: "test",
       signature: "0xsig",
     }));
-    expect(res.status).toBe(500);
-    const data = await res.json();
-    expect(data.error).toMatch(/deployment failed/i);
+    // SSE always returns 200 — errors are in the stream
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("text/event-stream");
+
+    const events = await parseSSEEvents(res);
+    const errorEvents = events.filter((e) => e.type === "error");
+    expect(errorEvents.length).toBe(1);
+    expect(errorEvents[0].error).toMatch(/deployment failed/i);
   });
 
   it("returns 500 when missing CLAIM_ISSUER_SIGNING_KEY", async () => {

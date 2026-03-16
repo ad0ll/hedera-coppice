@@ -13,6 +13,7 @@ import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
 import { StatusBadge } from "@/components/ui/status-badge";
+import type { OnboardEvent } from "@/app/api/onboard/route";
 
 interface CheckResult {
   label: string;
@@ -25,18 +26,43 @@ const ONBOARD_COUNTRIES = Object.entries(COUNTRY_NAMES)
   .map(([code, name]) => ({ code: Number(code), name }))
   .sort((a, b) => a.name.localeCompare(b.name));
 
-/** Format camelCase transaction keys to human-readable labels */
-function formatTxLabel(key: string): string {
-  return key
-    // Insert space before uppercase runs: "claimKYC" → "claim KYC", "deployIdentity" → "deploy Identity"
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/^./, (c) => c.toUpperCase())
-    .trim();
+/** Steps in the onboarding flow, shown progressively via SSE. */
+const ONBOARD_STEP_KEYS = [
+  "deployIdentity",
+  "registerIdentity",
+  "claimKYC",
+  "claimAML",
+  "claimAccredited",
+] as const;
+
+const ONBOARD_STEP_LABELS: Record<string, string> = {
+  deployIdentity: "Deploy identity contract",
+  registerIdentity: "Register in identity registry",
+  claimKYC: "Issue KYC credential",
+  claimAML: "Issue AML credential",
+  claimAccredited: "Issue Accredited credential",
+};
+
+type OnboardStepStatus = "pending" | "active" | "success" | "error";
+
+interface OnboardStep {
+  key: string;
+  label: string;
+  status: OnboardStepStatus;
+  txHash?: string;
 }
 
 interface OnboardResult {
   identityAddress: string;
   transactions: Record<string, string>;
+}
+
+function makeInitialSteps(): OnboardStep[] {
+  return ONBOARD_STEP_KEYS.map((key) => ({
+    key,
+    label: ONBOARD_STEP_LABELS[key],
+    status: "pending" as OnboardStepStatus,
+  }));
 }
 
 export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?: (eligible: boolean) => void }) {
@@ -51,6 +77,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   // Demo onboarding state
   const [selectedCountry, setSelectedCountry] = useState(840);
   const [onboarding, setOnboarding] = useState(false);
+  const [onboardSteps, setOnboardSteps] = useState<OnboardStep[]>([]);
   const [onboardResult, setOnboardResult] = useState<OnboardResult | null>(null);
   const [onboardError, setOnboardError] = useState<string | null>(null);
   const runChecksRef = useRef<(() => void) | null>(null);
@@ -164,6 +191,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     setOnboardError(null);
     setOnboardResult(null);
 
+    const steps = makeInitialSteps();
+    setOnboardSteps([...steps]);
+
     try {
       const { message, signature } = await signAuthMessage(config, address, "Demo Onboarding");
 
@@ -178,26 +208,92 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         }),
       });
 
-      let data: { success?: boolean; error?: string; identityAddress?: string; transactions?: Record<string, string> };
-      try {
-        data = await res.json();
-      } catch {
-        throw new Error(`Server error (${res.status})`);
-      }
-
-      if (!res.ok) {
+      // Non-streaming error responses (validation, auth, already registered)
+      if (res.headers.get("content-type")?.includes("application/json")) {
+        const data = await res.json();
         throw new Error(data.error || "Onboarding failed");
       }
 
-      if (data.identityAddress && data.transactions) {
-        setOnboardResult({
-          identityAddress: data.identityAddress,
-          transactions: data.transactions,
-        });
+      if (!res.body) {
+        throw new Error("No response stream");
       }
 
-      // Trigger immediate compliance re-check
-      setTimeout(() => runChecksRef.current?.(), 500);
+      // Read SSE stream
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() ?? "";
+
+        for (const chunk of lines) {
+          const dataLine = chunk.trim();
+          if (!dataLine.startsWith("data: ")) continue;
+          const json = dataLine.slice(6);
+
+          let event: OnboardEvent;
+          try {
+            event = JSON.parse(json);
+          } catch {
+            continue;
+          }
+
+          if (event.type === "step") {
+            const stepIndex = steps.findIndex((s) => s.key === event.step);
+            if (stepIndex >= 0) {
+              if (event.txHash) {
+                // Step completed
+                steps[stepIndex] = {
+                  ...steps[stepIndex],
+                  label: event.label ?? steps[stepIndex].label,
+                  status: "success",
+                  txHash: event.txHash,
+                };
+                // Activate next pending step
+                const nextPending = steps.findIndex((s) => s.status === "pending");
+                if (nextPending >= 0) {
+                  steps[nextPending] = { ...steps[nextPending], status: "active" };
+                }
+              } else {
+                // Step started
+                steps[stepIndex] = {
+                  ...steps[stepIndex],
+                  label: event.label ?? steps[stepIndex].label,
+                  status: "active",
+                };
+              }
+              setOnboardSteps([...steps]);
+            }
+          } else if (event.type === "complete") {
+            // Mark all steps as success (in case any were missed)
+            for (const s of steps) {
+              if (s.status !== "success") s.status = "success";
+            }
+            setOnboardSteps([...steps]);
+
+            if (event.identityAddress && event.transactions) {
+              setOnboardResult({
+                identityAddress: event.identityAddress,
+                transactions: event.transactions,
+              });
+            }
+            // Trigger immediate compliance re-check
+            setTimeout(() => runChecksRef.current?.(), 500);
+          } else if (event.type === "error") {
+            const failIndex = steps.findIndex((s) => s.status === "active");
+            if (failIndex >= 0) {
+              steps[failIndex] = { ...steps[failIndex], status: "error" };
+            }
+            setOnboardSteps([...steps]);
+            setOnboardError(event.error ?? "Onboarding failed");
+          }
+        }
+      }
     } catch (err: unknown) {
       const msg = getErrorMessage(err, 100, "Onboarding failed");
       setOnboardError(msg);
@@ -226,6 +322,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
   const allDone = checks.length > 0 && checks.every((c) => c.status !== "loading");
   const passCount = checks.filter((c) => c.status === "pass").length;
+  const showOnboarding = allDone && !eligible && !onboardResult;
+  const showOnboardResult = onboardSteps.length > 0;
 
   return (
     <div className="card-flush">
@@ -268,8 +366,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         ))}
       </div>
 
-      {/* Demo onboarding — shown when compliance checks fail */}
-      {allDone && !eligible && (
+      {/* Demo onboarding — shown when compliance checks fail and user hasn't onboarded yet */}
+      {showOnboarding && (
         <div className="px-6 py-6 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5">
           <div className="flex items-center gap-2 mb-4">
             <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
@@ -278,7 +376,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
             </span>
           </div>
 
-          {!onboardResult && (
+          {!onboarding && (
             <>
               <div className="flex gap-3 items-end mb-3">
                 <div className="flex-1">
@@ -287,7 +385,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                     id="onboard-country"
                     value={selectedCountry}
                     onChange={(e) => setSelectedCountry(Number(e.target.value))}
-                    disabled={onboarding}
                     className="input w-full text-sm"
                   >
                     {ONBOARD_COUNTRIES.map(({ code, name }) => (
@@ -299,72 +396,95 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 </div>
                 <button
                   onClick={handleOnboard}
-                  disabled={onboarding}
                   className="btn-primary px-4 whitespace-nowrap disabled:cursor-not-allowed"
                 >
-                  {onboarding ? "Registering..." : "Register Identity"}
+                  Register Identity
                 </button>
               </div>
 
-              {selectedCountry === 999 && !onboarding && (
+              {selectedCountry === 999 && (
                 <div className="flex items-start gap-2 mb-3 p-2.5 rounded-lg bg-bond-amber/8 border border-bond-amber/20">
                   <WarningIcon className="w-4 h-4 text-bond-amber shrink-0 mt-0.5" />
                   <p className="text-xs text-bond-amber/90">
-                    Narnia is a restricted jurisdiction. Your identity will be registered, but the jurisdiction compliance check will still fail.
+                    Narnia is a restricted jurisdiction. Your identity will be registered but the jurisdiction check will still fail.
+                    This demonstrates how ERC-3643 country restrictions work. Choose a non-restricted country to complete the full purchase flow.
                   </p>
                 </div>
               )}
             </>
           )}
+        </div>
+      )}
 
-          {onboarding && (
-            <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-surface-3/50">
-              <Spinner variant="amber" aria-label="Registering identity" />
-              <span className="text-sm text-white">Deploying identity and issuing credentials on-chain...</span>
+      {/* Progressive onboarding steps — visible during and after onboarding */}
+      {showOnboardResult && (
+        <div className="px-6 py-4 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5" aria-live="polite">
+          {!showOnboarding && (
+            <div className="flex items-center gap-2 mb-4">
+              <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
+              <span className="text-xs text-text-muted">
+                On-chain identity registration
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-0.5">
+            {onboardSteps.map((step) => (
+              <div key={step.key} className="flex items-center gap-3 py-2">
+                <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                  {step.status === "pending" && (
+                    <div className="w-2 h-2 rounded-full bg-text-muted/30" />
+                  )}
+                  {step.status === "active" && (
+                    <Spinner variant="amber" aria-label="Processing" />
+                  )}
+                  {step.status === "success" && (
+                    <CheckIcon className="w-5 h-5 text-bond-green" />
+                  )}
+                  {step.status === "error" && (
+                    <XIcon className="w-5 h-5 text-bond-red" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm ${
+                    step.status === "pending" ? "text-text-muted/40" :
+                    step.status === "error" ? "text-bond-red" :
+                    "text-white"
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+                {step.txHash && (
+                  <a
+                    href={`https://hashscan.io/testnet/transaction/${step.txHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-mono text-text-muted hover:text-bond-green transition-colors shrink-0"
+                    title={step.txHash}
+                  >
+                    {step.txHash.slice(0, 8)}...
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {onboardResult && (
+            <div className="mt-3 pt-3 border-t border-border/30">
+              <a
+                href={`https://hashscan.io/testnet/contract/${onboardResult.identityAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
+              >
+                <CheckIcon className="w-3.5 h-3.5" />
+                View identity contract on HashScan
+              </a>
             </div>
           )}
 
           {onboardError && (
-            <p className="text-xs text-bond-red mb-3">{onboardError}</p>
-          )}
-
-          {onboardResult && (
-            <div className="bg-surface-3/50 rounded-lg p-4 space-y-3">
-              <div className="flex items-center gap-2">
-                <CheckIcon className="w-5 h-5 text-bond-green" />
-                <p className="text-sm text-bond-green font-medium">You&apos;re now eligible to invest in Coppice Green Bonds</p>
-              </div>
-              <p className="text-xs text-text-muted pl-7">
-                Your compliance checks are updating above. Once complete, scroll down to purchase.
-              </p>
-              <details className="pl-7">
-                <summary className="text-xs text-text-muted cursor-pointer hover:text-white transition-colors">
-                  View on-chain transaction details
-                </summary>
-                <div className="mt-2 space-y-1">
-                  <a
-                    href={`https://hashscan.io/testnet/contract/${onboardResult.identityAddress}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-bond-green hover:text-bond-green/80 underline underline-offset-2 block"
-                  >
-                    Identity contract on HashScan
-                  </a>
-                  {Object.entries(onboardResult.transactions).map(([label, hash]) => (
-                    <a
-                      key={label}
-                      href={`https://hashscan.io/testnet/transaction/${hash}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-white/70 hover:text-white underline underline-offset-2 block"
-                      title={hash}
-                    >
-                      {formatTxLabel(label)}: {hash.slice(0, 10)}...{hash.slice(-6)}
-                    </a>
-                  ))}
-                </div>
-              </details>
-            </div>
+            <p className="text-xs text-bond-red mt-3">{onboardError}</p>
           )}
         </div>
       )}
