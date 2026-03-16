@@ -8,8 +8,13 @@ test.describe("eUSD Faucet", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
+    // Wait for portfolio section to render, then scroll to it
+    const eusdLabel = page.getByText("eUSD Balance");
+    await expect(eusdLabel).toBeVisible({ timeout: 15000 });
+    await eusdLabel.scrollIntoViewIfNeeded();
+
     await expect(page.getByRole("button", { name: /get 1,000 test eusd/i })).toBeVisible({
-      timeout: 15000,
+      timeout: 10000,
     });
   });
 
@@ -23,11 +28,14 @@ test.describe("eUSD Faucet", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    // Wait for portfolio to load
-    await expect(page.getByText("eUSD Balance")).toBeVisible({ timeout: 15000 });
+    // Wait for portfolio to load and scroll to it
+    const eusdLabel = page.getByText("eUSD Balance");
+    await expect(eusdLabel).toBeVisible({ timeout: 15000 });
+    await eusdLabel.scrollIntoViewIfNeeded();
 
     // Click faucet
     const faucetButton = page.getByRole("button", { name: /get 1,000 test eusd/i });
+    await expect(faucetButton).toBeVisible({ timeout: 10000 });
     await faucetButton.click();
 
     // Should show claiming state
