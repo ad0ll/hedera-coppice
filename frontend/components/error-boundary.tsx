@@ -2,6 +2,7 @@
 
 import { Component, type ReactNode } from "react";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ErrorCircleIcon } from "@/components/ui/icons";
 
 interface Props {
   children: ReactNode;
@@ -28,7 +29,7 @@ export class ErrorBoundary extends Component<Props, State> {
         <div role="alert" aria-live="assertive">
           <EmptyState
             variant="danger"
-            icon={<svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>}
+            icon={<ErrorCircleIcon className="w-6 h-6 text-bond-red" />}
             title="Something went wrong"
             description={this.state.error?.message || "An unexpected error occurred. Try reloading the page."}
             action={

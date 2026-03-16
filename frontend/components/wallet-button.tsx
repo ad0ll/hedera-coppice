@@ -40,7 +40,7 @@ export function WalletButton() {
     <button
       onClick={() => connect({ connector: injected() })}
       disabled={isConnecting}
-      className="bg-bond-green text-black px-4 py-2 rounded-lg text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-50 shadow-[0_0_12px_rgba(34,197,94,0.2)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white whitespace-nowrap"
+      className="bg-bond-green text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white whitespace-nowrap"
     >
       {isConnecting ? "Connecting..." : "Connect Wallet"}
     </button>

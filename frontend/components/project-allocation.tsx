@@ -32,7 +32,7 @@ export function ProjectAllocation() {
   }
 
   return (
-    <div className="card">
+    <div className="card-static">
       <h3 className="card-title">Use of Proceeds</h3>
 
       {allocations.length === 0 ? (

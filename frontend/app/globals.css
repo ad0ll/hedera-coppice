@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bond-green: #22c55e;
-  --color-bond-green-dim: #16a34a;
+  --color-bond-green: #10b981;
+  --color-bond-green-dim: #059669;
   --color-bond-red: #ef4444;
   --color-bond-amber: #f59e0b;
   --color-bond-teal: #14b8a6;
@@ -93,11 +93,6 @@ body::after {
 }
 .card-flush {
   @apply bg-surface-2 border border-border rounded-xl overflow-hidden;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-.card-flush:hover {
-  border-color: color-mix(in srgb, var(--color-bond-green) 15%, transparent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--color-bond-green) 4%, transparent);
 }
 .card-static {
   @apply bg-surface-2 border border-border rounded-xl p-6;
@@ -119,6 +114,11 @@ body::after {
 }
 .font-mono {
   font-family: var(--font-mono), "Geist Mono", ui-monospace, monospace;
+}
+
+/* Full-bleed container — breaks out of max-w-7xl parent, re-constrains inner content */
+.full-bleed {
+  @apply -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8;
 }
 
 /* Form inputs */
@@ -184,7 +184,7 @@ body::after {
 }
 
 @keyframes check-flash-green {
-  from { background-color: rgba(34, 197, 94, 0.08); }
+  from { background-color: rgba(16, 185, 129, 0.08); }
   to { background-color: transparent; }
 }
 @keyframes check-flash-red {
@@ -245,7 +245,7 @@ body::after {
 }
 
 @keyframes event-highlight {
-  from { background-color: rgba(34, 197, 94, 0.06); }
+  from { background-color: rgba(16, 185, 129, 0.06); }
   to { background-color: transparent; }
 }
 

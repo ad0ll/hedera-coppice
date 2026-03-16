@@ -8,6 +8,8 @@ import { ProjectAllocation } from "@/components/project-allocation";
 import { signAuthMessage } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
+import { StatusMessage } from "@/components/ui/status-message";
+import { ShieldCheckIcon, ProhibitIcon } from "@/components/ui/icons";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, getErrorMessage } from "@/lib/format";
 import { BOND_CATEGORIES } from "@/lib/event-types";
@@ -116,9 +118,9 @@ export default function IssuerDashboard() {
   if (!address) {
     return (
       <EmptyState
-        icon={<svg className="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>}
+        icon={<ShieldCheckIcon className="w-6 h-6 text-text-muted" />}
         title="Issuer Dashboard"
-        description="Connect your issuer wallet to manage the bond."
+        description="Connect your issuer wallet to mint tokens, allocate proceeds, freeze wallets, and pause trading."
       />
     );
   }
@@ -136,7 +138,7 @@ export default function IssuerDashboard() {
     return (
       <EmptyState
         variant="danger"
-        icon={<svg className="w-6 h-6 text-bond-red" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" /></svg>}
+        icon={<ProhibitIcon className="w-6 h-6 text-bond-red" />}
         title="Not Authorized"
         description="Only the bond issuer can access this dashboard."
       />
@@ -164,11 +166,7 @@ export default function IssuerDashboard() {
                   className="w-full btn-primary">
                   {loading ? "Minting..." : "Mint"}
                 </button>
-                {mintOp.status && (
-                  <p className={mintOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                    {mintOp.status.msg}
-                  </p>
-                )}
+                <StatusMessage status={mintOp.status} />
               </div>
             </Card>
           </div>
@@ -189,13 +187,9 @@ export default function IssuerDashboard() {
                   placeholder="Amount (USD)" min="0" className="input" />
                 <button onClick={handleAllocateProceeds} disabled={!project || !proceedsAmount}
                   className="w-full btn-outline-amber">
-                  Allocate to HCS
+                  Record Allocation
                 </button>
-                {proceedsOp.status && (
-                  <p className={proceedsOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                    {proceedsOp.status.msg}
-                  </p>
-                )}
+                <StatusMessage status={proceedsOp.status} />
               </div>
             </Card>
           </div>
@@ -224,11 +218,7 @@ export default function IssuerDashboard() {
                     Unfreeze
                   </button>
                 </div>
-                {freezeOp.status && (
-                  <p className={freezeOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}>
-                    {freezeOp.status.msg}
-                  </p>
-                )}
+                <StatusMessage status={freezeOp.status} />
               </div>
             </Card>
           </div>
@@ -247,11 +237,7 @@ export default function IssuerDashboard() {
                 className={`w-full ${isPaused ? "btn-outline-green" : "btn-outline-red"}`}>
                 {isPaused ? "Unpause Token" : "Pause Token"}
               </button>
-              {pauseOp.status && (
-                <p className={`mt-2 ${pauseOp.status.type === "success" ? "status-msg-success" : "status-msg-error"}`}>
-                  {pauseOp.status.msg}
-                </p>
-              )}
+              <StatusMessage status={pauseOp.status} className="mt-2" />
             </Card>
           </div>
         </div>

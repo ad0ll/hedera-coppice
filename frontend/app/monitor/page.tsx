@@ -14,7 +14,7 @@ export default function ComplianceMonitor() {
     <div className="space-y-6">
       <h1 className="page-title animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>Compliance Monitor</h1>
 
-      <div className="bg-surface-2 border-y border-border -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
+      <div className="bg-surface-2 border-y border-border full-bleed animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
         <div className="max-w-7xl mx-auto flex divide-x divide-border">
           <div className="flex-1 py-6 pr-6">
             <p className="stat-label mb-2">Total Events</p>

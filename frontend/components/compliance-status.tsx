@@ -12,6 +12,7 @@ import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/const
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
+import { StatusBadge } from "@/components/ui/status-badge";
 
 interface CheckResult {
   label: string;
@@ -62,18 +63,18 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       if (!address) return;
 
       const results: CheckResult[] = [
-        { label: "Identity Registered", status: "loading" },
+        { label: "On-Chain Identity", status: "loading" },
         { label: "KYC / AML / Accredited", status: "loading" },
         { label: "Jurisdiction Check", status: "loading" },
-        { label: "Compliance Module", status: "loading" },
+        { label: "Transfer Eligibility", status: "loading" },
       ];
       setChecks([...results]);
 
       const registered = await isRegistered(address);
       results[0] = {
-        label: "Identity Registered",
+        label: "On-Chain Identity",
         status: registered ? "pass" : "fail",
-        detail: registered ? "ONCHAINID linked" : "No identity found",
+        detail: registered ? "Identity contract linked" : "No identity found",
       };
       setChecks([...results]);
       await minDelay(300);
@@ -81,7 +82,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       if (!registered) {
         results[1] = { label: "KYC / AML / Accredited", status: "fail", detail: "Not registered" };
         results[2] = { label: "Jurisdiction Check", status: "fail", detail: "Not registered" };
-        results[3] = { label: "Compliance Module", status: "fail", detail: "Not registered" };
+        results[3] = { label: "Transfer Eligibility", status: "fail", detail: "Not registered" };
         setChecks([...results]);
         setEligible(false);
         onEligibilityChange?.(false);
@@ -116,7 +117,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       results[1] = {
         label: "KYC / AML / Accredited",
         status: verified ? "pass" : "fail",
-        detail: verified ? "All claims verified" : "Missing required claims",
+        detail: verified ? "All credentials verified" : "Missing required credentials",
       };
 
       const { country, isRestricted, countryCheckFailed } = countryResult;
@@ -132,7 +133,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       };
 
       results[3] = {
-        label: "Compliance Module",
+        label: "Transfer Eligibility",
         status: transferAllowed ? "pass" : "fail",
         detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance",
       };
@@ -212,7 +213,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
         </div>
         <div className="px-6 py-4 space-y-1">
-          {["Identity Registered", "KYC / AML / Accredited", "Jurisdiction Check", "Compliance Module"].map((label) => (
+          {["On-Chain Identity", "KYC / AML / Accredited", "Jurisdiction Check", "Transfer Eligibility"].map((label) => (
             <div key={label} className="flex items-center gap-3 py-2.5 border-b border-border/30 last:border-0 opacity-40">
               <div className="w-5 h-5 rounded-full bg-surface-3" />
               <span className="text-sm text-text-muted">{label}</span>
@@ -233,11 +234,11 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       }`}>
         <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
         {allDone && (
-          <span className={`animate-badge-enter text-xs px-3 py-1 rounded-full font-medium ${
-            eligible ? "bg-bond-green/15 text-bond-green" : "bg-bond-red/15 text-bond-red"
-          }`}>
-            {eligible ? "Eligible to Invest" : "Not Eligible"}
-          </span>
+          <StatusBadge
+            label={eligible ? "Eligible to Invest" : "Not Eligible"}
+            variant={eligible ? "green" : "red"}
+            className="animate-badge-enter px-3 py-1"
+          />
         )}
         {!allDone && checks.length > 0 && (
           <span className="text-xs text-text-muted">{passCount}/{checks.length} checks</span>
@@ -271,9 +272,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       {allDone && !eligible && (
         <div className="px-6 py-6 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5">
           <div className="flex items-center gap-2 mb-4">
-            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-bond-amber/15 text-bond-amber font-medium">
-              Demo
-            </span>
+            <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
             <span className="text-xs text-text-muted">
               Register an on-chain identity to experience the full purchase flow.
             </span>
@@ -321,7 +320,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           {onboarding && (
             <div className="flex items-center gap-3 mb-3 p-3 rounded-lg bg-surface-3/50">
               <Spinner variant="amber" aria-label="Registering identity" />
-              <span className="text-sm text-white">Deploying identity and issuing claims on-chain...</span>
+              <span className="text-sm text-white">Deploying identity and issuing credentials on-chain...</span>
             </div>
           )}
 

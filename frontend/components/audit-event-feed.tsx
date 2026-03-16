@@ -2,7 +2,7 @@
 
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
-import { WarningIcon, Spinner } from "@/components/ui/icons";
+import { WarningIcon, Spinner, ExternalLinkIcon } from "@/components/ui/icons";
 import { useState, useMemo } from "react";
 
 function formatTimestamp(ts: number | string): string {
@@ -29,7 +29,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
         </h3>
         <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
           <WarningIcon className="w-5 h-5 shrink-0" />
-          HCS topic not configured — {topicType} trail unavailable.
+          Audit topic not configured — event trail unavailable.
         </div>
       </div>
     );
@@ -43,7 +43,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
         </h3>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
           <Spinner className="w-4 h-4" aria-hidden />
-          Loading events from HCS...
+          Loading events from Hedera...
         </div>
       </div>
     );
@@ -98,9 +98,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
                         title={event.tx}
                       >
                         {event.tx.slice(0, 10)}...
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                        </svg>
+                        <ExternalLinkIcon />
                       </a>
                     )}
                   </div>

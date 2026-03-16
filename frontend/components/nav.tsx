@@ -26,7 +26,7 @@ export function Nav() {
             <Link href="/" className="flex items-center gap-2 group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green rounded-lg">
               <svg viewBox="0 0 32 32" className="w-7 h-7" aria-hidden="true">
                 <rect width="32" height="32" rx="6" fill="currentColor" className="text-surface-3" />
-                <path d="M16 6C11 11 9 16 11 21C12 24 14 26 16 27C18 26 20 24 21 21C23 16 21 11 16 6Z" fill="#22c55e" opacity="0.9"/>
+                <path d="M16 6C11 11 9 16 11 21C12 24 14 26 16 27C18 26 20 24 21 21C23 16 21 11 16 6Z" fill="#10b981" opacity="0.9"/>
               </svg>
               <span className="text-lg font-semibold tracking-tight text-white">
                 Coppice
