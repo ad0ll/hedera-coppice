@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { WalletIcon } from "@/components/ui/icons";
 import { useTokenBalance } from "@/hooks/use-token";
 import { useHTS } from "@/hooks/use-hts";
+import { FaucetButton } from "@/components/faucet-button";
 
 export default function InvestorPortal() {
   const { address } = useConnection();
@@ -75,6 +76,7 @@ export default function InvestorPortal() {
                 <p className="stat-label mb-1">eUSD Balance</p>
                 <p className="font-display text-3xl text-bond-green">{displayEusdBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice USD</p>
+                <FaucetButton />
               </div>
             </div>
           </div>
