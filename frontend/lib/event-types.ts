@@ -52,7 +52,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   "Energy Efficiency": "bg-bond-amber",
   "Clean Transportation": "bg-bond-red",
   "Sustainable Water": "bg-bond-green-dim",
-  "Green Buildings": "bg-bond-green/70",
+  "Green Buildings": "bg-bond-teal",
   Other: "bg-text-muted",
 };
 
