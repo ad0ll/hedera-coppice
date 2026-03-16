@@ -18,7 +18,7 @@ html {
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-body), "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--color-surface);
@@ -78,16 +78,26 @@ body {
   border-color: color-mix(in srgb, var(--color-bond-green) 15%, transparent);
   box-shadow: 0 0 20px color-mix(in srgb, var(--color-bond-green) 4%, transparent);
 }
+.card-static {
+  @apply bg-surface-2 border border-border rounded-xl p-6;
+}
 
 /* Typography */
 .page-title {
-  @apply text-2xl font-semibold text-white;
+  font-family: var(--font-display), "Instrument Serif", Georgia, serif;
+  @apply text-3xl text-white;
 }
 .card-title {
   @apply text-lg font-semibold text-white mb-4;
 }
 .stat-label {
-  @apply text-[11px] text-text-muted uppercase tracking-widest;
+  @apply text-xs text-text-muted uppercase tracking-wider;
+}
+.font-display {
+  font-family: var(--font-display), "Instrument Serif", Georgia, serif;
+}
+.font-mono {
+  font-family: var(--font-mono), "Geist Mono", ui-monospace, monospace;
 }
 
 /* Form inputs */
