@@ -457,8 +457,8 @@ async function main() {
     startDate: couponStartDate,
     endDate: couponEndDate,
     fixingDate: couponRecordDate,
-    rate: 425, // 4.25% with 2 decimals
-    rateDecimals: 2,
+    rate: 425, // 4.25% = 0.0425 as fraction (425 / 10^4)
+    rateDecimals: 4,
     rateStatus: 1, // Active
   };
 

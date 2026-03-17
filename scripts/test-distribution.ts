@@ -48,10 +48,10 @@ const EUSD_TOKEN_ID = "0.0.8214937";
 const LCCF_ACCOUNT_ID = "0.0.8254941";
 
 // Amount of eUSD to fund the contract with (in smallest unit, 2 decimals)
-// For 100k CPC * $1000 nominal * 4.25% * ~1 day, the payout is ~$11,644
+// For 100k CPC * $1000 nominal * 4.25% * ~1 day, the payout is ~$116.36
 // We need enough to cover that plus margin.
-// 15000.00 eUSD = 1500000
-const FUND_AMOUNT = 1_500_000;
+// 500.00 eUSD = 50000
+const FUND_AMOUNT = 50_000;
 
 const GAS_LIMIT = {
   high: 10_000_000,
@@ -252,8 +252,8 @@ async function main() {
     startDate: now + 60,        // 1 minute from now (must be future)
     endDate: now + 86400,       // 1 day period
     fixingDate: now + 120,      // same as record date
-    rate: 425,                  // 4.25%
-    rateDecimals: 2,
+    rate: 425,                  // 4.25% = 0.0425 fraction (425 / 10^4)
+    rateDecimals: 4,
     rateStatus: 1,              // SET
   };
 
