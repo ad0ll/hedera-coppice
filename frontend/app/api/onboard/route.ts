@@ -1,17 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getAddress,
-  encodeAbiParameters,
-  keccak256,
-  toHex,
-  type Address,
-  type Hex,
-} from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { ethers } from "ethers";
 import { z } from "zod";
 import { identityRegistryAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES } from "@/lib/constants";
-import { getDeployerWalletClient, getServerPublicClient } from "@/lib/deployer";
+import { getDeployerWallet, getServerProvider } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
 import {
   identityProxyAbi,
@@ -36,16 +28,16 @@ const CLAIM_TOPIC_NAMES: Record<string, string> = {
   "7": "claimAccredited",
 };
 
-function getClaimIssuerSigningKey(): Hex {
+function getClaimIssuerSigningKey(): string {
   const key = process.env.CLAIM_ISSUER_SIGNING_KEY;
   if (!key) throw new Error("Missing CLAIM_ISSUER_SIGNING_KEY");
-  return (key.startsWith("0x") ? key : `0x${key}`) as Hex;
+  return key.startsWith("0x") ? key : `0x${key}`;
 }
 
-function getEnvAddress(name: string): Address {
+function getEnvAddress(name: string): string {
   const value = process.env[name];
   if (!value) throw new Error(`Missing ${name}`);
-  return getAddress(value);
+  return ethers.getAddress(value);
 }
 
 /** SSE event types streamed to the client during onboarding. */
@@ -78,9 +70,9 @@ export async function POST(request: NextRequest) {
   }
   const { investorAddress, country, message, signature } = parsed.data;
 
-  let investor: Address;
+  let investor: string;
   try {
-    investor = getAddress(investorAddress);
+    investor = ethers.getAddress(investorAddress);
   } catch {
     return NextResponse.json({ error: "Invalid investor address" }, { status: 400 });
   }
@@ -94,9 +86,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Pre-flight: check env vars and registration status before starting SSE stream
-  let implAuthorityAddress: Address;
-  let claimIssuerAddress: Address;
-  let claimIssuerSigningKey: Hex;
+  let implAuthorityAddress: string;
+  let claimIssuerAddress: string;
+  let claimIssuerSigningKey: string;
   try {
     implAuthorityAddress = getEnvAddress("IDENTITY_IMPL_AUTHORITY_ADDRESS");
     claimIssuerAddress = getEnvAddress("CLAIM_ISSUER_ADDRESS");
@@ -106,27 +98,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 
-  const publicClient = getServerPublicClient();
+  const provider = getServerProvider();
+  const registryReadOnly = new ethers.Contract(
+    CONTRACT_ADDRESSES.identityRegistry,
+    identityRegistryAbi,
+    provider,
+  );
 
   // Check if already registered before starting the stream
   try {
     const alreadyRegistered = await withRetry(async () =>
-      publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "contains",
-        args: [investor],
-      }),
+      registryReadOnly.contains(investor),
     );
 
     if (alreadyRegistered) {
       const existingIdentity = await withRetry(async () =>
-        publicClient.readContract({
-          address: CONTRACT_ADDRESSES.identityRegistry,
-          abi: identityRegistryAbi,
-          functionName: "identity",
-          args: [investor],
-        }),
+        registryReadOnly.identity(investor),
       );
       return NextResponse.json(
         { error: "Address already registered", identityAddress: existingIdentity },
@@ -147,71 +134,88 @@ export async function POST(request: NextRequest) {
       };
 
       try {
-        const walletClient = getDeployerWalletClient();
-        const deployerAddress = walletClient.account.address;
+        const wallet = getDeployerWallet();
+        const deployerAddress = wallet.address;
         const transactions: Record<string, string> = {};
 
         // Step 1: Deploy IdentityProxy
         send({ type: "step", step: "deployIdentity", label: "Deploying identity contract..." });
-        const deployHash = await withRetry(async () =>
-          walletClient.deployContract({
-            abi: identityProxyAbi,
-            bytecode: identityProxyBytecode,
-            args: [implAuthorityAddress, deployerAddress],
-          }),
+        const identityFactory = new ethers.ContractFactory(
+          identityProxyAbi,
+          identityProxyBytecode,
+          wallet,
         );
-        const deployReceipt = await publicClient.waitForTransactionReceipt({ hash: deployHash });
-        if (!deployReceipt.contractAddress) {
-          throw new Error("IdentityProxy deployment failed — no address in receipt");
+        const deployedContract = await withRetry(async () =>
+          identityFactory.deploy(implAuthorityAddress, deployerAddress),
+        );
+        const deployReceipt = await deployedContract.deploymentTransaction()?.wait();
+        if (!deployReceipt || deployReceipt.status !== 1) {
+          throw new Error("IdentityProxy deployment failed");
         }
-        const identityAddress = getAddress(deployReceipt.contractAddress);
-        transactions["deployIdentity"] = deployReceipt.transactionHash;
-        send({ type: "step", step: "deployIdentity", label: "Identity contract deployed", txHash: deployReceipt.transactionHash });
+        const identityAddress = ethers.getAddress(await deployedContract.getAddress());
+        const deployTxHash = deployReceipt.hash;
+        transactions["deployIdentity"] = deployTxHash;
+        send({ type: "step", step: "deployIdentity", label: "Identity contract deployed", txHash: deployTxHash });
 
         // Step 2: Register identity
         send({ type: "step", step: "registerIdentity", label: "Registering in identity registry..." });
-        const registerHash = await withRetry(async () =>
-          walletClient.writeContract({
-            address: CONTRACT_ADDRESSES.identityRegistry,
-            abi: identityRegistryAbi,
-            functionName: "registerIdentity",
-            args: [investor, identityAddress, country],
-          }),
+        const registryContract = new ethers.Contract(
+          CONTRACT_ADDRESSES.identityRegistry,
+          identityRegistryAbi,
+          wallet,
         );
-        const registerReceipt = await publicClient.waitForTransactionReceipt({ hash: registerHash });
-        transactions["registerIdentity"] = registerReceipt.transactionHash;
-        send({ type: "step", step: "registerIdentity", label: "Registered in identity registry", txHash: registerReceipt.transactionHash });
+        const registerTx = await withRetry(async () =>
+          registryContract.registerIdentity(investor, identityAddress, country),
+        );
+        const registerReceipt = await registerTx.wait();
+        if (!registerReceipt || registerReceipt.status !== 1) {
+          throw new Error("registerIdentity transaction failed");
+        }
+        transactions["registerIdentity"] = registerReceipt.hash;
+        send({ type: "step", step: "registerIdentity", label: "Registered in identity registry", txHash: registerReceipt.hash });
 
         // Steps 3-5: Issue claims
-        const claimIssuerAccount = privateKeyToAccount(claimIssuerSigningKey);
-        const claimData = toHex("Verified");
+        const claimIssuerWallet = new ethers.Wallet(claimIssuerSigningKey);
+        const claimData = ethers.hexlify(ethers.toUtf8Bytes("Verified"));
+        const abiCoder = ethers.AbiCoder.defaultAbiCoder();
 
         for (const topic of CLAIM_TOPICS) {
           const key = CLAIM_TOPIC_NAMES[topic.toString()] ?? `claim${topic}`;
           const claimLabel = key.replace("claim", "");
           send({ type: "step", step: key, label: `Issuing ${claimLabel} claim...` });
 
-          const dataHash = keccak256(
-            encodeAbiParameters(
-              [{ type: "address" }, { type: "uint256" }, { type: "bytes" }],
+          const dataHash = ethers.keccak256(
+            abiCoder.encode(
+              ["address", "uint256", "bytes"],
               [identityAddress, topic, claimData],
             ),
           );
-          const claimSignature = await claimIssuerAccount.signMessage({
-            message: { raw: dataHash },
-          });
-
-          const claimHash = await withRetry(async () =>
-            walletClient.writeContract({
-              address: identityAddress,
-              abi: identityAddClaimAbi,
-              functionName: "addClaim",
-              args: [topic, BigInt(1), claimIssuerAddress, claimSignature, claimData, ""],
-            }),
+          // signMessage with raw bytes (EIP-191 personal sign over the hash)
+          const claimSignature = await claimIssuerWallet.signMessage(
+            ethers.getBytes(dataHash),
           );
-          const claimReceipt = await publicClient.waitForTransactionReceipt({ hash: claimHash });
-          transactions[key] = claimReceipt.transactionHash;
-          send({ type: "step", step: key, label: `${claimLabel} claim issued`, txHash: claimReceipt.transactionHash });
+
+          const identityContract = new ethers.Contract(
+            identityAddress,
+            identityAddClaimAbi,
+            wallet,
+          );
+          const claimTx = await withRetry(async () =>
+            identityContract.addClaim(
+              topic,
+              BigInt(1),
+              claimIssuerAddress,
+              claimSignature,
+              claimData,
+              "",
+            ),
+          );
+          const claimReceipt = await claimTx.wait();
+          if (!claimReceipt || claimReceipt.status !== 1) {
+            throw new Error(`addClaim transaction failed for topic ${topic}`);
+          }
+          transactions[key] = claimReceipt.hash;
+          send({ type: "step", step: key, label: `${claimLabel} claim issued`, txHash: claimReceipt.hash });
         }
 
         // Final complete event

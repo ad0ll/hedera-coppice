@@ -1,14 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { zeroAddress, parseEther } from "viem";
-import { useConnection, useConfig } from "wagmi";
-import { usePublicClient } from "wagmi";
+import { ethers } from "ethers";
+import { useConnection } from "@/contexts/ats-context";
 import { useIdentity, type ClaimStatus } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
 import { countryRestrictModuleAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS, JSON_RPC_URL } from "@/lib/constants";
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
@@ -68,8 +67,6 @@ function makeInitialSteps(): OnboardStep[] {
 
 export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?: (eligible: boolean) => void }) {
   const { address } = useConnection();
-  const config = useConfig();
-  const publicClient = usePublicClient();
   const { isRegistered, getCountry, getClaimStatus } = useIdentity();
   const { canTransfer } = useCompliance();
   const [checks, setChecks] = useState<CheckResult[]>([]);
@@ -162,22 +159,25 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           const country = await getCountry(address);
           let isRestricted = false;
           let countryCheckFailed = false;
-          if (publicClient && country > 0) {
+          if (country > 0) {
             try {
-              isRestricted = await publicClient.readContract({
-                address: COUNTRY_RESTRICT_MODULE_ADDRESS,
-                abi: countryRestrictModuleAbi,
-                functionName: "isCountryRestricted",
-                args: [CONTRACT_ADDRESSES.compliance, country],
-              // Typecast required: readContract returns unknown when ABI is imported as const from external package
-              }) as boolean;
+              const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+              const restrictModule = new ethers.Contract(
+                COUNTRY_RESTRICT_MODULE_ADDRESS,
+                countryRestrictModuleAbi,
+                provider,
+              );
+              isRestricted = await restrictModule.isCountryRestricted(
+                CONTRACT_ADDRESSES.compliance,
+                country,
+              );
             } catch {
               countryCheckFailed = true;
             }
           }
           return { country, isRestricted, countryCheckFailed };
         })(),
-        canTransfer(zeroAddress, address, parseEther("1")),
+        canTransfer(ethers.ZeroAddress, address, ethers.parseEther("1")),
       ]);
 
       const results = buildResults(claims, registered, countryResult, transferAllowed);
@@ -199,8 +199,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setEligible(false);
       onEligibilityChange?.(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getClaimStatus, canTransfer are useCallback-wrapped with [publicClient] deps, so they are stable when publicClient is stable
-  }, [address, publicClient, onEligibilityChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getClaimStatus, canTransfer are useCallback-wrapped with stable deps
+  }, [address, onEligibilityChange]);
 
   const handleOnboard = useCallback(async () => {
     if (!address || onboarding) return;
@@ -213,7 +213,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     setOnboardSteps([...steps]);
 
     try {
-      const { message, signature } = await signAuthMessage(config, address, "Demo Onboarding");
+      const { message, signature } = await signAuthMessage(address, "Demo Onboarding");
 
       const res = await fetch("/api/onboard", {
         method: "POST",
@@ -319,7 +319,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     } finally {
       setOnboarding(false);
     }
-  }, [address, config, onboarding, selectedCountry]);
+  }, [address, onboarding, selectedCountry]);
 
   if (!address) {
     return (

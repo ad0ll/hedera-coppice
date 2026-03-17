@@ -1,4 +1,4 @@
-import { formatEther } from "viem";
+import { ethers } from "ethers";
 
 /**
  * Format a token balance for display with locale-aware formatting.
@@ -8,7 +8,7 @@ export function formatBalance(
   value: bigint | number,
   options?: { minimumFractionDigits?: number },
 ): string {
-  const num = typeof value === "bigint" ? Number(formatEther(value)) : value;
+  const num = typeof value === "bigint" ? Number(ethers.formatEther(value)) : value;
   return num.toLocaleString("en-US", options);
 }
 

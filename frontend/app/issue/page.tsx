@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { isAddress, parseEther } from "viem";
-import { useConnection, useConfig } from "wagmi";
+import { ethers } from "ethers";
+import { useConnection } from "@/contexts/ats-context";
 import { useTokenRead, useTokenWrite, useIsAgent, useTokenOwner } from "@/hooks/use-token";
 import { useHolders } from "@/hooks/use-holders";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
@@ -25,7 +25,6 @@ import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
-  const config = useConfig();
   const { totalSupply, paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
   const { data: isAuthorized, isLoading: isCheckingAgent, refetch: refetchIsAgent } = useIsAgent(address);
@@ -68,7 +67,7 @@ export default function IssuerDashboard() {
     setPromoting(true);
     promoteOp.clear();
     try {
-      const { message, signature } = await signAuthMessage(config, address, "Grant Agent Role");
+      const { message, signature } = await signAuthMessage(address, "Grant Agent Role");
       await fetchAPI("/api/demo/grant-agent-role", grantAgentRoleResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,13 +84,13 @@ export default function IssuerDashboard() {
 
   async function handleMint() {
     if (!mintTo || !mintAmount) return;
-    if (!isAddress(mintTo)) {
+    if (!ethers.isAddress(mintTo)) {
       mintOp.setStatus({ type: "error", msg: "Invalid Ethereum address" });
       return;
     }
     mintOp.clear();
     try {
-      await mint(mintTo, parseEther(mintAmount));
+      await mint(mintTo, ethers.parseEther(mintAmount));
       mintOp.setStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${abbreviateAddress(mintTo, 10, 0)}` });
       setMintTo("");
       setMintAmount("");
@@ -102,7 +101,7 @@ export default function IssuerDashboard() {
 
   async function handleFreeze(action: "freeze" | "unfreeze") {
     if (!freezeAddr) return;
-    if (!isAddress(freezeAddr)) {
+    if (!ethers.isAddress(freezeAddr)) {
       freezeOp.setStatus({ type: "error", msg: "Invalid Ethereum address" });
       return;
     }
@@ -137,7 +136,7 @@ export default function IssuerDashboard() {
     if (!project || !proceedsAmount || !address) return;
     proceedsOp.clear();
     try {
-      const { message: authMessage, signature } = await signAuthMessage(config, address, "Allocate Proceeds");
+      const { message: authMessage, signature } = await signAuthMessage(address, "Allocate Proceeds");
 
       await fetchAPI("/api/issuer/allocate", allocateResponseSchema, {
         method: "POST",

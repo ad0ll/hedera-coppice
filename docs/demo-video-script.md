@@ -1,5 +1,11 @@
 # Coppice Demo Video Script
 
+Coppice is a Green Bond system th
+Green bonds are a 3 trillion dollar industry, but all currently implementations focus purely on the financials.
+Green Bonds served through Coppice are a compliant financial instrument, but the key 
+If you want to make sure that the green bonds you are buying are genuinely being invested into positive environment impacts, Coppice is your platform.
+
+
 **Max length:** 5 minutes (hard limit per hackathon rules)
 **Target length:** 4:30 (leave buffer -- judges penalize overtime, never under-time)
 **Upload to:** YouTube (unlisted), link goes in pitch deck PDF

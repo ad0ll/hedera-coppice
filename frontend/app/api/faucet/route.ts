@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAddress } from "viem";
+import { ethers } from "ethers";
 import { z } from "zod";
 import { TokenMintTransaction, TransferTransaction, TokenId, AccountId } from "@hashgraph/sdk";
 import { getClient } from "@/lib/hedera";
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
   let walletAddress;
   try {
-    walletAddress = getAddress(parsed.data.walletAddress);
+    walletAddress = ethers.getAddress(parsed.data.walletAddress);
   } catch {
     return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
   }

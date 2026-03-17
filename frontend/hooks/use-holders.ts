@@ -1,16 +1,15 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { type Address, zeroAddress, isAddress } from "viem";
-import { usePublicClient } from "wagmi";
+import { ethers } from "ethers";
 import { tokenAbi, identityRegistryAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, JSON_RPC_URL } from "@/lib/constants";
 import type { AuditEvent } from "@/hooks/use-hcs-audit";
 
-const ZERO = zeroAddress.toLowerCase();
+const ZERO = ethers.ZeroAddress.toLowerCase();
 
 export interface HolderInfo {
-  address: Address;
+  address: string;
   balance: bigint;
   frozen: boolean;
   verified: boolean;
@@ -34,7 +33,6 @@ export function extractHolderAddresses(events: AuditEvent[]): string[] {
  * balanceOf, isFrozen, and isVerified for each address.
  */
 export function useHolders(events: AuditEvent[]) {
-  const publicClient = usePublicClient();
   const [holders, setHolders] = useState<HolderInfo[]>([]);
   const [fetched, setFetched] = useState(false);
   const prevAddressKeyRef = useRef<string>("");
@@ -42,7 +40,7 @@ export function useHolders(events: AuditEvent[]) {
   const addresses = useMemo(() => extractHolderAddresses(events), [events]);
   const addressKey = useMemo(() => [...addresses].sort().join(","), [addresses]);
 
-  const canFetch = !!publicClient && addresses.length > 0;
+  const canFetch = addresses.length > 0;
 
   useEffect(() => {
     if (!canFetch) return;
@@ -54,29 +52,18 @@ export function useHolders(events: AuditEvent[]) {
     let cancelled = false;
 
     async function fetchHolderData() {
-      const validAddresses = addresses.filter((a): a is Address => isAddress(a));
+      const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+      const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
+      const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
+
+      const validAddresses = addresses.filter((a) => ethers.isAddress(a));
 
       const promises = validAddresses.map(async (address) => {
         try {
           const [balance, frozen, verified] = await Promise.all([
-            publicClient!.readContract({
-              address: CONTRACT_ADDRESSES.token,
-              abi: tokenAbi,
-              functionName: "balanceOf",
-              args: [address],
-            }),
-            publicClient!.readContract({
-              address: CONTRACT_ADDRESSES.token,
-              abi: tokenAbi,
-              functionName: "isFrozen",
-              args: [address],
-            }),
-            publicClient!.readContract({
-              address: CONTRACT_ADDRESSES.identityRegistry,
-              abi: identityRegistryAbi,
-              functionName: "isVerified",
-              args: [address],
-            }),
+            tokenContract.balanceOf(address) as Promise<bigint>,
+            tokenContract.isFrozen(address) as Promise<boolean>,
+            registryContract.isVerified(address) as Promise<boolean>,
           ]);
           return { address, balance, frozen, verified } as HolderInfo;
         } catch {
@@ -100,7 +87,7 @@ export function useHolders(events: AuditEvent[]) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [publicClient, addressKey, addresses, canFetch, fetched]);
+  }, [addressKey, addresses, canFetch, fetched]);
 
   // Derive loading from state: loading if we can fetch but haven't yet, or if there are events but no addresses resolved
   const loading = canFetch ? !fetched : events.length > 0 && !fetched;

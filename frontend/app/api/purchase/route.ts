@@ -1,14 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  parseEther,
-  erc20Abi,
-  getAddress,
-} from "viem";
+import { ethers } from "ethers";
 import { z } from "zod";
-import { tokenAbi } from "@coppice/common";
 import { verifyAuth } from "@/lib/auth";
-import { EUSD_EVM_ADDRESS } from "@/lib/constants";
-import { getDeployerAccount, getDeployerWalletClient, getServerPublicClient } from "@/lib/deployer";
+import { EUSD_EVM_ADDRESS, CPC_SECURITY_ID } from "@/lib/constants";
+import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
@@ -26,6 +21,16 @@ export const purchaseResponseSchema = z.object({
 });
 export type PurchaseResponse = z.infer<typeof purchaseResponseSchema>;
 
+const ERC20_ABI = [
+  "function transferFrom(address from, address to, uint256 amount) returns (bool)",
+  "function transfer(address to, uint256 amount) returns (bool)",
+];
+
+// ATS Security mint ABI — the diamond proxy's ERC1400 facet
+const SECURITY_MINT_ABI = [
+  "function mint(address to, uint256 value) external",
+];
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
   const parsed = purchaseBodySchema.safeParse(body);
@@ -34,14 +39,8 @@ export async function POST(request: NextRequest) {
   }
   const { investorAddress, amount, message, signature } = parsed.data;
 
-  let investor;
-  try {
-    investor = getAddress(investorAddress);
-  } catch {
-    return NextResponse.json({ error: "Invalid investor address" }, { status: 400 });
-  }
+  const investor = ethers.getAddress(investorAddress);
 
-  // Verify wallet signature — proves caller owns the investor wallet
   try {
     await verifyAuth(message, signature, investor);
   } catch (err: unknown) {
@@ -50,9 +49,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const deployerAccount = getDeployerAccount();
-
-    // 1. Check eUSD balance via Mirror Node (uses Hedera account ID format)
+    // 1. Check eUSD balance via Mirror Node
     const eusdTokenId = process.env.EUSD_TOKEN_ID;
     if (!eusdTokenId) {
       return NextResponse.json({ error: "EUSD_TOKEN_ID not configured" }, { status: 500 });
@@ -75,63 +72,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const walletClient = getDeployerWalletClient();
-    const publicClient = getServerPublicClient();
+    const wallet = getDeployerWallet();
 
     // 2. Transfer eUSD from investor to treasury via ERC-20 transferFrom
-    // Investor must have already called eUSD.approve(deployerAddress, amount) client-side
+    const eusdContract = new ethers.Contract(EUSD_EVM_ADDRESS, ERC20_ABI, wallet);
     const eusdAmount = BigInt(Math.round(amount * 100)); // eUSD has 2 decimals
-    const treasuryAddress = deployerAccount.address;
+    const treasuryAddress = wallet.address;
 
-    const transferHash = await walletClient.writeContract({
-      address: EUSD_EVM_ADDRESS,
-      abi: erc20Abi,
-      functionName: "transferFrom",
-      args: [investor, treasuryAddress, eusdAmount],
-      gas: BigInt(300_000),
+    const transferTx = await eusdContract.transferFrom(investor, treasuryAddress, eusdAmount, {
+      gasLimit: BigInt(300_000),
     });
-
-    const transferReceipt = await publicClient.waitForTransactionReceipt({ hash: transferHash });
-    if (transferReceipt.status !== "success") {
+    const transferReceipt = await transferTx.wait();
+    if (!transferReceipt || transferReceipt.status !== 1) {
       return NextResponse.json(
         { error: "eUSD transfer failed — did you approve the spending amount?" },
         { status: 500 },
       );
     }
 
-    // 3. Mint CPC tokens to investor via viem
+    // 3. Mint CPC tokens to investor via ATS security contract
     let mintTxHash: string | undefined;
     try {
-      const tokenAddressRaw = process.env.TOKEN_ADDRESS;
-      if (!tokenAddressRaw) {
-        throw new Error("Missing TOKEN_ADDRESS");
-      }
-      const tokenAddress = getAddress(tokenAddressRaw);
-
-      const hash = await walletClient.writeContract({
-        address: tokenAddress,
-        abi: tokenAbi,
-        functionName: "mint",
-        args: [investor, parseEther(String(amount))],
-      });
-
-      const receipt = await publicClient.waitForTransactionReceipt({ hash });
-      mintTxHash = receipt.transactionHash;
+      const securityContract = new ethers.Contract(CPC_SECURITY_ID, SECURITY_MINT_ABI, wallet);
+      const mintAmount = ethers.parseEther(String(amount));
+      const mintTx = await securityContract.mint(investor, mintAmount);
+      const mintReceipt = await mintTx.wait();
+      mintTxHash = mintReceipt?.hash;
     } catch (mintErr: unknown) {
-      // Mint failed after eUSD was already transferred — refund via transfer back to investor
+      // Mint failed after eUSD was already transferred — refund
       console.error("CPC mint failed, refunding eUSD...");
       let refundSucceeded = false;
       try {
-        const refundHash = await walletClient.writeContract({
-          address: EUSD_EVM_ADDRESS,
-          abi: erc20Abi,
-          functionName: "transfer",
-          args: [investor, eusdAmount],
-          gas: BigInt(300_000),
+        const refundTx = await eusdContract.transfer(investor, eusdAmount, {
+          gasLimit: BigInt(300_000),
         });
-        const refundReceipt = await publicClient.waitForTransactionReceipt({ hash: refundHash });
-        refundSucceeded = refundReceipt.status === "success";
-        console.log(`eUSD refund: ${refundReceipt.status}`);
+        const refundReceipt = await refundTx.wait();
+        refundSucceeded = refundReceipt?.status === 1;
+        console.log(`eUSD refund: ${refundReceipt?.status === 1 ? "success" : "reverted"}`);
       } catch (refundErr: unknown) {
         const refundMsg = getErrorMessage(refundErr, 0, "unknown");
         console.error(`eUSD refund FAILED: ${refundMsg} — manual intervention needed`);
@@ -148,7 +125,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      transferTxHash: transferReceipt.transactionHash,
+      transferTxHash: transferReceipt.hash,
       mintTxHash,
     });
   } catch (err: unknown) {

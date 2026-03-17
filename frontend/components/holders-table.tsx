@@ -1,13 +1,12 @@
 "use client";
 
-import { type Address } from "viem";
 import { formatBalance, abbreviateAddress } from "@/lib/format";
 import { DEMO_WALLETS } from "@/lib/constants";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Spinner, ExternalLinkIcon } from "@/components/ui/icons";
 import type { HolderInfo } from "@/hooks/use-holders";
 
-function holderLabel(address: Address): string | null {
+function holderLabel(address: string): string | null {
   return DEMO_WALLETS[address.toLowerCase()]?.label ?? null;
 }
 

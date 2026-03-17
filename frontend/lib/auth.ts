@@ -1,21 +1,24 @@
-import { verifyMessage, getAddress } from "viem";
-import { signMessage } from "@wagmi/core";
-import type { Config } from "wagmi";
-import type { Address } from "viem";
+import { ethers } from "ethers";
 
 /**
  * Client-side: sign an auth message proving wallet ownership.
- * Uses EIP-191 personal_sign via wagmi.
+ * Uses EIP-191 personal_sign via ethers BrowserProvider (MetaMask).
  */
 export async function signAuthMessage(
-  config: Config,
-  address: Address,
+  address: string,
   purpose: string,
 ): Promise<{ message: string; signature: string }> {
   const timestamp = new Date().toISOString();
   const nonce = Math.random().toString(36).slice(2, 10);
   const message = `Coppice - ${purpose}\nAddress: ${address}\nTimestamp: ${timestamp}\nNonce: ${nonce}`;
-  const signature = await signMessage(config, { account: address, message });
+
+  if (!window.ethereum) {
+    throw new Error("MetaMask not found");
+  }
+  const provider = new ethers.BrowserProvider(window.ethereum);
+  const signer = await provider.getSigner();
+  const signature = await signer.signMessage(message);
+
   return { message, signature };
 }
 
@@ -49,14 +52,8 @@ export async function verifyAuth(
 ): Promise<void> {
   validateTimestamp(message);
 
-  const isValid = await verifyMessage({
-    address: getAddress(expectedAddress),
-    message,
-    // Typecast required: signature is a hex string but not an address — getAddress doesn't apply
-    signature: signature as `0x${string}`,
-  });
-
-  if (!isValid) {
+  const recovered = ethers.verifyMessage(message, signature);
+  if (recovered.toLowerCase() !== expectedAddress.toLowerCase()) {
     throw new Error("Invalid signature");
   }
 }

@@ -38,7 +38,9 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 
 ## Deployed Contracts & Topics
 
-- Token (CPC): 0x17e19B53981370a904d0003Ba2D336837a43cbf0
+- CPC Bond (ATS): 0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9 (account 0.0.8254921)
+- LifeCycleCashFlow: 0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350 (account 0.0.8254941)
+- Token (old T-REX CPC): 0x17e19B53981370a904d0003Ba2D336837a43cbf0
 - IdentityRegistry: 0x03ecdB8673d65b81752AC14dAaCa797D846c1B31
 - ModularCompliance: 0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf
 - ClaimIssuer: 0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A

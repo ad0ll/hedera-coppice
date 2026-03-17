@@ -3,13 +3,13 @@
 import { useTokenRead } from "@/hooks/use-token";
 import { BOND_DETAILS } from "@/lib/constants";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatEther } from "viem";
+import { ethers } from "ethers";
 
 export function BondDetails() {
   const { totalSupply, paused } = useTokenRead();
 
   const supply = totalSupply.data != null
-    ? Number(formatEther(totalSupply.data)).toLocaleString("en-US")
+    ? Number(ethers.formatEther(totalSupply.data)).toLocaleString("en-US")
     : "--";
   const isPaused = paused.data ?? null;
 

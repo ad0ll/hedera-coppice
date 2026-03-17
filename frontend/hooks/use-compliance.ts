@@ -1,27 +1,24 @@
 "use client";
 
 import { useCallback } from "react";
-import { usePublicClient } from "wagmi";
-import { type Address } from "viem";
+import { ethers } from "ethers";
 import { modularComplianceAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, JSON_RPC_URL } from "@/lib/constants";
 
 export function useCompliance() {
-  const publicClient = usePublicClient();
-
-  const canTransfer = useCallback(async (from: Address, to: Address, amount: bigint): Promise<boolean> => {
-    if (!publicClient) return false;
+  const canTransfer = useCallback(async (from: string, to: string, amount: bigint): Promise<boolean> => {
     try {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.compliance,
-        abi: modularComplianceAbi,
-        functionName: "canTransfer",
-        args: [from, to, amount],
-      });
+      const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+      const contract = new ethers.Contract(
+        CONTRACT_ADDRESSES.compliance,
+        modularComplianceAbi,
+        provider,
+      );
+      return await contract.canTransfer(from, to, amount);
     } catch {
       return false;
     }
-  }, [publicClient]);
+  }, []);
 
   return { canTransfer };
 }

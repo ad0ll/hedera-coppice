@@ -1,27 +1,19 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useConnection, useWriteContract } from "wagmi";
+import { ethers } from "ethers";
+import { useConnection, useAts } from "@/contexts/ats-context";
 import { EUSD_EVM_ADDRESS, EUSD_TOKEN_ID } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/format";
 import { fetchAPI } from "@/lib/api-client";
 import { faucetResponseSchema } from "@/app/api/faucet/route";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
-const HTS_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000167" as const;
+const HTS_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000167";
 
-const associateTokenAbi = [
-  {
-    name: "associateToken",
-    type: "function" as const,
-    stateMutability: "nonpayable" as const,
-    inputs: [
-      { name: "account", type: "address" as const },
-      { name: "token", type: "address" as const },
-    ],
-    outputs: [{ name: "responseCode", type: "int64" as const }],
-  },
-] as const;
+const ASSOCIATE_TOKEN_ABI = [
+  "function associateToken(address account, address token) returns (int64 responseCode)",
+];
 
 type FaucetState = "idle" | "associating" | "claiming" | "success";
 
@@ -48,12 +40,12 @@ interface FaucetButtonProps {
 
 export function FaucetButton({ onSuccess }: FaucetButtonProps) {
   const { address } = useConnection();
+  const { signer } = useAts();
   const [state, setState] = useState<FaucetState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const { writeContractAsync } = useWriteContract();
 
   const handleClaim = useCallback(async () => {
-    if (!address || state !== "idle") return;
+    if (!address || state !== "idle" || !signer) return;
     setError(null);
 
     try {
@@ -63,13 +55,17 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
       if (!isAssociated) {
         setState("associating");
         try {
-          await writeContractAsync({
-            address: HTS_PRECOMPILE_ADDRESS,
-            abi: associateTokenAbi,
-            functionName: "associateToken",
-            args: [address, EUSD_EVM_ADDRESS],
-            gas: BigInt(800_000),
-          });
+          const htsContract = new ethers.Contract(
+            HTS_PRECOMPILE_ADDRESS,
+            ASSOCIATE_TOKEN_ABI,
+            signer,
+          );
+          const tx: ethers.TransactionResponse = await htsContract.associateToken(
+            address,
+            EUSD_EVM_ADDRESS,
+            { gasLimit: BigInt(800_000) },
+          );
+          await tx.wait();
         } catch (err: unknown) {
           const msg = getErrorMessage(err, 100, "Token association failed");
           if (!msg.includes("TOKEN_ALREADY_ASSOCIATED")) {
@@ -94,7 +90,7 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
       setError(msg);
       setState("idle");
     }
-  }, [address, state, writeContractAsync, onSuccess]);
+  }, [address, state, signer, onSuccess]);
 
   if (!address) return null;
 

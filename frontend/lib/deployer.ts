@@ -1,30 +1,28 @@
-// Server-only module — shared deployer account and client setup for API routes.
-import { createWalletClient, createPublicClient, http } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { hederaTestnet } from "@/lib/wagmi";
-import { JSON_RPC_URL } from "@/lib/hedera";
+// Server-only module — shared deployer account and provider setup for API routes.
+// Uses ethers v6 (consistent with ATS SDK).
+import { ethers } from "ethers";
 
-export function getDeployerAccount() {
+const JSON_RPC_URL =
+  process.env.NEXT_PUBLIC_HEDERA_JSON_RPC || "https://testnet.hashio.io/api";
+
+let cachedProvider: ethers.JsonRpcProvider | null = null;
+
+export function getServerProvider(): ethers.JsonRpcProvider {
+  if (!cachedProvider) {
+    cachedProvider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+  }
+  return cachedProvider;
+}
+
+export function getDeployerWallet(): ethers.Wallet {
   const deployerKey = process.env.DEPLOYER_PRIVATE_KEY;
   if (!deployerKey) {
     throw new Error("Missing DEPLOYER_PRIVATE_KEY");
   }
-  // Typecast required: env var string needs to be narrowed to viem's branded hex type for privateKeyToAccount
-  const keyHex = (deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`) as `0x${string}`;
-  return privateKeyToAccount(keyHex);
+  const keyHex = deployerKey.startsWith("0x") ? deployerKey : `0x${deployerKey}`;
+  return new ethers.Wallet(keyHex, getServerProvider());
 }
 
-export function getDeployerWalletClient() {
-  return createWalletClient({
-    account: getDeployerAccount(),
-    chain: hederaTestnet,
-    transport: http(JSON_RPC_URL),
-  });
-}
-
-export function getServerPublicClient() {
-  return createPublicClient({
-    chain: hederaTestnet,
-    transport: http(JSON_RPC_URL),
-  });
+export function getDeployerAddress(): string {
+  return getDeployerWallet().address;
 }

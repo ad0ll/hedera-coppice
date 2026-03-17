@@ -1,16 +1,11 @@
 "use client";
 
-import { useConnection, useConnect, useDisconnect } from "wagmi";
-import { injected } from "wagmi/connectors";
+import { useAts } from "@/contexts/ats-context";
 import { DEMO_WALLETS } from "@/lib/constants";
 import { abbreviateAddress } from "@/lib/format";
 
 export function WalletButton() {
-  const { address, isConnecting: accountConnecting } = useConnection();
-  const { connect, isPending } = useConnect();
-  const { disconnect } = useDisconnect();
-
-  const isConnecting = accountConnecting || isPending;
+  const { address, isConnecting, connect, disconnect } = useAts();
 
   const walletLabel = address
     ? DEMO_WALLETS[address.toLowerCase()]?.label || abbreviateAddress(address)
@@ -38,7 +33,7 @@ export function WalletButton() {
 
   return (
     <button
-      onClick={() => connect({ connector: injected() })}
+      onClick={() => connect()}
       disabled={isConnecting}
       className="bg-bond-green text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white whitespace-nowrap"
     >

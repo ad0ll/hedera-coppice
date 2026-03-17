@@ -2,48 +2,73 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 import type { OnboardEvent } from "@/app/api/onboard/route";
 
-// Mock deployer utilities — the onboard route imports from @/lib/deployer
-const mockWriteContract = vi.fn().mockResolvedValue("0xtxhash");
-const mockDeployContract = vi.fn().mockResolvedValue("0xdeployhash");
-const mockWaitForTransactionReceipt = vi.fn().mockResolvedValue({
-  transactionHash: "0xtxhash",
-  status: "success",
-  contractAddress: "0x1234567890abcdef1234567890abcdef12345678",
+// Mock contract method results
+const mockContains = vi.fn().mockResolvedValue(false);
+const mockIdentity = vi.fn().mockResolvedValue("0xExistingIdentity");
+const mockRegisterIdentity = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xregisterhash" }),
 });
-const mockReadContract = vi.fn().mockResolvedValue(false); // default: not registered
-
-vi.mock("@/lib/deployer", () => ({
-  getDeployerAccount: vi.fn().mockReturnValue({
-    address: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE",
-  }),
-  getDeployerWalletClient: vi.fn().mockReturnValue({
-    account: { address: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE" },
-    writeContract: (...args: unknown[]) => mockWriteContract(...args),
-    deployContract: (...args: unknown[]) => mockDeployContract(...args),
-  }),
-  getServerPublicClient: vi.fn().mockReturnValue({
-    waitForTransactionReceipt: (...args: unknown[]) => mockWaitForTransactionReceipt(...args),
-    readContract: (...args: unknown[]) => mockReadContract(...args),
-  }),
-}));
-
-// Mock viem — need real getAddress and encoding utils
-vi.mock("viem", async () => {
-  const actual = await vi.importActual<typeof import("viem")>("viem");
-  return { ...actual };
+const mockAddClaim = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xclaimhash" }),
 });
 
-// Mock viem/accounts — privateKeyToAccount for claim issuer signing
-vi.mock("viem/accounts", async () => {
-  const actual = await vi.importActual<typeof import("viem/accounts")>("viem/accounts");
+// Mock factory deploy result
+const mockDeploy = vi.fn().mockResolvedValue({
+  deploymentTransaction: vi.fn().mockReturnValue({
+    wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xdeployhash" }),
+  }),
+  getAddress: vi.fn().mockResolvedValue("0x1234567890abcdef1234567890abcdef12345678"),
+});
+
+// Track signMessage calls
+const mockSignMessage = vi.fn().mockResolvedValue("0xfakesignature");
+
+// ethers.Contract mock — returns object with all methods used by the route.
+// Both read-only (provider) and write (wallet) Contract instances get the same mock.
+function MockContract() {
+  return {
+    contains: (...args: unknown[]) => mockContains(...args),
+    identity: (...args: unknown[]) => mockIdentity(...args),
+    registerIdentity: (...args: unknown[]) => mockRegisterIdentity(...args),
+    addClaim: (...args: unknown[]) => mockAddClaim(...args),
+  };
+}
+
+// ethers.ContractFactory mock
+function MockContractFactory() {
+  return {
+    deploy: (...args: unknown[]) => mockDeploy(...args),
+  };
+}
+
+// ethers.Wallet mock (for claim issuer signing key)
+function MockWallet() {
+  return {
+    address: "0xClaimIssuerSigner",
+    signMessage: (...args: unknown[]) => mockSignMessage(...args),
+  };
+}
+
+vi.mock("ethers", async () => {
+  const actual = await vi.importActual<typeof import("ethers")>("ethers");
   return {
     ...actual,
-    privateKeyToAccount: vi.fn().mockReturnValue({
-      address: "0xClaimIssuerSigner",
-      signMessage: vi.fn().mockResolvedValue("0xfakesignature"),
-    }),
+    ethers: {
+      ...actual.ethers,
+      Contract: MockContract,
+      ContractFactory: MockContractFactory,
+      Wallet: MockWallet,
+    },
   };
 });
+
+// Mock deployer utilities
+vi.mock("@/lib/deployer", () => ({
+  getDeployerWallet: vi.fn().mockReturnValue({
+    address: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE",
+  }),
+  getServerProvider: vi.fn().mockReturnValue({}),
+}));
 
 // Mock auth — default: accept all signatures
 const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
@@ -54,16 +79,6 @@ vi.mock("@/lib/auth", () => ({
 // Mock retry — execute immediately without retries
 vi.mock("@/lib/retry", () => ({
   withRetry: <T>(fn: () => Promise<T>) => fn(),
-}));
-
-// Mock wagmi config
-vi.mock("@/lib/wagmi", () => ({
-  hederaTestnet: { id: 296, name: "Hedera Testnet" },
-}));
-
-// Mock hedera server utils
-vi.mock("@/lib/hedera", () => ({
-  JSON_RPC_URL: "https://testnet.hashio.io/api",
 }));
 
 // Mock @coppice/common
@@ -110,14 +125,21 @@ async function parseSSEEvents(res: Response): Promise<OnboardEvent[]> {
 describe("POST /api/onboard", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReadContract.mockResolvedValue(false);
-    mockWriteContract.mockResolvedValue("0xtxhash");
-    mockDeployContract.mockResolvedValue("0xdeployhash");
-    mockWaitForTransactionReceipt.mockResolvedValue({
-      transactionHash: "0xtxhash",
-      status: "success",
-      contractAddress: "0x1234567890abcdef1234567890abcdef12345678",
+    mockContains.mockResolvedValue(false);
+    mockIdentity.mockResolvedValue("0xExistingIdentity");
+    mockRegisterIdentity.mockResolvedValue({
+      wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xregisterhash" }),
     });
+    mockAddClaim.mockResolvedValue({
+      wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xclaimhash" }),
+    });
+    mockDeploy.mockResolvedValue({
+      deploymentTransaction: vi.fn().mockReturnValue({
+        wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xdeployhash" }),
+      }),
+      getAddress: vi.fn().mockResolvedValue("0x1234567890abcdef1234567890abcdef12345678"),
+    });
+    mockSignMessage.mockResolvedValue("0xfakesignature");
   });
 
   it("rejects invalid JSON body", async () => {
@@ -190,9 +212,8 @@ describe("POST /api/onboard", () => {
   });
 
   it("returns 409 when address is already registered", async () => {
-    mockReadContract
-      .mockResolvedValueOnce(true) // contains() → true
-      .mockResolvedValueOnce("0xExistingIdentity"); // identity() → address
+    mockContains.mockResolvedValueOnce(true);
+    mockIdentity.mockResolvedValueOnce("0xExistingIdentity");
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_INVESTOR,
@@ -235,22 +256,25 @@ describe("POST /api/onboard", () => {
     const complete = completeEvents[0];
     expect(complete.identityAddress).toBeDefined();
     expect(complete.transactions).toBeDefined();
-    expect(complete.transactions?.deployIdentity).toBe("0xtxhash");
-    expect(complete.transactions?.registerIdentity).toBe("0xtxhash");
-    expect(complete.transactions?.claimKYC).toBe("0xtxhash");
-    expect(complete.transactions?.claimAML).toBe("0xtxhash");
-    expect(complete.transactions?.claimAccredited).toBe("0xtxhash");
+    expect(complete.transactions?.deployIdentity).toBe("0xdeployhash");
+    expect(complete.transactions?.registerIdentity).toBe("0xregisterhash");
+    expect(complete.transactions?.claimKYC).toBe("0xclaimhash");
+    expect(complete.transactions?.claimAML).toBe("0xclaimhash");
+    expect(complete.transactions?.claimAccredited).toBe("0xclaimhash");
 
-    // Verify contract calls
-    expect(mockDeployContract).toHaveBeenCalledTimes(1);
-    expect(mockWriteContract).toHaveBeenCalledTimes(4);
+    // Verify deploy was called once
+    expect(mockDeploy).toHaveBeenCalledTimes(1);
+    // registerIdentity once + 3 addClaim calls
+    expect(mockRegisterIdentity).toHaveBeenCalledTimes(1);
+    expect(mockAddClaim).toHaveBeenCalledTimes(3);
   });
 
   it("streams error event when identity deployment fails", async () => {
-    mockWaitForTransactionReceipt.mockResolvedValueOnce({
-      transactionHash: "0xtxhash",
-      status: "success",
-      contractAddress: null,
+    mockDeploy.mockResolvedValueOnce({
+      deploymentTransaction: vi.fn().mockReturnValue({
+        wait: vi.fn().mockResolvedValue({ status: 0, hash: "0xfailedhash" }),
+      }),
+      getAddress: vi.fn().mockResolvedValue("0x1234567890abcdef1234567890abcdef12345678"),
     });
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({

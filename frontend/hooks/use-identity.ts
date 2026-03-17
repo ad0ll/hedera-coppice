@@ -1,10 +1,9 @@
 "use client";
 
 import { useCallback } from "react";
-import { usePublicClient } from "wagmi";
-import { type Address, zeroAddress } from "viem";
+import { ethers } from "ethers";
 import { identityRegistryAbi, claimIssuerAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, JSON_RPC_URL } from "@/lib/constants";
 
 /** Claim topic IDs used in our T-REX deployment. */
 export const CLAIM_TOPICS = { KYC: 1, AML: 2, ACCREDITED: 7 } as const;
@@ -16,96 +15,69 @@ export interface ClaimStatus {
   accredited: boolean;
 }
 
-export function useIdentity() {
-  const publicClient = usePublicClient();
+function getProvider() {
+  return new ethers.JsonRpcProvider(JSON_RPC_URL);
+}
 
-  const isVerified = useCallback(async (address: Address): Promise<boolean> => {
-    if (!publicClient) return false;
+function getRegistryContract() {
+  return new ethers.Contract(
+    CONTRACT_ADDRESSES.identityRegistry,
+    identityRegistryAbi,
+    getProvider(),
+  );
+}
+
+export function useIdentity() {
+  const isVerified = useCallback(async (address: string): Promise<boolean> => {
     try {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "isVerified",
-        args: [address],
-      });
+      const contract = getRegistryContract();
+      return await contract.isVerified(address);
     } catch {
       return false;
     }
-  }, [publicClient]);
+  }, []);
 
-  const getCountry = useCallback(async (address: Address): Promise<number> => {
-    if (!publicClient) return 0;
+  const getCountry = useCallback(async (address: string): Promise<number> => {
     try {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "investorCountry",
-        args: [address],
-      });
+      const contract = getRegistryContract();
+      return Number(await contract.investorCountry(address));
     } catch {
       return 0;
     }
-  }, [publicClient]);
+  }, []);
 
-  const getIdentity = useCallback(async (address: Address): Promise<Address> => {
-    if (!publicClient) return zeroAddress;
+  const getIdentity = useCallback(async (address: string): Promise<string> => {
     try {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "identity",
-        args: [address],
-      });
+      const contract = getRegistryContract();
+      return await contract.identity(address);
     } catch {
-      return zeroAddress;
+      return ethers.ZeroAddress;
     }
-  }, [publicClient]);
+  }, []);
 
-  const isRegistered = useCallback(async (address: Address): Promise<boolean> => {
-    if (!publicClient) return false;
+  const isRegistered = useCallback(async (address: string): Promise<boolean> => {
     try {
-      return await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "contains",
-        args: [address],
-      });
+      const contract = getRegistryContract();
+      return await contract.contains(address);
     } catch {
       return false;
     }
-  }, [publicClient]);
+  }, []);
 
-  const getClaimStatus = useCallback(async (address: Address): Promise<ClaimStatus> => {
+  const getClaimStatus = useCallback(async (address: string): Promise<ClaimStatus> => {
     const none: ClaimStatus = { kyc: false, aml: false, accredited: false };
-    if (!publicClient) return none;
     try {
-      const identityAddr = await publicClient.readContract({
-        address: CONTRACT_ADDRESSES.identityRegistry,
-        abi: identityRegistryAbi,
-        functionName: "identity",
-        args: [address],
-      });
-      if (identityAddr === zeroAddress) return none;
+      const registryContract = getRegistryContract();
+      const identityAddr: string = await registryContract.identity(address);
+      if (identityAddr === ethers.ZeroAddress) return none;
+
+      const provider = getProvider();
+      const identityContract = new ethers.Contract(identityAddr, claimIssuerAbi, provider);
 
       const [kycClaims, amlClaims, accreditedClaims] = await Promise.all([
-        publicClient.readContract({
-          address: identityAddr,
-          abi: claimIssuerAbi,
-          functionName: "getClaimIdsByTopic",
-          args: [BigInt(CLAIM_TOPICS.KYC)],
-        }),
-        publicClient.readContract({
-          address: identityAddr,
-          abi: claimIssuerAbi,
-          functionName: "getClaimIdsByTopic",
-          args: [BigInt(CLAIM_TOPICS.AML)],
-        }),
-        publicClient.readContract({
-          address: identityAddr,
-          abi: claimIssuerAbi,
-          functionName: "getClaimIdsByTopic",
-          args: [BigInt(CLAIM_TOPICS.ACCREDITED)],
-        }),
+        identityContract.getClaimIdsByTopic(BigInt(CLAIM_TOPICS.KYC)),
+        identityContract.getClaimIdsByTopic(BigInt(CLAIM_TOPICS.AML)),
+        identityContract.getClaimIdsByTopic(BigInt(CLAIM_TOPICS.ACCREDITED)),
       ]);
 
       return {
@@ -116,7 +88,7 @@ export function useIdentity() {
     } catch {
       return none;
     }
-  }, [publicClient]);
+  }, []);
 
   return { isVerified, getCountry, getIdentity, isRegistered, getClaimStatus };
 }

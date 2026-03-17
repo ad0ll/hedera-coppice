@@ -1,30 +1,40 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
+// Mock contract method behavior
+const mockIsAgent = vi.fn().mockResolvedValue(false);
+const mockAddAgent = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
+});
+
+// ethers.Contract mock — returns an object with both read and write methods.
+// The route creates two Contract instances (one with provider, one with wallet).
+// Both get the same mock methods so we can control behavior via mockIsAgent/mockAddAgent.
+function MockContract() {
+  return {
+    isAgent: (...args: unknown[]) => mockIsAgent(...args),
+    addAgent: (...args: unknown[]) => mockAddAgent(...args),
+  };
+}
+
+vi.mock("ethers", async () => {
+  const actual = await vi.importActual<typeof import("ethers")>("ethers");
+  return {
+    ...actual,
+    ethers: {
+      ...actual.ethers,
+      Contract: MockContract,
+    },
+  };
+});
+
 // Mock deployer utilities
-const mockWriteContract = vi.fn().mockResolvedValue("0xtxhash");
-const mockReadContract = vi.fn().mockResolvedValue(false); // default: not an agent
-const mockWaitForTransactionReceipt = vi.fn().mockResolvedValue({
-  transactionHash: "0xtxhash",
-  status: "success",
-});
-
 vi.mock("@/lib/deployer", () => ({
-  getDeployerWalletClient: vi.fn().mockReturnValue({
-    account: { address: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE" },
-    writeContract: (...args: unknown[]) => mockWriteContract(...args),
+  getDeployerWallet: vi.fn().mockReturnValue({
+    address: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE",
   }),
-  getServerPublicClient: vi.fn().mockReturnValue({
-    waitForTransactionReceipt: (...args: unknown[]) => mockWaitForTransactionReceipt(...args),
-    readContract: (...args: unknown[]) => mockReadContract(...args),
-  }),
+  getServerProvider: vi.fn().mockReturnValue({}),
 }));
-
-// Mock viem — need real getAddress
-vi.mock("viem", async () => {
-  const actual = await vi.importActual<typeof import("viem")>("viem");
-  return { ...actual };
-});
 
 // Mock auth — accept all signatures
 const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
@@ -32,26 +42,9 @@ vi.mock("@/lib/auth", () => ({
   verifyAuth: (...args: unknown[]) => mockVerifyAuth(...args),
 }));
 
-// Mock wagmi config
-vi.mock("@/lib/wagmi", () => ({
-  hederaTestnet: { id: 296, name: "Hedera Testnet" },
-}));
-
-// Mock hedera server utils
-vi.mock("@/lib/hedera", () => ({
-  JSON_RPC_URL: "https://testnet.hashio.io/api",
-}));
-
-// Mock @coppice/common
-vi.mock("@coppice/common", () => ({
-  tokenAbi: [],
-}));
-
 // Mock constants
 vi.mock("@/lib/constants", () => ({
-  CONTRACT_ADDRESSES: {
-    token: "0x17e19B53981370a904d0003Ba2D336837a43cbf0",
-  },
+  CPC_SECURITY_ID: "0x17e19B53981370a904d0003Ba2D336837a43cbf0",
 }));
 
 // Set env vars
@@ -70,7 +63,10 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
 describe("POST /api/demo/grant-agent-role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockReadContract.mockResolvedValue(false);
+    mockIsAgent.mockResolvedValue(false);
+    mockAddAgent.mockResolvedValue({
+      wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
+    });
   });
 
   it("rejects invalid JSON body", async () => {
@@ -116,7 +112,7 @@ describe("POST /api/demo/grant-agent-role", () => {
   });
 
   it("returns 409 when address is already an agent", async () => {
-    mockReadContract.mockResolvedValueOnce(true);
+    mockIsAgent.mockResolvedValueOnce(true);
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_ADDRESS,
@@ -129,7 +125,7 @@ describe("POST /api/demo/grant-agent-role", () => {
   });
 
   it("returns 409 when addAgent reverts with 'already has role' (TOCTOU race)", async () => {
-    mockWriteContract.mockRejectedValueOnce(new Error("Roles: account already has role"));
+    mockAddAgent.mockRejectedValueOnce(new Error("Roles: account already has role"));
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_ADDRESS,
@@ -152,6 +148,6 @@ describe("POST /api/demo/grant-agent-role", () => {
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.txHash).toBe("0xtxhash");
-    expect(mockWriteContract).toHaveBeenCalledTimes(1);
+    expect(mockAddAgent).toHaveBeenCalledTimes(1);
   });
 });

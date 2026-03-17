@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { zeroAddress, parseEther, erc20Abi, getAddress } from "viem";
-import { useConnection, useConfig } from "wagmi";
-import { writeContract, waitForTransactionReceipt } from "@wagmi/core";
+import { ethers } from "ethers";
+import { useConnection, useAts } from "@/contexts/ats-context";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
@@ -14,9 +13,13 @@ import { getErrorMessage } from "@/lib/format";
 import { StepProgress } from "@/components/ui/step-progress";
 import type { Step } from "@/components/ui/step-progress";
 
+const ERC20_ABI = [
+  "function approve(address spender, uint256 amount) returns (bool)",
+];
+
 export function TransferFlow({ enabled }: { enabled: boolean }) {
   const { address } = useConnection();
-  const config = useConfig();
+  const { signer } = useAts();
   const { isVerified } = useIdentity();
   const { canTransfer } = useCompliance();
   const [amount, setAmount] = useState("");
@@ -27,12 +30,12 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   const deployerEntry = Object.entries(DEMO_WALLETS).find(
     ([, info]) => info.role === "issuer",
   );
-  const deployerAddress = deployerEntry ? getAddress(deployerEntry[0]) : undefined;
+  const deployerAddress = deployerEntry ? ethers.getAddress(deployerEntry[0]) : undefined;
 
   async function handlePurchase() {
-    if (!address || !amount || running || !deployerAddress) return;
+    if (!address || !amount || running || !deployerAddress || !signer) return;
 
-    const parsedAmount = parseEther(amount);
+    const parsedAmount = ethers.parseEther(amount);
     setRunning(true);
 
     const newSteps: Step[] = [
@@ -47,7 +50,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       // Run identity and compliance checks in parallel — they are independent
       const [verified, allowed] = await Promise.all([
         isVerified(address),
-        canTransfer(zeroAddress, address, parsedAmount),
+        canTransfer(ethers.ZeroAddress, address, parsedAmount),
       ]);
 
       if (!verified) {
@@ -71,15 +74,14 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
       // Step 3: Approve eUSD spending — investor signs in MetaMask
       const eusdAmount = BigInt(Math.round(Number(amount) * 100)); // eUSD has 2 decimals
-      const approveHash = await writeContract(config, {
-        address: EUSD_EVM_ADDRESS,
-        abi: erc20Abi,
-        functionName: "approve",
-        args: [deployerAddress, eusdAmount],
-        gas: BigInt(800_000),
-      });
-      const approveReceipt = await waitForTransactionReceipt(config, { hash: approveHash });
-      if (approveReceipt.status === "reverted") {
+      const eusdContract = new ethers.Contract(EUSD_EVM_ADDRESS, ERC20_ABI, signer);
+      const approveTx: ethers.TransactionResponse = await eusdContract.approve(
+        deployerAddress,
+        eusdAmount,
+        { gasLimit: BigInt(800_000) },
+      );
+      const approveReceipt = await approveTx.wait();
+      if (approveReceipt && approveReceipt.status === 0) {
         throw new Error("eUSD approval transaction reverted");
       }
 
@@ -89,7 +91,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       setSteps([...newSteps]);
 
       // Step 4: Sign auth message and call purchase API
-      const { message, signature } = await signAuthMessage(config, address, "Purchase Bond Tokens");
+      const { message, signature } = await signAuthMessage(address, "Purchase Bond Tokens");
 
       await fetchAPI("/api/purchase", purchaseResponseSchema, {
         method: "POST",

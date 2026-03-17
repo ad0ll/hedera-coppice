@@ -4,9 +4,6 @@ import {
   Bricolage_Grotesque,
   Geist_Mono,
 } from "next/font/google";
-import { headers } from "next/headers";
-import { cookieToInitialState } from "wagmi";
-import { getConfig } from "@/lib/wagmi";
 import { Providers } from "@/components/providers";
 import { Nav } from "@/components/nav";
 import "./globals.css";
@@ -35,20 +32,15 @@ export const metadata: Metadata = {
   description: "ERC-3643 compliant green bond tokenization on Hedera",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialState = cookieToInitialState(
-    getConfig(),
-    (await headers()).get("cookie"),
-  );
-
   return (
     <html lang="en" className={`${instrumentSerif.variable} ${bricolageGrotesque.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-surface text-text flex flex-col">
-        <Providers initialState={initialState}>
+        <Providers>
           <Nav />
           <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full" role="main">
             {children}

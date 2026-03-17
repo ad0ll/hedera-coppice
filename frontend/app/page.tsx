@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useConnection } from "wagmi";
+import { useConnection } from "@/contexts/ats-context";
 import { formatBalance } from "@/lib/format";
 import { BondDetails } from "@/components/bond-details";
 import { ComplianceStatus } from "@/components/compliance-status";

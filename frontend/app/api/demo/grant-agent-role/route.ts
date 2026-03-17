@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAddress, type Address } from "viem";
+import { ethers } from "ethers";
 import { z } from "zod";
-import { tokenAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES } from "@/lib/constants";
-import { getDeployerWalletClient, getServerPublicClient } from "@/lib/deployer";
+import { CPC_SECURITY_ID } from "@/lib/constants";
+import { getDeployerWallet, getServerProvider } from "@/lib/deployer";
 import { verifyAuth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/format";
 
@@ -19,6 +18,11 @@ export const grantAgentRoleResponseSchema = z.object({
 });
 export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema>;
 
+const tokenAbi = [
+  "function isAgent(address account) view returns (bool)",
+  "function addAgent(address account)",
+];
+
 export async function POST(request: NextRequest) {
   let body: unknown;
   try {
@@ -32,9 +36,9 @@ export async function POST(request: NextRequest) {
   }
   const { investorAddress, message, signature } = parsed.data;
 
-  let address: Address;
+  let address: string;
   try {
-    address = getAddress(investorAddress);
+    address = ethers.getAddress(investorAddress);
   } catch {
     return NextResponse.json({ error: "Invalid address" }, { status: 400 });
   }
@@ -47,32 +51,27 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const publicClient = getServerPublicClient();
-    const walletClient = getDeployerWalletClient();
+    const provider = getServerProvider();
+    const wallet = getDeployerWallet();
+    const tokenContract = new ethers.Contract(CPC_SECURITY_ID, tokenAbi, wallet);
+    const readOnlyContract = new ethers.Contract(CPC_SECURITY_ID, tokenAbi, provider);
 
     // Check if already an agent
-    const alreadyAgent = await publicClient.readContract({
-      address: CONTRACT_ADDRESSES.token,
-      abi: tokenAbi,
-      functionName: "isAgent",
-      args: [address],
-    });
+    const alreadyAgent = await readOnlyContract.isAgent(address);
 
     if (alreadyAgent) {
       return NextResponse.json({ error: "Address is already an agent" }, { status: 409 });
     }
 
     // Call token.addAgent(address) as deployer (owner)
-    const hash = await walletClient.writeContract({
-      address: CONTRACT_ADDRESSES.token,
-      abi: tokenAbi,
-      functionName: "addAgent",
-      args: [address],
-    });
+    const tx = await tokenContract.addAgent(address);
+    const receipt = await tx.wait();
 
-    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (!receipt || receipt.status !== 1) {
+      throw new Error("Transaction failed");
+    }
 
-    return NextResponse.json({ success: true, txHash: receipt.transactionHash });
+    return NextResponse.json({ success: true, txHash: receipt.hash });
   } catch (err: unknown) {
     const message = getErrorMessage(err, 200, "Failed to grant agent role");
     // Handle race condition: addAgent reverts with "already has role" if
