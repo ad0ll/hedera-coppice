@@ -22,6 +22,8 @@ import { BOND_CATEGORIES, EVENT_TYPES } from "@/lib/event-types";
 import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
+import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
+import { useCoupons } from "@/hooks/use-coupons";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -58,6 +60,12 @@ export default function IssuerDashboard() {
   const [category, setCategory] = useState("Renewable Energy");
   const [proceedsAmount, setProceedsAmount] = useState("");
   const proceedsOp = useOperationStatus();
+
+  const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
+  const [distributing, setDistributing] = useState(false);
+  const distributeOp = useOperationStatus();
+  const { data: coupons = [] } = useCoupons();
+  const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
 
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
@@ -127,6 +135,7 @@ export default function IssuerDashboard() {
         await pause();
         pauseOp.setStatus({ type: "success", msg: "Token paused" });
       }
+      await pausedQuery.refetch();
     } catch (err: unknown) {
       pauseOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
@@ -156,6 +165,30 @@ export default function IssuerDashboard() {
       setProceedsAmount("");
     } catch (err: unknown) {
       proceedsOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
+    }
+  }
+
+  async function handleDistribute() {
+    if (selectedCouponId === null || !address || distributing) return;
+    distributeOp.clear();
+    setDistributing(true);
+    try {
+      const { message: authMessage, signature } = await signAuthMessage(address, "Distribute Coupon");
+      const result = await fetchAPI("/api/issuer/distribute-coupon", distributeResponseSchema, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          couponId: selectedCouponId,
+          address,
+          message: authMessage,
+          signature,
+        }),
+      });
+      distributeOp.setStatus({ type: "success", msg: `Coupon #${selectedCouponId} distributed (tx: ${abbreviateAddress(result.txHash, 10, 0)})` });
+    } catch (err: unknown) {
+      distributeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Distribution failed") });
+    } finally {
+      setDistributing(false);
     }
   }
 
@@ -321,6 +354,45 @@ export default function IssuerDashboard() {
                 {isPaused ? "Unpause Token" : "Pause Token"}
               </button>
               <StatusMessage status={pauseOp.status} className="mt-2" />
+            </Card>
+          </div>
+
+          {/* Distribute Coupon */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+            <Card>
+              <h3 className="card-title">Distribute Coupon</h3>
+              <div className="space-y-3">
+                <label className="sr-only" htmlFor="coupon-select">Select coupon</label>
+                <select
+                  id="coupon-select"
+                  value={selectedCouponId ?? ""}
+                  onChange={(e) => setSelectedCouponId(e.target.value === "" ? null : Number(e.target.value))}
+                  className="input"
+                >
+                  <option value="">Select a coupon...</option>
+                  {coupons.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Coupon #{c.id} - {c.rateDisplay}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={handleDistribute}
+                  disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || distributing}
+                  className="w-full btn-primary"
+                >
+                  {distributing ? "Distributing..." : "Distribute"}
+                </button>
+                {selectedCoupon && (
+                  <p className="text-xs text-text-muted">
+                    {selectedCoupon.status === "upcoming" && "This coupon has not reached its record date yet."}
+                    {selectedCoupon.status === "record" && "Record date passed. Awaiting execution date."}
+                    {selectedCoupon.status === "executable" && "Ready for distribution."}
+                    {selectedCoupon.status === "paid" && "This coupon has been paid / is past execution date."}
+                  </p>
+                )}
+                <StatusMessage status={distributeOp.status} />
+              </div>
             </Card>
           </div>
         </div>

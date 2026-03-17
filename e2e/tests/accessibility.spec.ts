@@ -25,10 +25,18 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     // Tab to the Coppice logo link
     await page.keyboard.press("Tab");
 
-    // Tab through nav links — Invest, Issuer, Compliance
+    // Tab through nav links — Invest, Coupons, Impact, Issuer, Compliance
     await page.keyboard.press("Tab");
     const investLink = page.getByRole("link", { name: "Invest" });
     await expect(investLink).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    const couponsLink = page.getByRole("link", { name: "Coupons" });
+    await expect(couponsLink).toBeFocused();
+
+    await page.keyboard.press("Tab");
+    const impactLink = page.getByRole("link", { name: "Impact" });
+    await expect(impactLink).toBeFocused();
 
     await page.keyboard.press("Tab");
     const issuerLink = page.getByRole("link", { name: "Issuer" });
@@ -86,7 +94,7 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     await injectWalletMock(page, ALICE_KEY);
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
-    await expect(page.getByText("Eligible to Invest")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Identity contract linked")).toBeVisible({ timeout: 30000 });
 
     const purchaseInput = page.getByLabel("Purchase amount in CPC");
     await expect(purchaseInput).toBeVisible();
@@ -102,7 +110,7 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     const spinners = page.locator('[role="status"]');
     // Wait for compliance to start loading (spinners appear)
     // then wait for completion
-    await expect(page.getByText("Eligible to Invest").or(page.getByText("Not Eligible"))).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Identity contract linked")).toBeVisible({ timeout: 30000 });
   });
 
   test("compliance status uses aria-live for dynamic updates", async ({ page }) => {
@@ -130,15 +138,14 @@ test.describe("Wallet Disconnect Behavior", () => {
     await page.goto("/");
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    // Wait for portfolio to show
-    await expect(page.getByRole("heading", { name: "Portfolio" })).toBeVisible({ timeout: 10000 });
+    // Wait for portfolio balances to show
     await expect(page.getByText("CPC Balance")).toBeVisible({ timeout: 15000 });
 
     // Disconnect
     await page.getByRole("button", { name: "Disconnect" }).click();
 
-    // Portfolio should show "Connect wallet" message
-    await expect(page.getByText("Connect wallet to view portfolio")).toBeVisible({ timeout: 5000 });
+    // Portfolio should show empty state with connect prompt
+    await expect(page.getByText("Connect a wallet to check eligibility")).toBeVisible({ timeout: 5000 });
   });
 
   test("compliance status resets when wallet disconnects", async ({ page }) => {
@@ -147,13 +154,15 @@ test.describe("Wallet Disconnect Behavior", () => {
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
     // Wait for compliance checks to complete
-    await expect(page.getByText("Eligible to Invest")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Identity contract linked")).toBeVisible({ timeout: 30000 });
 
     // Disconnect
     await page.getByRole("button", { name: "Disconnect" }).click();
 
-    // Compliance should show "Connect your wallet" message
-    await expect(page.getByText("Connect your wallet to check compliance")).toBeVisible({ timeout: 5000 });
+    // Compliance checks should reset to greyed out state (no detail text)
+    await expect(page.getByText("Identity contract linked")).not.toBeVisible({ timeout: 5000 });
+    // Connect Wallet button should reappear
+    await expect(page.getByRole("button", { name: "Connect Wallet" })).toBeVisible();
   });
 
   test("issuer dashboard shows connect prompt after disconnect", async ({ page }) => {

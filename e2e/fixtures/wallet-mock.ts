@@ -89,11 +89,13 @@ export async function injectWalletMock(
         return data.result;
       }
 
+      let connected = false;
+
       (window as any).ethereum = {
         isMetaMask: true,
         chainId: CHAIN_ID_HEX,
         networkVersion: String(chain),
-        selectedAddress: addr,
+        selectedAddress: null as string | null,
 
         request: async function ({
           method,
@@ -104,8 +106,12 @@ export async function injectWalletMock(
         }) {
           switch (method) {
             case "eth_requestAccounts":
-            case "eth_accounts":
+              connected = true;
+              (window as any).ethereum.selectedAddress = addr;
               return [addr];
+
+            case "eth_accounts":
+              return connected ? [addr] : [];
 
             case "eth_chainId":
               return CHAIN_ID_HEX;
@@ -188,6 +194,64 @@ export async function injectWalletMock(
     },
     { addr: address, rpc: rpcUrl, chain: chainId }
   );
+}
+
+/**
+ * Ensures the ATS token is unpaused. If it's paused, sends an unpause tx.
+ * Used as a safety net in beforeAll/afterAll to prevent a failed pause test
+ * from leaving the token stuck and blocking all subsequent write tests.
+ */
+export async function ensureTokenUnpaused(
+  tokenAddress: string,
+  deployerPrivateKey: string
+): Promise<void> {
+  const publicClient = createPublicClient({
+    chain: hederaTestnet,
+    transport: http(RPC_URL),
+  });
+
+  const isPaused = await publicClient.readContract({
+    address: tokenAddress as Hex,
+    abi: [
+      {
+        name: "isPaused",
+        type: "function",
+        inputs: [],
+        outputs: [{ name: "", type: "bool" }],
+        stateMutability: "view",
+      },
+    ] as const,
+    functionName: "isPaused",
+  });
+
+  if (!isPaused) return;
+
+  const keyHex = (deployerPrivateKey.startsWith("0x")
+    ? deployerPrivateKey
+    : `0x${deployerPrivateKey}`) as Hex;
+  const account = privateKeyToAccount(keyHex);
+  const walletClient = createWalletClient({
+    account,
+    chain: hederaTestnet,
+    transport: http(RPC_URL),
+  });
+
+  const hash = await walletClient.writeContract({
+    address: tokenAddress as Hex,
+    abi: [
+      {
+        name: "unpause",
+        type: "function",
+        inputs: [],
+        outputs: [{ name: "", type: "bool" }],
+        stateMutability: "nonpayable",
+      },
+    ] as const,
+    functionName: "unpause",
+  });
+
+  // Wait for the transaction to be mined
+  await publicClient.waitForTransactionReceipt({ hash });
 }
 
 /**

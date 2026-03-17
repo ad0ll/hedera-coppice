@@ -44,7 +44,7 @@ vi.mock("@/lib/auth", () => ({
 
 // Mock constants
 vi.mock("@/lib/constants", () => ({
-  CPC_SECURITY_ID: "0x17e19B53981370a904d0003Ba2D336837a43cbf0",
+  CPC_SECURITY_ID: "0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9",
 }));
 
 // Set env vars

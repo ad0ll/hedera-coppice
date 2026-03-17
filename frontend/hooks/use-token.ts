@@ -8,7 +8,7 @@ import { CPC_SECURITY_ID, JSON_RPC_URL } from "@/lib/constants";
 const TOKEN_ABI = [
   "function totalSupply() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
-  "function paused() view returns (bool)",
+  "function isPaused() view returns (bool)",
   "function isAgent(address) view returns (bool)",
   "function isFrozen(address) view returns (bool)",
   "function owner() view returns (address)",
@@ -42,7 +42,7 @@ export function useTokenRead() {
     queryKey: ["token", "paused"],
     queryFn: async () => {
       const contract = getReadContract();
-      const result: boolean = await contract.paused();
+      const result: boolean = await contract.isPaused();
       return result;
     },
     refetchInterval: 10_000,

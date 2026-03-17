@@ -31,7 +31,7 @@ test.describe("Issuer Dashboard", () => {
 
     // Stats banner
     await expect(page.getByText("Total Supply")).toBeVisible();
-    await expect(page.getByText("Holders")).toBeVisible();
+    await expect(page.getByText("Holders", { exact: true })).toBeVisible();
     await expect(page.getByText("Token Status")).toBeVisible();
     await expect(page.getByText("Proceeds Allocated")).toBeVisible();
 
@@ -43,6 +43,7 @@ test.describe("Issuer Dashboard", () => {
     await expect(page.getByText("Allocate Proceeds")).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
     await expect(page.getByText("Token Pause Control")).toBeVisible();
+    await expect(page.getByText("Distribute Coupon")).toBeVisible();
 
     // Activity feed
     await expect(page.getByText("Recent Activity")).toBeVisible();
@@ -77,8 +78,8 @@ test.describe("Issuer Dashboard", () => {
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
     await expect(page.getByText("Token Pause Control")).toBeVisible({ timeout: 10000 });
-    // Token should be active (unpaused) after setup
-    await expect(page.getByText("Active")).toBeVisible({ timeout: 15000 });
+    // Token should be active (unpaused) after setup — scope to pause control section
+    await expect(page.getByRole("button", { name: "Pause Token" })).toBeVisible({ timeout: 15000 });
   });
 
   test("should show allocate proceeds form", async ({ page }) => {
@@ -107,24 +108,24 @@ test.describe("Issuer Dashboard", () => {
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    // Bob may already be an agent from a previous test run
+    // Wait for the role check to complete — either "Become an Issuer" or "Mint Tokens" appears.
+    // "Mint Tokens" is a stable indicator that the full dashboard loaded (never appears transiently).
     const promoteButton = page.getByRole("button", { name: "Grant Agent Role" });
-    const dashboard = page.getByText("Issuer Dashboard");
+    const mintHeading = page.getByText("Mint Tokens");
 
-    // Wait for either the promote CTA or the dashboard to appear
-    await expect(promoteButton.or(dashboard)).toBeVisible({ timeout: 30000 });
+    await expect(promoteButton.or(mintHeading)).toBeVisible({ timeout: 30000 });
 
     if (await promoteButton.isVisible()) {
       // Bob is not yet an agent — trigger the self-promotion flow
       await promoteButton.click();
 
-      // Wait for the dashboard to appear after promotion
-      await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 60000 });
+      // Wait for the full dashboard to appear after promotion
+      await expect(mintHeading).toBeVisible({ timeout: 60000 });
     }
 
     // Bob should see the demo banner (not the owner)
-    await expect(page.getByText("You have the agent role for this demo session")).toBeVisible();
-    // Bob should now see ALL operation cards including allocate (visible to all agents)
+    await expect(page.getByText("You have the agent role for this demo session")).toBeVisible({ timeout: 10000 });
+    // Bob should now see ALL operation cards
     await expect(page.getByText("Mint Tokens")).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
     await expect(page.getByText("Allocate Proceeds")).toBeVisible();

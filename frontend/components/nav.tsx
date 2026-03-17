@@ -34,6 +34,8 @@ export function Nav() {
             </Link>
             <div className="hidden sm:flex gap-1">
               <Link href="/" className={navLinkClass("/")}>Invest</Link>
+              <Link href="/coupons" className={navLinkClass("/coupons")}>Coupons</Link>
+              <Link href="/impact" className={navLinkClass("/impact")}>Impact</Link>
               <Link href="/issue" className={navLinkClass("/issue")}>Issuer</Link>
               <Link href="/monitor" className={navLinkClass("/monitor")}>Compliance</Link>
             </div>
@@ -62,6 +64,8 @@ export function Nav() {
           <div className="px-4 py-3 flex gap-2">
             {[
               { href: "/", label: "Invest" },
+              { href: "/coupons", label: "Coupons" },
+              { href: "/impact", label: "Impact" },
               { href: "/issue", label: "Issuer" },
               { href: "/monitor", label: "Compliance" },
             ].map(({ href, label }) => {

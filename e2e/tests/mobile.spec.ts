@@ -27,6 +27,8 @@ test.describe("Mobile Responsive Design", () => {
 
     // Menu links should be visible
     await expect(page.locator(".sm\\:hidden >> text=Invest")).toBeVisible();
+    await expect(page.locator(".sm\\:hidden >> text=Coupons")).toBeVisible();
+    await expect(page.locator(".sm\\:hidden >> text=Impact")).toBeVisible();
     await expect(page.locator(".sm\\:hidden >> text=Issuer")).toBeVisible();
     await expect(page.locator(".sm\\:hidden >> text=Compliance")).toBeVisible();
 
@@ -66,7 +68,7 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page.getByRole("heading", { name: "Coppice Green Bond" })).toBeVisible({ timeout: 10000 });
 
     // Compliance checks should load
-    await expect(page.getByText("Eligible to Invest")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Identity contract linked")).toBeVisible({ timeout: 30000 });
 
     // Portfolio section should be visible (stacked on mobile)
     await expect(page.getByText("CPC Balance")).toBeVisible();
@@ -88,6 +90,7 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page.getByText("Freeze / Unfreeze Wallet")).toBeVisible();
     await expect(page.getByText("Token Pause Control")).toBeVisible();
     await expect(page.getByText("Allocate Proceeds")).toBeVisible();
+    await expect(page.getByText("Distribute Coupon")).toBeVisible();
   });
 
   test("should display compliance monitor responsively", async ({ page }) => {

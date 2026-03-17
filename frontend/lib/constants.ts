@@ -34,7 +34,7 @@ export const DEMO_WALLETS: Record<string, { label: string; country: string; role
 
 // Deployed contract addresses (Hedera testnet)
 export const CONTRACT_ADDRESSES = {
-  token: process.env.NEXT_PUBLIC_TOKEN_ADDRESS || "0x17e19B53981370a904d0003Ba2D336837a43cbf0",
+  token: process.env.NEXT_PUBLIC_TOKEN_ADDRESS || "0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9",
   identityRegistry: process.env.NEXT_PUBLIC_IDENTITY_REGISTRY_ADDRESS || "0x03ecdB8673d65b81752AC14dAaCa797D846c1B31",
   compliance: process.env.NEXT_PUBLIC_COMPLIANCE_ADDRESS || "0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf",
   claimIssuer: process.env.NEXT_PUBLIC_CLAIM_ISSUER_ADDRESS || "0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A",

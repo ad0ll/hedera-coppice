@@ -159,7 +159,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           const country = await getCountry(address);
           let isRestricted = false;
           let countryCheckFailed = false;
-          if (country > 0) {
+          if (country > 0 && COUNTRY_RESTRICT_MODULE_ADDRESS !== ethers.ZeroAddress) {
             try {
               const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
               const restrictModule = new ethers.Contract(
