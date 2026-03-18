@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : 2,
+  workers: 4,
   reporter: "html",
   timeout: 60000,
   use: {
@@ -22,7 +22,7 @@ export default defineConfig({
     ? {}
     : {
         webServer: {
-          command: `cd ../frontend && npx next dev --port ${PORT}`,
+          command: `cd ../frontend && npx next dev --port ${PORT} --webpack`,
           port: PORT,
           reuseExistingServer: !process.env.CI,
           timeout: 30000,

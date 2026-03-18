@@ -33,8 +33,10 @@ test.describe("Compliance Monitor", () => {
     await page.goto("/monitor");
     await expect(page.getByRole("button", { name: "Guardian Verification" })).toBeVisible();
     await page.getByRole("button", { name: "Guardian Verification" }).click();
-    // Should show Guardian events, loading state, or empty state
-    await page.waitForTimeout(8000);
+    // Wait for Audit Event Feed to disappear (confirms tab switched)
+    await expect(page.getByText("Audit Event Feed")).not.toBeVisible({ timeout: 5000 });
+    // Now wait for Guardian content: events, loading, or empty state
+    await page.waitForTimeout(10000);
     const hasEvents = await page.getByText("Project Registered").first().isVisible().catch(() => false);
     const hasEmpty = await page.getByText("No Guardian verification events").isVisible().catch(() => false);
     const hasLoading = await page.locator(".animate-pulse").first().isVisible().catch(() => false);

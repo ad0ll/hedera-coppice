@@ -86,7 +86,7 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 10000 });
 
     // All cards should be visible (stacked on mobile)
-    await expect(page.getByText("Mint Tokens")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mint Tokens" })).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze Wallet")).toBeVisible();
     await expect(page.getByText("Token Pause Control")).toBeVisible();
     await expect(page.getByText("Allocate Proceeds")).toBeVisible();
