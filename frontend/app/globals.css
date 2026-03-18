@@ -179,6 +179,7 @@ body::after {
 
 .animate-entrance {
   opacity: 0;
+  will-change: transform, opacity;
   animation: fade-in-up 500ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
   animation-delay: calc(var(--index, 0) * 80ms);
 }
