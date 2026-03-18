@@ -16,7 +16,7 @@ export function EmptyState({ icon, title, description, variant = "default", acti
   const iconBg = variant === "danger" ? "bg-bond-red/10" : "bg-surface-3";
 
   const card = (
-    <div className={`card p-12 text-center ${className}`}>
+    <div className={`card p-6 sm:p-12 text-center ${className}`}>
       <div className={`w-12 h-12 mx-auto mb-4 rounded-xl ${iconBg} flex items-center justify-center`}>
         {icon}
       </div>

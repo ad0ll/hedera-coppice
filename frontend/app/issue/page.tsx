@@ -285,7 +285,7 @@ export default function IssuerDashboard() {
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
         <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Mint */}
           <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>

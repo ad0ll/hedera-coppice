@@ -9,7 +9,7 @@ import { AllocationBar } from "@/components/guardian/allocation-bar";
 
 function MetricsSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="animate-pulse">
           <div className="h-3 w-20 bg-surface-3 rounded mb-2" />
@@ -66,7 +66,7 @@ export default function ImpactPage() {
         {isLoading ? (
           <MetricsSkeleton />
         ) : (
-          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
             {metrics.map((m) => (
               <div key={m.label}>
                 <p className="stat-label mb-1.5">{m.label}</p>

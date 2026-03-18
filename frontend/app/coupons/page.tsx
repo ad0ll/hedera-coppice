@@ -145,7 +145,7 @@ export default function CouponsPage() {
         className="bg-gradient-to-b from-surface-2 to-transparent full-bleed pb-2 animate-entrance"
         style={{ "--index": 1 } as React.CSSProperties}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
           <div>
             <p className="stat-label mb-1.5">Next Coupon</p>
             <p className="font-display text-3xl text-white">

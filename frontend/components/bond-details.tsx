@@ -34,7 +34,7 @@ export function BondDetails() {
             <StatusBadge label={isPaused ? "Paused" : "Active"} variant={isPaused ? "red" : "green"} />
           )}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
           <div>
             <p className="stat-label mb-1.5">Symbol</p>
             <p className="font-display text-2xl text-white">{BOND_DETAILS.symbol}</p>

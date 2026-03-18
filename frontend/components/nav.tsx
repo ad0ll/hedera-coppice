@@ -43,7 +43,7 @@ export function Nav() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2 rounded-lg text-text-muted hover:text-white hover:bg-surface-3/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green"
+              className="sm:hidden p-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-3/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -61,7 +61,7 @@ export function Nav() {
       </div>
       {mobileMenuOpen && (
         <div className="sm:hidden border-t border-border bg-surface-2/95 backdrop-blur-md">
-          <div className="px-4 py-3 flex gap-2">
+          <div className="px-4 py-3 flex flex-wrap gap-1">
             {[
               { href: "/", label: "Invest" },
               { href: "/coupons", label: "Coupons" },
