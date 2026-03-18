@@ -74,6 +74,7 @@ export default function CouponsPage() {
         <EmptyState
           icon={
             <svg
+              aria-hidden="true"
               className="w-6 h-6 text-bond-red"
               fill="none"
               viewBox="0 0 24 24"
@@ -107,6 +108,7 @@ export default function CouponsPage() {
         <EmptyState
           icon={
             <svg
+              aria-hidden="true"
               className="w-6 h-6 text-text-muted"
               fill="none"
               viewBox="0 0 24 24"

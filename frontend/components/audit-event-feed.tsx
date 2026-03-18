@@ -17,9 +17,9 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   if (topicMissing) {
     return (
       <div className="card">
-        <h3 className="card-title">
+        <h2 className="card-title">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h3>
+        </h2>
         <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
           <WarningIcon className="w-5 h-5 shrink-0" />
           Audit topic not configured — event trail unavailable.
@@ -31,9 +31,9 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   if (loading) {
     return (
       <div className="card">
-        <h3 className="card-title">
+        <h2 className="card-title">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h3>
+        </h2>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
           <Spinner className="w-4 h-4" aria-hidden />
           Loading events from Hedera...
@@ -45,18 +45,19 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-white">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h3>
+        </h2>
         <span className="text-xs text-text-muted font-mono">{events.length} events</span>
       </div>
 
       {eventTypes.length > 1 && (
-        <div className="flex gap-1.5 px-6 py-3 border-b border-border/30 flex-wrap">
+        <div role="group" aria-label="Filter by event type" className="flex gap-1.5 px-6 py-3 border-b border-border/30 flex-wrap">
           {eventTypes.map((type) => (
             <button
               key={type}
               onClick={() => setFilter(type)}
+              aria-pressed={filter === type}
               className={`text-xs px-3 py-2 min-h-[44px] min-w-[44px] rounded-md transition-colors ${
                 filter === type
                   ? "bg-surface-3 text-white border border-border/50"

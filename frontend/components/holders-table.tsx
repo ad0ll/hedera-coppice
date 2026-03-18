@@ -15,7 +15,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
     return (
       <div className="card-flush">
         <div className="px-6 py-4 border-b border-border/50">
-          <h3 className="text-lg font-semibold text-white">Token Holders</h3>
+          <h2 className="text-lg font-semibold text-white">Token Holders</h2>
         </div>
         <div className="px-6 py-8 flex items-center justify-center gap-3 text-text-muted text-sm" role="status">
           <Spinner aria-hidden />
@@ -28,7 +28,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Token Holders</h3>
+        <h2 className="text-lg font-semibold text-white">Token Holders</h2>
         <span className="text-xs text-text-muted font-mono">{holders.length} addresses</span>
       </div>
 
@@ -83,7 +83,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-text-muted hover:text-bond-green transition-colors"
-                        title="View on HashScan"
+                        aria-label="View on HashScan"
                       >
                         <ExternalLinkIcon />
                       </a>

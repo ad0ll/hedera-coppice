@@ -33,7 +33,7 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-white">Recent Activity</h3>
+        <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
         <span className="text-xs text-text-muted font-mono">{events.length} total events</span>
       </div>
 

@@ -18,7 +18,7 @@ export function ProjectAllocation() {
   if (allocations.length === 0) {
     return (
       <div className="card-static">
-        <h3 className="card-title">Use of Proceeds</h3>
+        <h2 className="card-title">Use of Proceeds</h2>
         <p className="text-sm text-text-muted">No allocations recorded yet.</p>
       </div>
     );
@@ -33,7 +33,7 @@ export function ProjectAllocation() {
 
   return (
     <div className="card-static">
-      <h3 className="card-title">Use of Proceeds</h3>
+      <h2 className="card-title">Use of Proceeds</h2>
 
       <div className="space-y-2 mb-6">
         {Object.entries(totalByCategory).map(([category, total]) => {

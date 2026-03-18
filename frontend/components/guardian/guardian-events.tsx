@@ -80,7 +80,7 @@ const TYPE_LABELS: Record<TimelineEvent["type"], string> = {
 const TYPE_COLORS: Record<TimelineEvent["type"], string> = {
   registration: "bg-bond-teal/15 text-bond-teal",
   allocation: "bg-bond-amber/15 text-bond-amber",
-  mrv: "bg-blue-500/15 text-blue-400",
+  mrv: "bg-bond-teal/15 text-bond-teal",
   verification: "bg-bond-green/15 text-bond-green",
 };
 
@@ -134,9 +134,9 @@ export function GuardianEvents() {
             </div>
             <div className="flex flex-col gap-1 shrink-0">
               <a href={ipfsUrl(event.evidence.hash)} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">IPFS</a>
+                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">IPFS</a>
               <a href={hashScanUrl(event.evidence.topicId, event.evidence.messageId)} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">HashScan</a>
+                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">HashScan</a>
             </div>
           </div>
         </div>

@@ -211,7 +211,7 @@ export default function IssuerDashboard() {
 
   if (isCheckingAgent) {
     return (
-      <div className="card p-12 text-center">
+      <div className="card-static p-12 text-center">
         <span className="spinner w-6 h-6" role="status" aria-label="Checking authorization" />
         <p className="text-text-muted text-sm mt-4">Checking authorization...</p>
       </div>

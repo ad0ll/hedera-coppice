@@ -35,8 +35,11 @@ export default function ComplianceMonitor() {
       </div>
 
       {/* Tab toggle */}
-      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+      <div role="tablist" aria-label="Event source" className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
         <button
+          role="tab"
+          aria-selected={tab === "onchain"}
+          aria-controls="panel-onchain"
           onClick={() => setTab("onchain")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
             tab === "onchain" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
@@ -45,6 +48,9 @@ export default function ComplianceMonitor() {
           On-Chain Events
         </button>
         <button
+          role="tab"
+          aria-selected={tab === "guardian"}
+          aria-controls="panel-guardian"
           onClick={() => setTab("guardian")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
             tab === "guardian" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
@@ -54,7 +60,7 @@ export default function ComplianceMonitor() {
         </button>
       </div>
 
-      <div className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
+      <div id={`panel-${tab}`} role="tabpanel" aria-label={tab === "onchain" ? "On-Chain Events" : "Guardian Verification"} className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
         {tab === "onchain" ? (
           <AuditEventFeed topicType="audit" />
         ) : (

@@ -82,6 +82,7 @@ export default function ImpactPage() {
 
       {error && (
         <div
+          role="alert"
           className="card-static border-bond-amber/30 animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
