@@ -31,6 +31,7 @@ async function guardianLogin(username: string, password: string): Promise<string
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!loginRes.ok) {
     throw new Error(`Guardian login failed: ${loginRes.status}`);
@@ -41,6 +42,7 @@ async function guardianLogin(username: string, password: string): Promise<string
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refreshToken }),
+    signal: AbortSignal.timeout(10_000),
   });
   if (!tokenRes.ok) throw new Error(`Guardian token exchange failed: ${tokenRes.status}`);
   const { accessToken } = (await tokenRes.json()) as { accessToken: string };
