@@ -1,20 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { AuditEventFeed } from "@/components/audit-event-feed";
+import { GuardianEvents } from "@/components/guardian/guardian-events";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { APPROVAL_EVENTS, RESTRICTION_EVENTS } from "@/lib/event-types";
 
 export default function ComplianceMonitor() {
   const { events } = useHCSAudit("audit");
+  const [tab, setTab] = useState<"onchain" | "guardian">("onchain");
 
   const approvals = events.filter((e) => APPROVAL_EVENTS.has(e.type)).length;
   const restrictions = events.filter((e) => RESTRICTION_EVENTS.has(e.type)).length;
 
   return (
     <div className="space-y-6">
-      <h1 className="page-title animate-entrance" style={{ "--index": 0 }}>Compliance Monitor</h1>
+      <h1 className="page-title animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>Compliance Monitor</h1>
 
-      <div className="bg-surface-2 border-y border-border full-bleed animate-entrance" style={{ "--index": 1 }}>
+      <div className="bg-surface-2 border-y border-border full-bleed animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
         <div className="max-w-7xl mx-auto flex divide-x divide-border">
           <div className="flex-1 py-6 pr-6">
             <p className="stat-label mb-2">Total Events</p>
@@ -31,8 +34,32 @@ export default function ComplianceMonitor() {
         </div>
       </div>
 
-      <div className="animate-entrance" style={{ "--index": 2 }}>
-        <AuditEventFeed topicType="audit" />
+      {/* Tab toggle */}
+      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+        <button
+          onClick={() => setTab("onchain")}
+          className={`px-4 py-2 text-sm rounded-md transition-colors ${
+            tab === "onchain" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
+          }`}
+        >
+          On-Chain Events
+        </button>
+        <button
+          onClick={() => setTab("guardian")}
+          className={`px-4 py-2 text-sm rounded-md transition-colors ${
+            tab === "guardian" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
+          }`}
+        >
+          Guardian Verification
+        </button>
+      </div>
+
+      <div className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
+        {tab === "onchain" ? (
+          <AuditEventFeed topicType="audit" />
+        ) : (
+          <GuardianEvents />
+        )}
       </div>
     </div>
   );

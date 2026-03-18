@@ -52,7 +52,23 @@ function mockGuardianResponses(overrides?: {
   ];
 
   function wrapVC(cs: Record<string, unknown>) {
-    return { document: { credentialSubject: [cs] } };
+    return {
+      hash: "mockHash123",
+      topicId: "0.0.1234",
+      messageId: "1234567890.000000000",
+      document: {
+        credentialSubject: [cs],
+        issuer: "did:hedera:testnet:mock_0.0.5678",
+        issuanceDate: "2026-03-18T00:00:00Z",
+        proof: {
+          type: "Ed25519Signature2018",
+          created: "2026-03-18T00:00:00Z",
+          verificationMethod: "did:hedera:testnet:mock#key",
+          proofPurpose: "assertionMethod",
+          jws: "mock-jws",
+        },
+      },
+    };
   }
 
   mockFetch.mockImplementation((url: string) => {
@@ -128,6 +144,12 @@ describe("GET /api/guardian/data", () => {
     expect(data.totalVerifiedCO2e).toBe(4700);
     expect(data.sptTarget).toBe(10000);
     expect(data.sptMet).toBe(false);
+
+    // Evidence metadata from VC wrapper
+    expect(data.projects[0].registrationEvidence).toBeTruthy();
+    expect(data.projects[0].registrationEvidence.hash).toBe("mockHash123");
+    expect(data.projects[0].registrationEvidence.topicId).toBe("0.0.1234");
+    expect(data.projects[0].registrationEvidence.issuer).toBe("did:hedera:testnet:mock_0.0.5678");
   });
 
   it("matches projects to allocations by ProjectName", async () => {

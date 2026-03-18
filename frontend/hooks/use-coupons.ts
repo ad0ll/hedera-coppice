@@ -42,44 +42,53 @@ export function useCoupons() {
   return useQuery({
     queryKey: ["coupons", CPC_SECURITY_ID],
     queryFn: async (): Promise<CouponInfo[]> => {
-      const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
-      const bond = new ethers.Contract(CPC_SECURITY_ID, BOND_ABI, provider);
+      try {
+        const provider = new ethers.JsonRpcProvider(JSON_RPC_URL, undefined, {
+          staticNetwork: true,
+        });
+        const bond = new ethers.Contract(CPC_SECURITY_ID, BOND_ABI, provider);
 
-      const count = await bond.getCouponCount();
-      const countNum = Number(count);
-      if (countNum === 0) return [];
+        const count = await bond.getCouponCount();
+        const countNum = Number(count);
+        if (countNum === 0) return [];
 
-      const coupons: CouponInfo[] = [];
-      // ATS coupon IDs are 1-indexed (getCoupon(0) reverts)
-      for (let i = 1; i <= countNum; i++) {
-        const registered = await bond.getCoupon(i);
-        const c = registered.coupon;
-        const rate = Number(c.rate);
-        const rateDecimals = Number(c.rateDecimals);
-        const startDate = Number(c.startDate);
-        const endDate = Number(c.endDate);
-        const periodDays = Math.round((endDate - startDate) / 86400);
+        const coupons: CouponInfo[] = [];
+        // ATS coupon IDs are 1-indexed (getCoupon(0) reverts)
+        for (let i = 1; i <= countNum; i++) {
+          const registered = await bond.getCoupon(i);
+          const c = registered.coupon;
+          const rate = Number(c.rate);
+          const rateDecimals = Number(c.rateDecimals);
+          const startDate = Number(c.startDate);
+          const endDate = Number(c.endDate);
+          const periodDays = Math.round((endDate - startDate) / 86400);
 
-        const info: CouponInfo = {
-          id: i,
-          recordDate: Number(c.recordDate),
-          executionDate: Number(c.executionDate),
-          startDate,
-          endDate,
-          rate,
-          rateDecimals,
-          rateDisplay: formatRateDisplay(rate, rateDecimals),
-          snapshotId: Number(registered.snapshotId),
-          status: getCouponStatus({
+          const info: CouponInfo = {
+            id: i,
             recordDate: Number(c.recordDate),
             executionDate: Number(c.executionDate),
-          }),
-          periodDays,
-        };
-        coupons.push(info);
+            startDate,
+            endDate,
+            rate,
+            rateDecimals,
+            rateDisplay: formatRateDisplay(rate, rateDecimals),
+            snapshotId: Number(registered.snapshotId),
+            status: getCouponStatus({
+              recordDate: Number(c.recordDate),
+              executionDate: Number(c.executionDate),
+            }),
+            periodDays,
+          };
+          coupons.push(info);
+        }
+        return coupons;
+      } catch (err) {
+        console.error("[useCoupons] Failed to fetch coupon data:", err);
+        throw err;
       }
-      return coupons;
     },
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
     refetchInterval: 30_000,
     staleTime: 15_000,
   });

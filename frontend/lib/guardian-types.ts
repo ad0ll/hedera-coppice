@@ -114,15 +114,28 @@ export interface ViewerBlockResponse<T = Record<string, unknown>> {
   data: GuardianVCDocument<T>[];
 }
 
+// Provenance metadata extracted from VC document wrapper
+export interface VCEvidence {
+  hash: string;           // IPFS CID (base58)
+  topicId: string;        // HCS topic ID
+  messageId: string;      // HCS message timestamp
+  issuer: string;         // DID of signer
+  issuanceDate: string;   // ISO timestamp
+  proofType: string;      // e.g. "Ed25519Signature2018"
+}
+
 // Aggregated data for frontend consumption
 export interface GuardianProject {
   registration: ProjectRegistrationCS;
+  registrationEvidence?: VCEvidence;
   allocation?: FundAllocationCS;
+  allocationEvidence?: VCEvidence;
   mrvReport?: MRVReportCS;
+  mrvEvidence?: VCEvidence;
   verification?: VerificationStatementCS;
+  verificationEvidence?: VCEvidence;
   isVerified: boolean;
   verifiedCO2e: number;
-  messageId?: string;
   createDate: string;
 }
 

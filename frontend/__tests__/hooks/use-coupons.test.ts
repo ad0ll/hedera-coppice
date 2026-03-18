@@ -7,7 +7,7 @@ import { createElement, type ReactNode } from "react";
 // Mock ethers — vitest 4.x requires class-style mocks for constructors
 vi.mock("ethers", () => {
   const now = Math.floor(Date.now() / 1000);
-  class MockJsonRpcProvider {}
+  class MockJsonRpcProvider { constructor(..._args: unknown[]) {} }
   class MockContract {
     getCouponCount = vi.fn().mockResolvedValue(2n);
     getCoupon = vi.fn().mockImplementation((id: bigint) => {

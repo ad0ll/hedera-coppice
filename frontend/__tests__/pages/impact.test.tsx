@@ -20,7 +20,17 @@ function wrapper({ children }: { children: ReactNode }) {
 }
 
 const MOCK_DATA = {
-  bondFramework: { BondName: "Coppice Green Bond", TotalIssuanceAmount: 100000 },
+  bondFramework: {
+    BondName: "Coppice Green Bond",
+    TotalIssuanceAmount: 100000,
+    EligibleICMACategories: "Renewable Energy, Sustainable Water Management",
+    ReportingStandard: "ICMA Green Bond Principles (June 2025)",
+    RegulatoryFrameworks: "EU Taxonomy Regulation 2020/852",
+    EUTaxonomyAlignmentPercent: 85,
+    BondContractAddress: "0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9",
+    LCCFContractAddress: "0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350",
+    ExternalReviewProvider: "Simulated VVB",
+  },
   projects: [
     {
       registration: {
@@ -70,14 +80,15 @@ describe("Impact Page", () => {
   it("shows ICMA alignment section", () => {
     mockUseGuardian.mockReturnValue({ data: MOCK_DATA, isLoading: false, error: null });
     render(<ImpactPage />, { wrapper });
-    expect(screen.getByText("ICMA Green Bond Principles")).toBeInTheDocument();
+    expect(screen.getByText("ICMA Compliance Evidence")).toBeInTheDocument();
+    expect(screen.getAllByText("Guardian Verified").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows Guardian integration status", () => {
+  it("shows reporting frameworks from bond data", () => {
     mockUseGuardian.mockReturnValue({ data: MOCK_DATA, isLoading: false, error: null });
     render(<ImpactPage />, { wrapper });
-    expect(screen.getByText("Guardian MRV Integration")).toBeInTheDocument();
-    expect(screen.getByText("Live")).toBeInTheDocument();
+    expect(screen.getByText("ICMA Green Bond Principles (June 2025)")).toBeInTheDocument();
+    expect(screen.getByText("EU Taxonomy Regulation 2020/852")).toBeInTheDocument();
   });
 
   it("shows project cards with Guardian data", () => {

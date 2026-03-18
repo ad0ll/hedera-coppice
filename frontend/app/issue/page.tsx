@@ -35,6 +35,9 @@ export default function IssuerDashboard() {
   const { data: isAdmin } = useIsAdmin(address);
   const isOwner = isAdmin ?? false;
 
+  const DEPLOYER_ADDRESS = "0xeb974ba96c4912499c3b3bbd5a40617e1f6eecee";
+  const isDeployer = address?.toLowerCase() === DEPLOYER_ADDRESS;
+
   // HCS events — used for holders table and activity feed
   const { events: auditEvents, loading: auditLoading } = useHCSAudit("audit");
   const { events: impactEvents } = useHCSAudit("impact");
@@ -339,8 +342,8 @@ export default function IssuerDashboard() {
                   placeholder="Wallet address (0x...)" className="input" />
                 <div className="flex gap-2">
                   <button onClick={() => handleFreeze("freeze")}
-                    disabled={loading || !freezeAddr}
-                    className="flex-1 btn-outline-red">
+                    disabled={loading || !freezeAddr || !isDeployer}
+                    className="flex-1 btn-outline-red disabled:opacity-50">
                     Freeze
                   </button>
                   <button onClick={() => handleFreeze("unfreeze")}
@@ -349,6 +352,9 @@ export default function IssuerDashboard() {
                     Unfreeze
                   </button>
                 </div>
+                {!isDeployer && (
+                  <p className="text-xs text-text-muted">Only the bond issuer can freeze wallets. Unfreeze is available to all agents.</p>
+                )}
                 <StatusMessage status={freezeOp.status} />
               </div>
             </Card>
@@ -365,10 +371,13 @@ export default function IssuerDashboard() {
                   {isPaused ? "Paused" : "Active"}
                 </span>
               </div>
-              <button onClick={handlePauseToggle} disabled={loading}
-                className={`w-full ${isPaused ? "btn-outline-green" : "btn-outline-red"}`}>
+              <button onClick={handlePauseToggle} disabled={loading || !isDeployer}
+                className={`w-full ${isPaused ? "btn-outline-green" : "btn-outline-red"} disabled:opacity-50`}>
                 {isPaused ? "Unpause Token" : "Pause Token"}
               </button>
+              {!isDeployer && (
+                <p className="text-xs text-text-muted mt-2">Only the bond issuer can pause/unpause trading.</p>
+              )}
               <StatusMessage status={pauseOp.status} className="mt-2" />
             </Card>
           </div>

@@ -7,6 +7,7 @@ import type {
   MRVReportCS,
   VerificationStatementCS,
   ViewerBlockResponse,
+  VCEvidence,
   GuardianData,
   GuardianProject,
 } from "@/lib/guardian-types";
@@ -46,18 +47,33 @@ async function guardianLogin(username: string, password: string): Promise<string
   return accessToken;
 }
 
+interface FetchResult<T> {
+  cs: T;
+  evidence: VCEvidence;
+}
+
 async function fetchViewerBlock<T>(
   policyId: string,
   tag: string,
   token: string,
-): Promise<T[]> {
+): Promise<FetchResult<T>[]> {
   const res = await fetch(
     `${GUARDIAN_API_URL}/api/v1/policies/${policyId}/tag/${tag}/blocks`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!res.ok) return [];
   const body = (await res.json()) as ViewerBlockResponse<T>;
-  return (body.data ?? []).map((doc) => doc.document.credentialSubject[0]);
+  return (body.data ?? []).map((doc) => ({
+    cs: doc.document.credentialSubject[0],
+    evidence: {
+      hash: doc.hash,
+      topicId: doc.topicId,
+      messageId: doc.messageId,
+      issuer: doc.document.issuer,
+      issuanceDate: doc.document.issuanceDate,
+      proofType: doc.document.proof.type,
+    },
+  }));
 }
 
 export async function GET() {
@@ -78,7 +94,7 @@ export async function GET() {
     ]);
 
     // Fetch all document types in parallel
-    const [bondFrameworks, projects, allocations, mrvReports, verifications] =
+    const [bondFrameworkResults, projectResults, allocationResults, mrvResults, verificationResults] =
       await Promise.all([
         fetchViewerBlock<BondFrameworkCS>(policyId, TAGS.bondFrameworks, issuerToken),
         fetchViewerBlock<ProjectRegistrationCS>(policyId, TAGS.projects, issuerToken),
@@ -87,7 +103,7 @@ export async function GET() {
         fetchViewerBlock<VerificationStatementCS>(policyId, TAGS.verifications, verifierToken),
       ]);
 
-    const bondFramework = bondFrameworks[0] ?? null;
+    const bondFramework = bondFrameworkResults[0]?.cs ?? null;
     const totalIssuance = bondFramework?.TotalIssuanceAmount ?? 0;
 
     // Parse SPT target from bond framework text
@@ -97,32 +113,32 @@ export async function GET() {
     const sptTarget = sptMatch ? Number(sptMatch[1].replace(/,/g, "")) : 10_000;
 
     // Build per-project aggregation keyed by ProjectName
-    const guardianProjects: GuardianProject[] = projects.map((reg) => {
-      const allocation = allocations.find(
-        (a) => a.ProjectName === reg.ProjectName,
-      );
-      const mrv = mrvReports.find((m) => m.ProjectName === reg.ProjectName);
-      const verification = verifications.find(
-        (v) => v.ProjectName === reg.ProjectName,
-      );
+    const guardianProjects: GuardianProject[] = projectResults.map((reg) => {
+      const alloc = allocationResults.find((a) => a.cs.ProjectName === reg.cs.ProjectName);
+      const mrv = mrvResults.find((m) => m.cs.ProjectName === reg.cs.ProjectName);
+      const verif = verificationResults.find((v) => v.cs.ProjectName === reg.cs.ProjectName);
 
       return {
-        registration: reg,
-        allocation,
-        mrvReport: mrv,
-        verification,
-        isVerified: verification?.Opinion === "Approved" || verification?.Opinion === "Conditional",
-        verifiedCO2e: verification?.VerifiedGHGReduced ?? 0,
-        createDate: new Date().toISOString(),
+        registration: reg.cs,
+        registrationEvidence: reg.evidence,
+        allocation: alloc?.cs,
+        allocationEvidence: alloc?.evidence,
+        mrvReport: mrv?.cs,
+        mrvEvidence: mrv?.evidence,
+        verification: verif?.cs,
+        verificationEvidence: verif?.evidence,
+        isVerified: verif?.cs.Opinion === "Approved" || verif?.cs.Opinion === "Conditional",
+        verifiedCO2e: verif?.cs.VerifiedGHGReduced ?? 0,
+        createDate: reg.evidence.issuanceDate,
       };
     });
 
-    const totalAllocated = allocations.reduce(
-      (sum, a) => sum + (a.AllocatedAmountEUSD ?? 0),
+    const totalAllocated = allocationResults.reduce(
+      (sum, a) => sum + (a.cs.AllocatedAmountEUSD ?? 0),
       0,
     );
-    const totalVerifiedCO2e = verifications.reduce(
-      (sum, v) => sum + (v.VerifiedGHGReduced ?? 0),
+    const totalVerifiedCO2e = verificationResults.reduce(
+      (sum, v) => sum + (v.cs.VerifiedGHGReduced ?? 0),
       0,
     );
 
