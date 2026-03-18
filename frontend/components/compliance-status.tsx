@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { ethers } from "ethers";
 import { useConnection } from "@/contexts/ats-context";
-import { useIdentity, type ClaimStatus } from "@/hooks/use-identity";
+import { useIdentity, getClaimTransactions, CLAIM_TOPICS, type ClaimStatus, type ClaimTransactions } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
 import { countryRestrictModuleAbi } from "@coppice/common";
@@ -78,7 +78,7 @@ const CHECK_LABELS = [
 
 export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?: (eligible: boolean) => void }) {
   const { address } = useConnection();
-  const { isRegistered, getCountry, getClaimStatus } = useIdentity();
+  const { isRegistered, getCountry, getIdentity, getClaimStatus } = useIdentity();
   const { canTransfer } = useCompliance();
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [eligible, setEligible] = useState(false);
@@ -96,7 +96,13 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   useEffect(() => {
     if (!address) return;
 
-    function buildResults(claims: ClaimStatus, registered: boolean, countryResult: { country: number; isRestricted: boolean; countryCheckFailed: boolean }, transferAllowed: boolean): CheckResult[] {
+    function claimTxLink(claimTxs: ClaimTransactions, topic: number, label: string): CheckResult["link"] {
+      const txHash = claimTxs.get(topic);
+      if (!txHash) return undefined;
+      return { href: `https://hashscan.io/testnet/transaction/${txHash}`, label };
+    }
+
+    function buildResults(claims: ClaimStatus, registered: boolean, countryResult: { country: number; isRestricted: boolean; countryCheckFailed: boolean }, transferAllowed: boolean, claimTxs: ClaimTransactions): CheckResult[] {
       const countryLabel = COUNTRY_NAMES[countryResult.country] || `Code ${countryResult.country}`;
       return [
         {
@@ -105,9 +111,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           detail: registered ? "Identity contract linked" : "No identity found",
           link: registered ? { href: `https://hashscan.io/testnet/contract/${CONTRACT_ADDRESSES.identityRegistry}`, label: "Registry" } : undefined,
         },
-        { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing" },
-        { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing" },
-        { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing" },
+        { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing", link: claims.kyc ? claimTxLink(claimTxs, CLAIM_TOPICS.KYC, "Tx") : undefined },
+        { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing", link: claims.aml ? claimTxLink(claimTxs, CLAIM_TOPICS.AML, "Tx") : undefined },
+        { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing", link: claims.accredited ? claimTxLink(claimTxs, CLAIM_TOPICS.ACCREDITED, "Tx") : undefined },
         {
           label: "Jurisdiction Check",
           status: countryResult.countryCheckFailed ? "fail" : countryResult.isRestricted ? "fail" : "pass",
@@ -165,7 +171,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       }
 
       // All remaining checks are independent — run in parallel
-      const [claims, countryResult, transferAllowed] = await Promise.all([
+      const [claims, countryResult, transferAllowed, claimTxs] = await Promise.all([
         getClaimStatus(address),
         (async () => {
           const country = await getCountry(address);
@@ -190,9 +196,19 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           return { country, isRestricted, countryCheckFailed };
         })(),
         canTransfer(ethers.ZeroAddress, address, ethers.parseEther("1")),
+        // Fetch claim issuance tx hashes from the identity contract's ClaimAdded events
+        (async (): Promise<ClaimTransactions> => {
+          try {
+            const identityAddr = await getIdentity(address);
+            if (identityAddr === ethers.ZeroAddress) return new Map();
+            return await getClaimTransactions(identityAddr);
+          } catch {
+            return new Map();
+          }
+        })(),
       ]);
 
-      const results = buildResults(claims, registered, countryResult, transferAllowed);
+      const results = buildResults(claims, registered, countryResult, transferAllowed, claimTxs);
       setChecks(results);
 
       const allPass = results.every((r) => r.status === "pass");
@@ -211,7 +227,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       setEligible(false);
       onEligibilityChange?.(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getClaimStatus, canTransfer are useCallback-wrapped with stable deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getIdentity, getClaimStatus, canTransfer are useCallback-wrapped with stable deps
   }, [address, onEligibilityChange]);
 
   const handleOnboard = useCallback(async () => {

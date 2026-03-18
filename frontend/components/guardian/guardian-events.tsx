@@ -85,7 +85,7 @@ const TYPE_COLORS: Record<TimelineEvent["type"], string> = {
 };
 
 export function GuardianEvents() {
-  const { data, isLoading } = useGuardian();
+  const { data, isLoading, error } = useGuardian();
   const timeline = useMemo(
     () => (data ? buildTimeline(data.projects) : []),
     [data],
@@ -97,6 +97,16 @@ export function GuardianEvents() {
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="card-static animate-pulse h-20" />
         ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="card-static border-bond-amber/30">
+        <p className="text-sm text-bond-amber">
+          Guardian MRV data unavailable. Showing cached data if available.
+        </p>
       </div>
     );
   }

@@ -26,12 +26,21 @@ export function eusdFromRaw(raw: number): number {
   return raw / 10 ** EUSD_DECIMALS;
 }
 
-/** Format a coupon rate for display: rate=425, rateDecimals=4 -> "4.25%" */
+/**
+ * Format a coupon rate for display.
+ *
+ * ATS coupons use two on-chain conventions depending on when they were deployed:
+ *   - rateDecimals=2: rate/10^rd is already a percentage  (425/100 = 4.25%)
+ *   - rateDecimals=4: rate/10^rd is a fraction            (425/10000 = 0.0425 → 4.25%)
+ *
+ * We detect the convention by checking whether the raw division yields a value
+ * >= 1 (percentage) or < 1 (fraction).  This is safe for typical bond coupon
+ * rates (1–20%).
+ */
 export function formatRate(rate: number, rateDecimals: number): string {
-  const rateValue = rate / 10 ** rateDecimals;
-  const percentage = rateValue * 100;
-  const displayDecimals = rateDecimals > 2 ? rateDecimals - 2 : 2;
-  return `${percentage.toFixed(displayDecimals)}%`;
+  const raw = rate / 10 ** rateDecimals;
+  const percentage = raw >= 1 ? raw : raw * 100;
+  return `${percentage.toFixed(2)}%`;
 }
 
 /**

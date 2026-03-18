@@ -17,6 +17,7 @@ export const BOND_ABI = [
   "function getCouponCount() view returns (uint256)",
   "function getCoupon(uint256 couponID) view returns (tuple(tuple(uint256 recordDate, uint256 executionDate, uint256 startDate, uint256 endDate, uint256 fixingDate, uint256 rate, uint8 rateDecimals, uint8 rateStatus) coupon, uint256 snapshotId))",
   "function takeSnapshot() returns (uint256)",
+  "function setCoupon(tuple(uint256 recordDate, uint256 executionDate, uint256 startDate, uint256 endDate, uint256 fixingDate, uint256 rate, uint8 rateDecimals, uint8 rateStatus) _newCoupon) returns (uint256)",
 ] as const;
 
 export const LCCF_ABI = [
@@ -36,6 +37,24 @@ export const ERC20_ABI = [
 
 export const SECURITY_MINT_ABI = [
   "function issue(address to, uint256 value, bytes data) external",
+] as const;
+
+/** ATS KYC facet — grant KYC and check status. */
+export const ATS_KYC_ABI = [
+  "function grantKyc(address _account, string _vcId, uint256 _validFrom, uint256 _validTo, address _issuer) returns (bool)",
+  "function getKycStatusFor(address _account) view returns (uint256)",
+] as const;
+
+/** ATS ControlList facet — whitelist management. */
+export const ATS_CONTROL_LIST_ABI = [
+  "function addToControlList(address _account) returns (bool)",
+  "function isInControlList(address _account) view returns (bool)",
+] as const;
+
+/** ATS SSI Management facet — issuer registration (required before grantKyc). */
+export const ATS_SSI_ABI = [
+  "function addIssuer(address _issuer) returns (bool)",
+  "function isIssuer(address _issuer) view returns (bool)",
 ] as const;
 
 /** ATS role hashes shared between hooks and API routes. */

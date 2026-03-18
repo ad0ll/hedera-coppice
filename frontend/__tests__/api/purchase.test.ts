@@ -1,15 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
-// Mock contract method behavior
+// Mock contract method behavior — eUSD ERC-20
 const mockTransferFrom = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
 });
 const mockTransfer = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xrefundhash" }),
 });
+
+// Mock contract method behavior — ATS CPC bond
 const mockIssue = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
+});
+const mockIsIssuer = vi.fn().mockResolvedValue(true);
+const mockAddIssuer = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xissuer" }),
+});
+const mockGetKycStatusFor = vi.fn().mockResolvedValue(1n);
+const mockGrantKyc = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xkyc" }),
+});
+const mockIsInControlList = vi.fn().mockResolvedValue(true);
+const mockAddToControlList = vi.fn().mockResolvedValue({
+  wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xwl" }),
 });
 
 function MockContract() {
@@ -17,6 +31,12 @@ function MockContract() {
     transferFrom: (...args: unknown[]) => mockTransferFrom(...args),
     transfer: (...args: unknown[]) => mockTransfer(...args),
     issue: (...args: unknown[]) => mockIssue(...args),
+    isIssuer: (...args: unknown[]) => mockIsIssuer(...args),
+    addIssuer: (...args: unknown[]) => mockAddIssuer(...args),
+    getKycStatusFor: (...args: unknown[]) => mockGetKycStatusFor(...args),
+    grantKyc: (...args: unknown[]) => mockGrantKyc(...args),
+    isInControlList: (...args: unknown[]) => mockIsInControlList(...args),
+    addToControlList: (...args: unknown[]) => mockAddToControlList(...args),
   };
 }
 
@@ -86,6 +106,10 @@ describe("POST /api/purchase", () => {
     mockIssue.mockResolvedValue({
       wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
     });
+    // ATS KYC/whitelist defaults: deployer already issuer, investor already KYC'd and whitelisted
+    mockIsIssuer.mockResolvedValue(true);
+    mockGetKycStatusFor.mockResolvedValue(BigInt(1));
+    mockIsInControlList.mockResolvedValue(true);
   });
 
   it("rejects missing message and signature", async () => {
@@ -197,5 +221,82 @@ describe("POST /api/purchase", () => {
     expect(res.status).toBe(500);
     const data = await res.json();
     expect(data.error).toMatch(/eUSD transfer failed/i);
+  });
+
+  it("grants KYC when investor is not yet KYC'd", async () => {
+    mockGetKycStatusFor.mockResolvedValue(BigInt(0));
+
+    const { POST } = await import("@/app/api/purchase/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ALICE_ADDR,
+      amount: 5,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(200);
+    expect(mockGrantKyc).toHaveBeenCalledTimes(1);
+    // First arg should be the checksummed investor address
+    expect(mockGrantKyc.mock.calls[0][0]).toBe(
+      "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762",
+    );
+  });
+
+  it("skips KYC grant when investor already has KYC status 1", async () => {
+    mockGetKycStatusFor.mockResolvedValue(BigInt(1));
+
+    const { POST } = await import("@/app/api/purchase/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ALICE_ADDR,
+      amount: 5,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(200);
+    expect(mockGrantKyc).not.toHaveBeenCalled();
+  });
+
+  it("adds investor to control list when not whitelisted", async () => {
+    mockIsInControlList.mockResolvedValue(false);
+
+    const { POST } = await import("@/app/api/purchase/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ALICE_ADDR,
+      amount: 5,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(200);
+    expect(mockAddToControlList).toHaveBeenCalledTimes(1);
+    expect(mockAddToControlList.mock.calls[0][0]).toBe(
+      "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762",
+    );
+  });
+
+  it("skips control list when investor is already whitelisted", async () => {
+    mockIsInControlList.mockResolvedValue(true);
+
+    const { POST } = await import("@/app/api/purchase/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ALICE_ADDR,
+      amount: 5,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(200);
+    expect(mockAddToControlList).not.toHaveBeenCalled();
+  });
+
+  it("registers deployer as issuer when not yet registered", async () => {
+    mockIsIssuer.mockResolvedValue(false);
+
+    const { POST } = await import("@/app/api/purchase/route");
+    const res = await POST(makeRequest({
+      investorAddress: FAKE_ALICE_ADDR,
+      amount: 5,
+      message: "test",
+      signature: "0xsig",
+    }));
+    expect(res.status).toBe(200);
+    expect(mockAddIssuer).toHaveBeenCalledTimes(1);
   });
 });

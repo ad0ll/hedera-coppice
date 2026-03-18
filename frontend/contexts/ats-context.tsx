@@ -36,17 +36,29 @@ export function AtsProvider({ children }: { children: ReactNode }) {
   const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null);
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | null>(null);
 
-  // Listen for MetaMask account changes
+  // Listen for MetaMask account changes — update address AND signer
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return;
+    const eth = window.ethereum;
 
     const handleAccountsChanged = (...args: unknown[]) => {
       const accounts = args[0] as string[];
       if (accounts.length === 0) {
         setAddress(undefined);
+        setProvider(null);
         setSigner(null);
       } else {
-        setAddress(ethers.getAddress(accounts[0]));
+        const bp = new ethers.BrowserProvider(eth);
+        bp.getSigner().then((s) => {
+          setProvider(bp);
+          setSigner(s);
+          return s.getAddress();
+        }).then((addr) => {
+          setAddress(ethers.getAddress(addr));
+        }).catch(() => {
+          // Fallback: at minimum update the address from the event
+          setAddress(ethers.getAddress(accounts[0]));
+        });
       }
     };
 
@@ -56,7 +68,11 @@ export function AtsProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Check if already connected on mount
+  // Check if already connected on mount.
+  // Use eth_accounts (passive, no popup) to see if the wallet has authorized
+  // accounts, then getSigner() to resolve the CURRENTLY ACTIVE account.
+  // Previously used listAccounts() which returns cached accounts and can
+  // reconnect to the wrong wallet after the user switches in MetaMask.
   useEffect(() => {
     if (typeof window === "undefined" || !window.ethereum) return;
     const eth = window.ethereum;
@@ -64,7 +80,7 @@ export function AtsProvider({ children }: { children: ReactNode }) {
     const checkConnection = async () => {
       try {
         const bp = new ethers.BrowserProvider(eth);
-        const accounts = await bp.listAccounts();
+        const accounts = await bp.send("eth_accounts", []) as string[];
         if (accounts.length > 0) {
           const s = await bp.getSigner();
           setProvider(bp);

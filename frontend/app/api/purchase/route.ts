@@ -6,7 +6,14 @@ import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage, eusdFromRaw } from "@/lib/format";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 import { parseRequestBody, recoverAddressOrError, requireEnv } from "@/lib/api-helpers";
-import { ERC20_ABI, SECURITY_MINT_ABI, EUSD_DECIMALS } from "@/lib/abis";
+import {
+  ERC20_ABI,
+  SECURITY_MINT_ABI,
+  ATS_KYC_ABI,
+  ATS_CONTROL_LIST_ABI,
+  ATS_SSI_ABI,
+  EUSD_DECIMALS,
+} from "@/lib/abis";
 
 const purchaseBodySchema = z.object({
   amount: z.number().positive(),
@@ -71,12 +78,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Mint CPC tokens to investor via ATS security contract
+    // 3. Ensure investor has ATS KYC and is in the whitelist (control list)
+    const cpcContract = new ethers.Contract(
+      CPC_SECURITY_ID,
+      [...ATS_KYC_ABI, ...ATS_CONTROL_LIST_ABI, ...ATS_SSI_ABI, ...SECURITY_MINT_ABI],
+      wallet,
+    );
+
+    // 3a. Ensure deployer is registered as a KYC issuer (idempotent)
+    const deployerIsIssuer: boolean = await cpcContract.isIssuer(wallet.address);
+    if (!deployerIsIssuer) {
+      const addIssuerTx = await cpcContract.addIssuer(wallet.address, {
+        gasLimit: BigInt(300_000),
+      });
+      await addIssuerTx.wait();
+    }
+
+    // 3b. Grant KYC if not already granted (status 1 = granted)
+    const kycStatus: bigint = await cpcContract.getKycStatusFor(investor);
+    if (kycStatus !== BigInt(1)) {
+      const now = Math.floor(Date.now() / 1000);
+      const oneYearFromNow = now + 365 * 24 * 60 * 60;
+      const kycTx = await cpcContract.grantKyc(
+        investor,
+        `vc-purchase-${investor.toLowerCase().slice(2, 10)}`,
+        now,
+        oneYearFromNow,
+        wallet.address,
+        { gasLimit: BigInt(300_000) },
+      );
+      await kycTx.wait();
+    }
+
+    // 3c. Add to control list (whitelist) if not already listed
+    const isListed: boolean = await cpcContract.isInControlList(investor);
+    if (!isListed) {
+      const wlTx = await cpcContract.addToControlList(investor, {
+        gasLimit: BigInt(300_000),
+      });
+      await wlTx.wait();
+    }
+
+    // 4. Mint CPC tokens to investor via ATS security contract
     let mintTxHash: string | undefined;
     try {
-      const securityContract = new ethers.Contract(CPC_SECURITY_ID, SECURITY_MINT_ABI, wallet);
       const mintAmount = ethers.parseEther(String(amount));
-      const mintTx = await securityContract.issue(investor, mintAmount, "0x");
+      const mintTx = await cpcContract.issue(investor, mintAmount, "0x");
       const mintReceipt = await mintTx.wait();
       mintTxHash = mintReceipt?.hash;
     } catch (mintErr: unknown) {

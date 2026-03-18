@@ -23,6 +23,7 @@ import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
+import { createCouponResponseSchema } from "@/app/api/issuer/create-coupon/route";
 import { useCoupons } from "@/hooks/use-coupons";
 import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
@@ -67,6 +68,15 @@ export default function IssuerDashboard() {
   const [lastDistributeTx, setLastDistributeTx] = useState<string | null>(null);
   const { data: coupons = [] } = useCoupons();
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
+
+  const [couponRate, setCouponRate] = useState("");
+  const [couponStartDate, setCouponStartDate] = useState("");
+  const [couponRecordDate, setCouponRecordDate] = useState("");
+  const [couponExecutionDate, setCouponExecutionDate] = useState("");
+  const [couponEndDate, setCouponEndDate] = useState("");
+  const [creatingCoupon, setCreatingCoupon] = useState(false);
+  const createCouponOp = useOperationStatus();
+  const [lastCreateCouponTx, setLastCreateCouponTx] = useState<string | null>(null);
 
   const { data: guardianData } = useGuardian();
   const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
@@ -168,6 +178,41 @@ export default function IssuerDashboard() {
       setProceedsAmount("");
     } catch (err: unknown) {
       proceedsOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
+    }
+  }
+
+  async function handleCreateCoupon() {
+    if (!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || !address || creatingCoupon) return;
+    createCouponOp.clear();
+    setLastCreateCouponTx(null);
+    setCreatingCoupon(true);
+    try {
+      const { message: authMessage, signature } = await signAuthMessage(address, "Create Coupon");
+      const result = await fetchAPI("/api/issuer/create-coupon", createCouponResponseSchema, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rate: Number(couponRate),
+          startDate: new Date(couponStartDate).toISOString(),
+          recordDate: new Date(couponRecordDate).toISOString(),
+          executionDate: new Date(couponExecutionDate).toISOString(),
+          endDate: new Date(couponEndDate).toISOString(),
+          address,
+          message: authMessage,
+          signature,
+        }),
+      });
+      setLastCreateCouponTx(result.txHash);
+      createCouponOp.setStatus({ type: "success", msg: `Coupon #${result.couponId} created at ${couponRate}%` });
+      setCouponRate("");
+      setCouponStartDate("");
+      setCouponRecordDate("");
+      setCouponExecutionDate("");
+      setCouponEndDate("");
+    } catch (err: unknown) {
+      createCouponOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Create coupon failed") });
+    } finally {
+      setCreatingCoupon(false);
     }
   }
 
@@ -424,6 +469,90 @@ export default function IssuerDashboard() {
                 {lastDistributeTx && distributeOp.status?.type === "success" && (
                   <a
                     href={`https://hashscan.io/testnet/transaction/${lastDistributeTx}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
+                  >
+                    View on HashScan
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                  </a>
+                )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Create Coupon */}
+          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+            <Card>
+              <h3 className="card-title">Create Coupon</h3>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="coupon-rate" className="text-xs text-text-muted mb-1 block">Annual Rate (%)</label>
+                  <input
+                    id="coupon-rate"
+                    type="number"
+                    value={couponRate}
+                    onChange={(e) => setCouponRate(e.target.value)}
+                    placeholder="4.25"
+                    min="0"
+                    step="0.01"
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="coupon-start" className="text-xs text-text-muted mb-1 block">Start Date</label>
+                  <input
+                    id="coupon-start"
+                    type="datetime-local"
+                    value={couponStartDate}
+                    onChange={(e) => setCouponStartDate(e.target.value)}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="coupon-record" className="text-xs text-text-muted mb-1 block">Record Date</label>
+                  <input
+                    id="coupon-record"
+                    type="datetime-local"
+                    value={couponRecordDate}
+                    onChange={(e) => setCouponRecordDate(e.target.value)}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="coupon-execution" className="text-xs text-text-muted mb-1 block">Execution Date</label>
+                  <input
+                    id="coupon-execution"
+                    type="datetime-local"
+                    value={couponExecutionDate}
+                    onChange={(e) => setCouponExecutionDate(e.target.value)}
+                    className="input"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="coupon-end" className="text-xs text-text-muted mb-1 block">End Date</label>
+                  <input
+                    id="coupon-end"
+                    type="datetime-local"
+                    value={couponEndDate}
+                    onChange={(e) => setCouponEndDate(e.target.value)}
+                    className="input"
+                  />
+                </div>
+                <button
+                  onClick={handleCreateCoupon}
+                  disabled={!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || creatingCoupon}
+                  className="w-full btn-primary"
+                >
+                  {creatingCoupon ? "Creating..." : "Create Coupon"}
+                </button>
+                {!isDeployer && (
+                  <p className="text-xs text-text-muted">Only the bond issuer can create coupons (requires CORPORATE_ACTION role).</p>
+                )}
+                <StatusMessage status={createCouponOp.status} />
+                {lastCreateCouponTx && createCouponOp.status?.type === "success" && (
+                  <a
+                    href={`https://hashscan.io/testnet/transaction/${lastCreateCouponTx}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
