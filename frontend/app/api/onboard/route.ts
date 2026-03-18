@@ -10,8 +10,8 @@ import {
   identityProxyBytecode,
   identityAddClaimAbi,
 } from "@/lib/onchain-id";
-import { verifyAuth } from "@/lib/auth";
 import { withRetry } from "@/lib/retry";
+import { parseRequestBody, verifyAuthOrError, normalizeAddress } from "@/lib/api-helpers";
 
 const onboardBodySchema = z.object({
   investorAddress: z.string().nonempty(),
@@ -57,33 +57,17 @@ function sseEncode(event: OnboardEvent): string {
 }
 
 export async function POST(request: NextRequest) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const bodyResult = await parseRequestBody(request, onboardBodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
+  const { investorAddress, country, message, signature } = bodyResult.data;
 
-  const parsed = onboardBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-  const { investorAddress, country, message, signature } = parsed.data;
-
-  let investor: string;
-  try {
-    investor = ethers.getAddress(investorAddress);
-  } catch {
-    return NextResponse.json({ error: "Invalid investor address" }, { status: 400 });
-  }
+  const addrResult = normalizeAddress(investorAddress);
+  if ("error" in addrResult) return addrResult.error;
+  const investor = addrResult.address;
 
   // Verify wallet signature — proves caller owns the investor wallet
-  try {
-    await verifyAuth(message, signature, investor);
-  } catch (err: unknown) {
-    const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
-  }
+  const authError = await verifyAuthOrError(message, signature, investor);
+  if (authError) return authError;
 
   // Pre-flight: check env vars and registration status before starting SSE stream
   let implAuthorityAddress: string;

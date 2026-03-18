@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { ethers } from "ethers";
 import { tokenAbi, identityRegistryAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES, JSON_RPC_URL } from "@/lib/constants";
+import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { getReadProvider } from "@/lib/provider";
 import type { AuditEvent } from "@/hooks/use-hcs-audit";
 
 const ZERO = ethers.ZeroAddress.toLowerCase();
@@ -52,7 +53,7 @@ export function useHolders(events: AuditEvent[]) {
     let cancelled = false;
 
     async function fetchHolderData() {
-      const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+      const provider = getReadProvider();
       const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
       const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
 
@@ -61,13 +62,13 @@ export function useHolders(events: AuditEvent[]) {
       const promises = validAddresses.map(async (address) => {
         try {
           const [balance, frozen, verified] = await Promise.all([
-            tokenContract.balanceOf(address) as Promise<bigint>,
-            tokenContract.isFrozen(address) as Promise<boolean>,
-            registryContract.isVerified(address) as Promise<boolean>,
+            tokenContract.balanceOf(address),
+            tokenContract.isFrozen(address),
+            registryContract.isVerified(address),
           ]);
-          return { address, balance, frozen, verified } as HolderInfo;
+          return { address, balance, frozen, verified };
         } catch {
-          return { address, balance: BigInt(0), frozen: false, verified: false } as HolderInfo;
+          return { address, balance: BigInt(0), frozen: false, verified: false };
         }
       });
 
@@ -81,7 +82,7 @@ export function useHolders(events: AuditEvent[]) {
     }
 
     fetchHolderData();
-    const interval = setInterval(fetchHolderData, 15_000);
+    const interval = setInterval(fetchHolderData, 30_000);
 
     return () => {
       cancelled = true;

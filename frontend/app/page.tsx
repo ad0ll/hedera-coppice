@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useConnection } from "@/contexts/ats-context";
-import { formatBalance } from "@/lib/format";
+import { formatBalance, formatNumber } from "@/lib/format";
 import { BondDetails } from "@/components/bond-details";
 import { ComplianceStatus } from "@/components/compliance-status";
 import { TransferFlow } from "@/components/transfer-flow";
@@ -27,7 +27,7 @@ export default function InvestorPortal() {
   const refreshEusdBalance = useCallback(async () => {
     if (!address) return;
     const eusd = await getEusdBalance(address);
-    setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+    setEusdBalance(formatNumber(eusd, { minimumFractionDigits: 2 }));
   }, [address, getEusdBalance]);
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function InvestorPortal() {
     const load = async () => {
       const eusd = await getEusdBalance(address);
       if (!cancelled) {
-        setEusdBalance(eusd.toLocaleString("en-US", { minimumFractionDigits: 2 }));
+        setEusdBalance(formatNumber(eusd, { minimumFractionDigits: 2 }));
       }
     };
     load();

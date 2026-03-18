@@ -2,21 +2,10 @@
 
 import type React from "react";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
+import { formatTimestamp } from "@/lib/format";
 import { Spinner } from "@/components/ui/icons";
 import { AddressLink, TxLink } from "@/components/ui/hashscan-link";
 import type { AuditEvent } from "@/hooks/use-hcs-audit";
-
-function formatTimestamp(ts: number | string): string {
-  if (typeof ts === "string") {
-    const secs = parseFloat(ts);
-    return new Date(secs * 1000).toLocaleString("en-US", {
-      month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  }
-  return new Date(ts).toLocaleString("en-US", {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-  });
-}
 
 function eventSummary(event: AuditEvent): React.ReactNode {
   const d = event.data;
@@ -67,7 +56,7 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
                   {eventSummary(event)}
                 </span>
                 <span className="text-[11px] text-text-muted/60 shrink-0">
-                  {formatTimestamp(event.consensusTimestamp || event.ts)}
+                  {formatTimestamp(event.consensusTimestamp || event.ts, { includeDate: true })}
                 </span>
                 {event.tx && (
                   <span className="shrink-0 text-xs">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useGuardian } from "@/hooks/use-guardian";
+import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ProjectCard } from "@/components/guardian/project-card";
 import { SptStatus } from "@/components/guardian/spt-status";
@@ -27,13 +28,13 @@ export default function ImpactPage() {
     ? [
         {
           label: "tCO\u2082e Verified",
-          value: data.totalVerifiedCO2e.toLocaleString(),
+          value: formatNumber(data.totalVerifiedCO2e),
           unit: "tonnes",
         },
         {
           label: "Proceeds Allocated",
           value: `${data.allocationPercent}%`,
-          unit: `${data.totalAllocatedEUSD.toLocaleString()} eUSD`,
+          unit: `${formatNumber(data.totalAllocatedEUSD)} eUSD`,
         },
         {
           label: "Projects Funded",
@@ -43,7 +44,7 @@ export default function ImpactPage() {
         {
           label: "SPT Status",
           value: data.sptMet ? "Met" : "Below",
-          unit: `${data.totalVerifiedCO2e.toLocaleString()} / ${data.sptTarget.toLocaleString()} tCO₂e`,
+          unit: `${formatNumber(data.totalVerifiedCO2e)} / ${formatNumber(data.sptTarget)} tCO₂e`,
         },
       ]
     : [];
@@ -148,7 +149,7 @@ export default function ImpactPage() {
               <p className="stat-label mb-2">Use of Proceeds</p>
               <p className="text-sm text-white mb-1">{data.bondFramework.EligibleICMACategories}</p>
               <p className="text-xs text-text-muted">
-                {data.allocationPercent}% allocated ({data.totalAllocatedEUSD.toLocaleString()} / {data.totalIssuanceEUSD.toLocaleString()} eUSD) across {data.projects.length} projects
+                {data.allocationPercent}% allocated ({formatNumber(data.totalAllocatedEUSD)} / {formatNumber(data.totalIssuanceEUSD)} eUSD) across {data.projects.length} projects
               </p>
             </div>
 

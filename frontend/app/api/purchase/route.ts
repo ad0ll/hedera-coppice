@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth";
 import { EUSD_EVM_ADDRESS, CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet } from "@/lib/deployer";
-import { getErrorMessage } from "@/lib/format";
+import { getErrorMessage, eusdFromRaw } from "@/lib/format";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
+import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
+import { ERC20_ABI, SECURITY_MINT_ABI, EUSD_DECIMALS } from "@/lib/abis";
 
 const purchaseBodySchema = z.object({
   investorAddress: z.string().nonempty(),
@@ -21,39 +22,21 @@ export const purchaseResponseSchema = z.object({
 });
 export type PurchaseResponse = z.infer<typeof purchaseResponseSchema>;
 
-const ERC20_ABI = [
-  "function transferFrom(address from, address to, uint256 amount) returns (bool)",
-  "function transfer(address to, uint256 amount) returns (bool)",
-];
-
-// ATS Security issuance ABI — the diamond proxy's ERC1594 facet
-const SECURITY_MINT_ABI = [
-  "function issue(address to, uint256 value, bytes data) external",
-];
-
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const parsed = purchaseBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-  const { investorAddress, amount, message, signature } = parsed.data;
+  const bodyResult = await parseRequestBody(request, purchaseBodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
+  const { investorAddress, amount, message, signature } = bodyResult.data;
 
   const investor = ethers.getAddress(investorAddress);
 
-  try {
-    await verifyAuth(message, signature, investor);
-  } catch (err: unknown) {
-    const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
-  }
+  const authError = await verifyAuthOrError(message, signature, investor);
+  if (authError) return authError;
 
   try {
     // 1. Check eUSD balance via Mirror Node
-    const eusdTokenId = process.env.EUSD_TOKEN_ID;
-    if (!eusdTokenId) {
-      return NextResponse.json({ error: "EUSD_TOKEN_ID not configured" }, { status: 500 });
-    }
+    const eusdEnv = requireEnv("EUSD_TOKEN_ID");
+    if ("error" in eusdEnv) return eusdEnv.error;
+    const eusdTokenId = eusdEnv.value;
     let accountId: string;
     try {
       accountId = await getHederaAccountId(investor);
@@ -64,7 +47,7 @@ export async function POST(request: NextRequest) {
       );
     }
     const rawBalance = await getHtsTokenBalance(accountId, eusdTokenId);
-    const balance = rawBalance / 100; // eUSD has 2 decimals
+    const balance = eusdFromRaw(rawBalance);
     if (balance < amount) {
       return NextResponse.json(
         { error: `Insufficient eUSD: ${balance} < ${amount}` },
@@ -76,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Transfer eUSD from investor to treasury via ERC-20 transferFrom
     const eusdContract = new ethers.Contract(EUSD_EVM_ADDRESS, ERC20_ABI, wallet);
-    const eusdAmount = BigInt(Math.round(amount * 100)); // eUSD has 2 decimals
+    const eusdAmount = BigInt(Math.round(amount * 10 ** EUSD_DECIMALS));
     const treasuryAddress = wallet.address;
 
     const transferTx = await eusdContract.transferFrom(investor, treasuryAddress, eusdAmount, {

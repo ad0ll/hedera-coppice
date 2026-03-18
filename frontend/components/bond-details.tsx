@@ -2,14 +2,14 @@
 
 import { useTokenRead } from "@/hooks/use-token";
 import { BOND_DETAILS } from "@/lib/constants";
+import { formatBalance } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { ethers } from "ethers";
 
 export function BondDetails() {
   const { totalSupply, paused } = useTokenRead();
 
   const supply = totalSupply.data != null
-    ? Number(ethers.formatEther(totalSupply.data)).toLocaleString("en-US")
+    ? formatBalance(totalSupply.data)
     : "--";
   const isPaused = paused.data ?? null;
 

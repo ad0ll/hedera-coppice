@@ -3,6 +3,7 @@
 import { useCallback } from "react";
 import { EUSD_TOKEN_ID } from "@/lib/constants";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
+import { eusdFromRaw } from "@/lib/format";
 
 export function useHTS() {
   const getEusdBalance = useCallback(async (evmAddress: string): Promise<number> => {
@@ -10,7 +11,7 @@ export function useHTS() {
     try {
       const accountId = await getHederaAccountId(evmAddress);
       const rawBalance = await getHtsTokenBalance(accountId, EUSD_TOKEN_ID);
-      return rawBalance / 100; // eUSD has 2 decimals
+      return eusdFromRaw(rawBalance);
     } catch {
       return 0;
     }

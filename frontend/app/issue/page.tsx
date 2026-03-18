@@ -17,7 +17,7 @@ import { StatusMessage } from "@/components/ui/status-message";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import { useOperationStatus } from "@/hooks/use-operation-status";
-import { abbreviateAddress, getErrorMessage } from "@/lib/format";
+import { abbreviateAddress, formatNumber, getErrorMessage } from "@/lib/format";
 import { BOND_CATEGORIES } from "@/lib/event-types";
 import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
@@ -163,7 +163,7 @@ export default function IssuerDashboard() {
           signature,
         }),
       });
-      proceedsOp.setStatus({ type: "success", msg: `Allocated $${Number(proceedsAmount).toLocaleString("en-US")} to ${project}` });
+      proceedsOp.setStatus({ type: "success", msg: `Allocated $${formatNumber(Number(proceedsAmount))} to ${project}` });
       setProject("");
       setProceedsAmount("");
     } catch (err: unknown) {

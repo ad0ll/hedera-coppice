@@ -10,13 +10,10 @@ import { signAuthMessage } from "@/lib/auth";
 import { fetchAPI } from "@/lib/api-client";
 import { purchaseResponseSchema } from "@/app/api/purchase/route";
 import { EUSD_EVM_ADDRESS, DEMO_WALLETS } from "@/lib/constants";
-import { getErrorMessage } from "@/lib/format";
+import { formatNumber, getErrorMessage } from "@/lib/format";
+import { ERC20_ABI, EUSD_DECIMALS } from "@/lib/abis";
 import { StepProgress } from "@/components/ui/step-progress";
 import type { Step } from "@/components/ui/step-progress";
-
-const ERC20_ABI = [
-  "function approve(address spender, uint256 amount) returns (bool)",
-];
 
 export function TransferFlow({ enabled }: { enabled: boolean }) {
   const { address } = useConnection();
@@ -85,7 +82,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       setSteps([...newSteps]);
 
       // Step 3: Approve eUSD spending — investor signs in MetaMask
-      const eusdAmount = BigInt(Math.round(Number(amount) * 100)); // eUSD has 2 decimals
+      const eusdAmount = BigInt(Math.round(Number(amount) * 10 ** EUSD_DECIMALS));
       const eusdContract = new ethers.Contract(EUSD_EVM_ADDRESS, ERC20_ABI, signer);
       const approveTx: ethers.TransactionResponse = await eusdContract.approve(
         deployerAddress,
@@ -169,11 +166,11 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       {amount && enabled && !running && steps.length === 0 && (
         <div>
           <p className="text-xs text-text-muted">
-            Cost: <span className="text-white font-mono">{Number(amount).toLocaleString("en-US")}</span> eUSD (1:1 exchange rate)
+            Cost: <span className="text-white font-mono">{formatNumber(Number(amount))}</span> eUSD (1:1 exchange rate)
           </p>
           {eusdBalance !== null && Number(amount) > eusdBalance && (
             <p className="text-xs text-bond-red mt-1">
-              Insufficient eUSD balance ({eusdBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} available)
+              Insufficient eUSD balance ({formatNumber(eusdBalance, { minimumFractionDigits: 2 })} available)
             </p>
           )}
         </div>

@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
+import { formatNumber } from "@/lib/format";
 import type { GuardianProject, VCEvidence } from "@/lib/guardian-types";
 
 function hashScanUrl(_topicId: string, messageId: string): string {
@@ -43,7 +45,7 @@ function buildTimeline(projects: GuardianProject[]): TimelineEvent[] {
         projectName: p.allocation.ProjectName,
         date: p.allocationEvidence.issuanceDate,
         evidence: p.allocationEvidence,
-        detail: `${p.allocation.AllocatedAmountEUSD.toLocaleString()} eUSD - ${p.allocation.Purpose}`,
+        detail: `${formatNumber(p.allocation.AllocatedAmountEUSD)} eUSD - ${p.allocation.Purpose}`,
       });
     }
     if (p.mrvReport && p.mrvEvidence) {
@@ -52,7 +54,7 @@ function buildTimeline(projects: GuardianProject[]): TimelineEvent[] {
         projectName: p.mrvReport.ProjectName,
         date: p.mrvEvidence.issuanceDate,
         evidence: p.mrvEvidence,
-        detail: `${p.mrvReport.AnnualGHGReduced.toLocaleString()} tCO\u2082e reported (${p.mrvReport.ReportingPeriodStart} to ${p.mrvReport.ReportingPeriodEnd})`,
+        detail: `${formatNumber(p.mrvReport.AnnualGHGReduced)} tCO\u2082e reported (${p.mrvReport.ReportingPeriodStart} to ${p.mrvReport.ReportingPeriodEnd})`,
       });
     }
     if (p.verification && p.verificationEvidence) {
@@ -61,7 +63,7 @@ function buildTimeline(projects: GuardianProject[]): TimelineEvent[] {
         projectName: p.verification.ProjectName,
         date: p.verificationEvidence.issuanceDate,
         evidence: p.verificationEvidence,
-        detail: `${p.verification.Opinion} - ${p.verification.VerifiedGHGReduced.toLocaleString()} tCO\u2082e verified`,
+        detail: `${p.verification.Opinion} - ${formatNumber(p.verification.VerifiedGHGReduced)} tCO\u2082e verified`,
       });
     }
   }
@@ -84,6 +86,10 @@ const TYPE_COLORS: Record<TimelineEvent["type"], string> = {
 
 export function GuardianEvents() {
   const { data, isLoading } = useGuardian();
+  const timeline = useMemo(
+    () => (data ? buildTimeline(data.projects) : []),
+    [data],
+  );
 
   if (isLoading) {
     return (
@@ -95,15 +101,13 @@ export function GuardianEvents() {
     );
   }
 
-  if (!data || data.projects.length === 0) {
+  if (!data || timeline.length === 0) {
     return (
       <div className="card-static text-sm text-text-muted text-center py-8">
         No Guardian verification events yet.
       </div>
     );
   }
-
-  const timeline = buildTimeline(data.projects);
 
   return (
     <div className="space-y-3">
@@ -117,7 +121,7 @@ export function GuardianEvents() {
                 </span>
                 <span className="text-xs text-text-muted">
                   {new Date(event.date).toLocaleString("en-US", {
-                    month: "short", day: "numeric", year: "numeric",
+                    month: "short", day: "numeric",
                     hour: "2-digit", minute: "2-digit",
                   })}
                 </span>

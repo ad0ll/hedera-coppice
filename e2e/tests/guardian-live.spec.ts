@@ -54,23 +54,17 @@ test.describe("Guardian Live Integration", () => {
     await expect(allocationText).toBeVisible({ timeout: 10000 });
   });
 
-  test("Impact page shows Guardian MRV status as Live", async ({ page }) => {
+  test("Impact page shows ICMA compliance evidence from Guardian", async ({ page }) => {
     await page.goto("/impact");
 
-    await expect(page.getByText("Guardian MRV Integration")).toBeVisible({
+    await expect(page.getByText("ICMA Compliance Evidence")).toBeVisible({
       timeout: 15000,
     });
-    await expect(page.getByText("Live")).toBeVisible();
-  });
-
-  test("Impact page shows ICMA principles", async ({ page }) => {
-    await page.goto("/impact");
-
-    await expect(page.getByText("ICMA Green Bond Principles")).toBeVisible({
-      timeout: 10000,
-    });
-    await expect(page.getByText("Use of Proceeds", { exact: true })).toBeVisible();
-    await expect(page.getByText("Project Evaluation & Selection")).toBeVisible();
+    await expect(page.getByText("Guardian Verified").first()).toBeVisible();
+    // Use stat-label locators to avoid strict mode violations
+    await expect(page.locator(".stat-label", { hasText: "Use of Proceeds" })).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "Project Evaluation" })).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "Reporting & Frameworks" })).toBeVisible();
   });
 
   test("Invest page shows Guardian impact summary", async ({ page }) => {

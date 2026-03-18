@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { VCEvidenceRow } from "@/components/guardian/vc-evidence";
 import type { GuardianProject, Indicator } from "@/lib/guardian-types";
@@ -45,7 +46,7 @@ function renderIndicators(json: string, label: string) {
         {indicators.map((ind, i) => (
           <span key={i} className="text-xs">
             {i > 0 && " | "}
-            <span className="font-mono text-white/70">{ind.value.toLocaleString()}</span> {ind.unit}
+            <span className="font-mono text-white/70">{formatNumber(ind.value)}</span> {ind.unit}
           </span>
         ))}
       </div>
@@ -83,14 +84,14 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
       <div className="flex items-center justify-between text-xs text-text-muted">
         <span>{reg.Location}</span>
         <span className="font-mono text-white">
-          {reg.Capacity.toLocaleString()} {reg.CapacityUnit}
+          {formatNumber(reg.Capacity)} {reg.CapacityUnit}
         </span>
       </div>
       {project.verification && (
         <div className="flex items-center justify-between text-xs border-t border-surface-3 pt-2 mt-1">
           <span className="text-text-muted">Verified CO₂e Avoided</span>
           <span className="font-mono text-bond-green">
-            {project.verifiedCO2e.toLocaleString()} t
+            {formatNumber(project.verifiedCO2e)} t
           </span>
         </div>
       )}
@@ -98,7 +99,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
         <div className="flex items-center justify-between text-xs">
           <span className="text-text-muted">Allocated</span>
           <span className="font-mono text-white">
-            {project.allocation.AllocatedAmountEUSD.toLocaleString()} eUSD
+            {formatNumber(project.allocation.AllocatedAmountEUSD)} eUSD
           </span>
         </div>
       )}
@@ -127,7 +128,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
               )}
               {project.allocationEvidence && project.allocation && (
                 <VCEvidenceRow label="Allocation" evidence={project.allocationEvidence}>
-                  <p><span className="text-text-muted/60">Amount: </span>{project.allocation.AllocatedAmountEUSD.toLocaleString()} eUSD</p>
+                  <p><span className="text-text-muted/60">Amount: </span>{formatNumber(project.allocation.AllocatedAmountEUSD)} eUSD</p>
                   <p><span className="text-text-muted/60">Purpose: </span>{project.allocation.Purpose}</p>
                   {project.allocation.HederaTransactionID && (
                     <p><span className="text-text-muted/60">Hedera Tx: </span>
@@ -155,7 +156,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
                       {project.verification.Opinion}
                     </span>
                   </p>
-                  <p><span className="text-text-muted/60">Verified: </span>{project.verification.VerifiedGHGReduced.toLocaleString()} tCO&#x2082;e</p>
+                  <p><span className="text-text-muted/60">Verified: </span>{formatNumber(project.verification.VerifiedGHGReduced)} tCO&#x2082;e</p>
                   {project.verification.VerifierNotes && (
                     <p className="italic text-text-muted/80 mt-1">&ldquo;{project.verification.VerifierNotes}&rdquo;</p>
                   )}

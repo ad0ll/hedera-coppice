@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/format";
 import type { GuardianProject } from "@/lib/guardian-types";
 
 interface AllocationBarProps {
@@ -17,7 +18,7 @@ export function AllocationBar({ allocated, total, percent, projects }: Allocatio
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">Allocated</span>
           <span className="font-mono text-white">
-            {allocated.toLocaleString()} / {total.toLocaleString()} eUSD
+            {formatNumber(allocated)} / {formatNumber(total)} eUSD
           </span>
         </div>
         <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">
@@ -39,7 +40,7 @@ export function AllocationBar({ allocated, total, percent, projects }: Allocatio
                 {p.registration.ProjectName}
               </span>
               <span className="font-mono text-white">
-                {p.allocation!.AllocatedAmountEUSD.toLocaleString()} eUSD (
+                {formatNumber(p.allocation!.AllocatedAmountEUSD)} eUSD (
                 {p.allocation!.ShareofFinancingPercent}%)
               </span>
             </div>

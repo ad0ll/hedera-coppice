@@ -75,7 +75,7 @@ describe("POST /api/issuer/allocate", () => {
     const res = await POST(makeRequest(body));
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toBe("Missing fields");
+    expect(data.error).toBe("Invalid request");
   });
 
   it("rejects missing category field", async () => {
@@ -115,7 +115,7 @@ describe("POST /api/issuer/allocate", () => {
     const res = await POST(makeRequest(body));
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toBe("Missing fields");
+    expect(data.error).toBe("Invalid request");
   });
 
   it("returns 500 when IMPACT_TOPIC_ID is not configured", async () => {

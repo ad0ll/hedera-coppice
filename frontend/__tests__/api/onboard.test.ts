@@ -194,7 +194,7 @@ describe("POST /api/onboard", () => {
     }));
     expect(res.status).toBe(400);
     const data = await res.json();
-    expect(data.error).toBe("Invalid investor address");
+    expect(data.error).toBe("Invalid address");
   });
 
   it("rejects when verifyAuth throws (invalid signature)", async () => {

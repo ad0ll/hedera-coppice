@@ -2,24 +2,17 @@
 
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
+import { formatTimestamp } from "@/lib/format";
 import { WarningIcon, Spinner, ExternalLinkIcon } from "@/components/ui/icons";
 import { useState, useMemo } from "react";
-
-function formatTimestamp(ts: number | string): string {
-  if (typeof ts === "string") {
-    const secs = parseFloat(ts);
-    return new Date(secs * 1000).toLocaleTimeString("en-US");
-  }
-  return new Date(ts).toLocaleTimeString("en-US");
-}
 
 export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | "impact" }) {
   const { events, loading, topicMissing } = useHCSAudit(topicType);
   const [filter, setFilter] = useState<string>("ALL");
 
   const eventTypes = useMemo(() => ["ALL", ...new Set(events.map((e) => e.type))], [events]);
-  const filtered = filter === "ALL" ? events : events.filter((e) => e.type === filter);
-  const sorted = [...filtered].reverse();
+  const filtered = useMemo(() => filter === "ALL" ? events : events.filter((e) => e.type === filter), [events, filter]);
+  const sorted = useMemo(() => [...filtered].reverse(), [filtered]);
 
   if (topicMissing) {
     return (

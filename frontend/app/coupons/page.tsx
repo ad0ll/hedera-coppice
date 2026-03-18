@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useCoupons } from "@/hooks/use-coupons";
 import type { CouponInfo } from "@/hooks/use-coupons";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -42,6 +43,8 @@ function getNextCouponDate(coupons: CouponInfo[]): string {
 
 export default function CouponsPage() {
   const { data: coupons, isLoading, isError } = useCoupons();
+  const couponList = useMemo(() => coupons ?? [], [coupons]);
+  const nextCouponDate = useMemo(() => getNextCouponDate(couponList), [couponList]);
 
   if (isLoading) {
     return (
@@ -92,8 +95,6 @@ export default function CouponsPage() {
     );
   }
 
-  const couponList = coupons ?? [];
-
   if (couponList.length === 0) {
     return (
       <div className="space-y-8">
@@ -127,7 +128,6 @@ export default function CouponsPage() {
   }
 
   const latestRate = couponList[couponList.length - 1].rateDisplay;
-  const nextCouponDate = getNextCouponDate(couponList);
 
   return (
     <div className="space-y-8">

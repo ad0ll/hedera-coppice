@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 interface SptStatusProps {
@@ -23,7 +24,7 @@ export function SptStatus({
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">SPT Progress</span>
           <span className="font-mono text-white">
-            {totalVerified.toLocaleString()} / {target.toLocaleString()} tCO₂e
+            {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
         <div className="w-full h-1.5 bg-surface-3 rounded-full overflow-hidden">
@@ -48,14 +49,14 @@ export function SptStatus({
         />
       </div>
       <p className="text-sm text-text-muted mb-4">
-        Avoid {target.toLocaleString()} tCO₂e per coupon period across all
+        Avoid {formatNumber(target)} tCO₂e per coupon period across all
         funded projects. Failure triggers a 25bps coupon step-up.
       </p>
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">Progress</span>
           <span className="font-mono text-white">
-            {totalVerified.toLocaleString()} / {target.toLocaleString()} tCO₂e
+            {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
         <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">

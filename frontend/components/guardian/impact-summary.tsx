@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SptStatus } from "@/components/guardian/spt-status";
 import type { GuardianData } from "@/lib/guardian-types";
@@ -20,7 +21,7 @@ export function ImpactSummary({ data }: ImpactSummaryProps) {
         <div>
           <p className="stat-label mb-1">Verified CO₂e</p>
           <p className="font-mono text-lg text-white">
-            {data.totalVerifiedCO2e.toLocaleString()}
+            {formatNumber(data.totalVerifiedCO2e)}
             <span className="text-xs text-text-muted ml-1">tonnes</span>
           </p>
         </div>

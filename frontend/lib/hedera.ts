@@ -27,9 +27,3 @@ export function getOperatorKey(): PrivateKey {
   const keyHex = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
   return PrivateKey.fromStringECDSA(keyHex);
 }
-
-export const MIRROR_NODE_URL =
-  process.env.NEXT_PUBLIC_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";
-
-export const JSON_RPC_URL =
-  process.env.NEXT_PUBLIC_HEDERA_JSON_RPC || "https://testnet.hashio.io/api";

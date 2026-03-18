@@ -13,8 +13,5 @@
   },
   "devDependencies": {
     "@wagmi/cli": "^2.1.0"
-  },
-  "peerDependencies": {
-    "viem": "^2.7.6"
   }
 }

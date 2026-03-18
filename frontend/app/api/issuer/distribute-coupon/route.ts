@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
+import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
+import { BOND_ABI, LCCF_ABI } from "@/lib/abis";
 
 const distributeBodySchema = z.object({
   couponId: z.number().int().nonnegative(),
@@ -20,39 +21,19 @@ export const distributeResponseSchema = z.object({
 });
 export type DistributeResponse = z.infer<typeof distributeResponseSchema>;
 
-const BOND_ABI = [
-  "function getCoupon(uint256 couponID) view returns (tuple(tuple(uint256 recordDate, uint256 executionDate, uint256 startDate, uint256 endDate, uint256 fixingDate, uint256 rate, uint8 rateDecimals, uint8 rateStatus) coupon, uint256 snapshotId))",
-  "function takeSnapshot() returns (uint256)",
-];
-
-const LCCF_ABI = [
-  "function executeDistribution(address asset, uint256 distributionID, uint256 pageIndex, uint256 pageLength) returns (address[], address[], uint256[], bool)",
-];
-
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const parsed = distributeBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-  const { couponId, address, message: authMessage, signature } = parsed.data;
+  const bodyResult = await parseRequestBody(request, distributeBodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
+  const { couponId, address, message: authMessage, signature } = bodyResult.data;
 
   const signerAddress = ethers.getAddress(address);
 
-  try {
-    await verifyAuth(authMessage, signature, signerAddress);
-  } catch (err: unknown) {
-    const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
-  }
+  const authError = await verifyAuthOrError(authMessage, signature, signerAddress);
+  if (authError) return authError;
 
-  const lccfAddress = process.env.LIFECYCLE_CASH_FLOW_ADDRESS;
-  if (!lccfAddress) {
-    return NextResponse.json(
-      { error: "LIFECYCLE_CASH_FLOW_ADDRESS not configured" },
-      { status: 500 },
-    );
-  }
+  const lccfEnv = requireEnv("LIFECYCLE_CASH_FLOW_ADDRESS");
+  if ("error" in lccfEnv) return lccfEnv.error;
+  const lccfAddress = lccfEnv.value;
 
   try {
     const wallet = getDeployerWallet();

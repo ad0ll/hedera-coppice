@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ethers } from "ethers";
 import { z } from "zod";
 import { TokenMintTransaction, TransferTransaction, TokenId, AccountId } from "@hashgraph/sdk";
 import { getClient } from "@/lib/hedera";
 import { getErrorMessage } from "@/lib/format";
 import { getHederaAccountId } from "@/lib/mirror-node";
+import { parseRequestBody, normalizeAddress, requireEnv } from "@/lib/api-helpers";
 
 const FAUCET_AMOUNT = 100_000; // 1,000.00 eUSD (2 decimals)
 
@@ -19,34 +19,20 @@ export const faucetResponseSchema = z.object({
 export type FaucetResponse = z.infer<typeof faucetResponseSchema>;
 
 export async function POST(request: NextRequest) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
+  const bodyResult = await parseRequestBody(request, faucetBodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
 
-  const parsed = faucetBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
+  const addrResult = normalizeAddress(bodyResult.data.walletAddress);
+  if ("error" in addrResult) return addrResult.error;
+  const walletAddress = addrResult.address;
 
-  let walletAddress;
-  try {
-    walletAddress = ethers.getAddress(parsed.data.walletAddress);
-  } catch {
-    return NextResponse.json({ error: "Invalid wallet address" }, { status: 400 });
-  }
+  const eusdEnv = requireEnv("EUSD_TOKEN_ID");
+  if ("error" in eusdEnv) return eusdEnv.error;
+  const eusdTokenId = eusdEnv.value;
 
-  const eusdTokenId = process.env.EUSD_TOKEN_ID;
-  if (!eusdTokenId) {
-    return NextResponse.json({ error: "EUSD_TOKEN_ID not configured" }, { status: 500 });
-  }
-
-  const hederaAccountId = process.env.HEDERA_ACCOUNT_ID;
-  if (!hederaAccountId) {
-    return NextResponse.json({ error: "HEDERA_ACCOUNT_ID not configured" }, { status: 500 });
-  }
+  const accountEnv = requireEnv("HEDERA_ACCOUNT_ID");
+  if ("error" in accountEnv) return accountEnv.error;
+  const hederaAccountId = accountEnv.value;
 
   // Resolve EVM address to Hedera account ID for the transfer
   let recipientAccountId: string;

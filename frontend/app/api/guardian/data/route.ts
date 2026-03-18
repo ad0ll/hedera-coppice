@@ -163,8 +163,8 @@ export async function GET() {
     };
 
     return NextResponse.json(data);
-  } catch (err) {
-    const message = (err as Error).message;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
     console.error("Guardian API error:", message);
     return NextResponse.json(
       { error: "Guardian API unavailable", detail: message },

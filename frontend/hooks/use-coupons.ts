@@ -1,11 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { ethers } from "ethers";
-import { JSON_RPC_URL, CPC_SECURITY_ID } from "@/lib/constants";
-
-const BOND_ABI = [
-  "function getCouponCount() view returns (uint256)",
-  "function getCoupon(uint256 couponID) view returns (tuple(tuple(uint256 recordDate, uint256 executionDate, uint256 startDate, uint256 endDate, uint256 fixingDate, uint256 rate, uint8 rateDecimals, uint8 rateStatus) coupon, uint256 snapshotId))",
-];
+import { CPC_SECURITY_ID } from "@/lib/constants";
+import { BOND_ABI } from "@/lib/abis";
+import { formatRate } from "@/lib/format";
+import { getReadProvider } from "@/lib/provider";
 
 export interface CouponInfo {
   id: number;
@@ -31,21 +29,12 @@ function getCouponStatus(coupon: {
   return "paid";
 }
 
-function formatRateDisplay(rate: number, rateDecimals: number): string {
-  const rateValue = rate / 10 ** rateDecimals;
-  const percentage = rateValue * 100;
-  const displayDecimals = rateDecimals > 2 ? rateDecimals - 2 : 2;
-  return `${percentage.toFixed(displayDecimals)}%`;
-}
-
 export function useCoupons() {
   return useQuery({
     queryKey: ["coupons", CPC_SECURITY_ID],
     queryFn: async (): Promise<CouponInfo[]> => {
       try {
-        const provider = new ethers.JsonRpcProvider(JSON_RPC_URL, undefined, {
-          staticNetwork: true,
-        });
+        const provider = getReadProvider();
         const bond = new ethers.Contract(CPC_SECURITY_ID, BOND_ABI, provider);
 
         const count = await bond.getCouponCount();
@@ -71,7 +60,7 @@ export function useCoupons() {
             endDate,
             rate,
             rateDecimals,
-            rateDisplay: formatRateDisplay(rate, rateDecimals),
+            rateDisplay: formatRate(rate, rateDecimals),
             snapshotId: Number(registered.snapshotId),
             status: getCouponStatus({
               recordDate: Number(c.recordDate),

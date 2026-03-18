@@ -5,6 +5,13 @@ const MOCK_GUARDIAN_DATA = {
     BondName: "Coppice Green Bond",
     TotalIssuanceAmount: 100000,
     SustainabilityPerformanceTarget: "Avoid 10,000 tCO2e per period",
+    EligibleICMACategories: "Renewable Energy, Sustainable Water Management",
+    ReportingStandard: "ICMA Green Bond Principles (June 2025)",
+    RegulatoryFrameworks: "EU Taxonomy Regulation 2020/852",
+    EUTaxonomyAlignmentPercent: 85,
+    BondContractAddress: "0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9",
+    LCCFContractAddress: "0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350",
+    ExternalReviewProvider: "Simulated VVB",
   },
   projects: [
     {
@@ -81,18 +88,14 @@ test.describe("Impact Page", () => {
     expect(count).toBeGreaterThanOrEqual(1);
   });
 
-  test("should show ICMA Green Bond Principles", async ({ page }) => {
+  test("should show ICMA compliance evidence from Guardian", async ({ page }) => {
     await page.goto("/impact");
-    await expect(page.getByText("ICMA Green Bond Principles")).toBeVisible();
-    await expect(page.getByText("Project Evaluation & Selection")).toBeVisible();
-    await expect(page.getByText("Management of Proceeds")).toBeVisible();
-    await expect(page.getByText("Reporting", { exact: true })).toBeVisible();
-  });
-
-  test("should show Guardian MRV integration status", async ({ page }) => {
-    await page.goto("/impact");
-    await expect(page.getByText("Guardian MRV Integration")).toBeVisible();
-    await expect(page.getByText("Live")).toBeVisible();
+    await expect(page.getByText("ICMA Compliance Evidence")).toBeVisible();
+    // Use stat-label locators to avoid strict mode violations with headings
+    await expect(page.locator(".stat-label", { hasText: "Use of Proceeds" })).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "Project Evaluation" })).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "Management of Proceeds" })).toBeVisible();
+    await expect(page.locator(".stat-label", { hasText: "Reporting & Frameworks" })).toBeVisible();
   });
 
   test("should show SPT progress", async ({ page }) => {
@@ -105,7 +108,7 @@ test.describe("Impact Page", () => {
     await page.goto("/impact");
     const heading = page.getByRole("heading", { name: "Use of Proceeds" });
     await expect(heading).toBeVisible();
-    await expect(page.getByText("50% allocated")).toBeVisible();
+    await expect(page.getByText("50% allocated", { exact: true })).toBeVisible();
   });
 
   test("should be navigable from main nav", async ({ page }) => {

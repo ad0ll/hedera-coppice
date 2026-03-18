@@ -1,6 +1,6 @@
 "use client";
 
-import { formatBalance } from "@/lib/format";
+import { formatBalance, formatNumber } from "@/lib/format";
 import type { HolderInfo } from "@/hooks/use-holders";
 
 interface IssuerStatsProps {
@@ -44,7 +44,7 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
         <div className="py-5 pl-6">
           <p className="stat-label mb-1">Proceeds Allocated</p>
           <p className="font-display text-3xl text-bond-amber">
-            {totalAllocated > 0 ? `$${totalAllocated.toLocaleString("en-US")}` : "--"}
+            {totalAllocated > 0 ? `$${formatNumber(totalAllocated)}` : "--"}
           </p>
           <p className="text-xs text-text-muted mt-1">Use of proceeds</p>
         </div>

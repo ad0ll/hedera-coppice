@@ -3,8 +3,9 @@ import { ethers } from "ethers";
 import { z } from "zod";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet, getServerProvider } from "@/lib/deployer";
-import { verifyAuth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/format";
+import { parseRequestBody, verifyAuthOrError, normalizeAddress } from "@/lib/api-helpers";
+import { ROLES, ACCESS_CONTROL_ABI } from "@/lib/abis";
 
 const bodySchema = z.object({
   investorAddress: z.string().nonempty(),
@@ -18,55 +19,33 @@ export const grantAgentRoleResponseSchema = z.object({
 });
 export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema>;
 
-const AGENT_ROLE = "0xc4aed0454da9bde6defa5baf93bb49d4690626fc243d138104e12d1def783ea6";
-
-const accessControlAbi = [
-  "function hasRole(bytes32 role, address account) view returns (bool)",
-  "function grantRole(bytes32 role, address account)",
-];
-
 export async function POST(request: NextRequest) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
-  }
-  const parsed = bodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-  const { investorAddress, message, signature } = parsed.data;
+  const bodyResult = await parseRequestBody(request, bodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
+  const { investorAddress, message, signature } = bodyResult.data;
 
-  let address: string;
-  try {
-    address = ethers.getAddress(investorAddress);
-  } catch {
-    return NextResponse.json({ error: "Invalid address" }, { status: 400 });
-  }
+  const addrResult = normalizeAddress(investorAddress);
+  if ("error" in addrResult) return addrResult.error;
+  const address = addrResult.address;
 
-  try {
-    await verifyAuth(message, signature, address);
-  } catch (err: unknown) {
-    const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
-  }
+  const authError = await verifyAuthOrError(message, signature, address);
+  if (authError) return authError;
 
   try {
     const provider = getServerProvider();
     const wallet = getDeployerWallet();
-    const tokenContract = new ethers.Contract(CPC_SECURITY_ID, accessControlAbi, wallet);
-    const readOnlyContract = new ethers.Contract(CPC_SECURITY_ID, accessControlAbi, provider);
+    const tokenContract = new ethers.Contract(CPC_SECURITY_ID, ACCESS_CONTROL_ABI, wallet);
+    const readOnlyContract = new ethers.Contract(CPC_SECURITY_ID, ACCESS_CONTROL_ABI, provider);
 
     // Check if already an agent
-    const alreadyAgent = await readOnlyContract.hasRole(AGENT_ROLE, address);
+    const alreadyAgent = await readOnlyContract.hasRole(ROLES.AGENT, address);
 
     if (alreadyAgent) {
       return NextResponse.json({ error: "Address is already an agent" }, { status: 409 });
     }
 
-    // Call token.grantRole(AGENT_ROLE, address) as deployer (admin)
-    const tx = await tokenContract.grantRole(AGENT_ROLE, address);
+    // Call token.grantRole(ROLES.AGENT, address) as deployer (admin)
+    const tx = await tokenContract.grantRole(ROLES.AGENT, address);
     const receipt = await tx.wait();
 
     if (!receipt || receipt.status !== 1) {

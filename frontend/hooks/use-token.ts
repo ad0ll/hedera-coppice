@@ -3,27 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { ethers } from "ethers";
 import { useAts } from "@/contexts/ats-context";
-import { CPC_SECURITY_ID, JSON_RPC_URL } from "@/lib/constants";
-
-const AGENT_ROLE = "0xc4aed0454da9bde6defa5baf93bb49d4690626fc243d138104e12d1def783ea6";
-const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
-
-const TOKEN_ABI = [
-  "function totalSupply() view returns (uint256)",
-  "function balanceOf(address) view returns (uint256)",
-  "function isPaused() view returns (bool)",
-  "function hasRole(bytes32 role, address account) view returns (bool)",
-  "function isFrozen(address) view returns (bool)",
-  "function mint(address to, uint256 amount)",
-  "function pause()",
-  "function unpause()",
-  "function setAddressFrozen(address addr, bool freeze)",
-  "function transfer(address to, uint256 amount)",
-];
-
-function getReadProvider() {
-  return new ethers.JsonRpcProvider(JSON_RPC_URL);
-}
+import { CPC_SECURITY_ID } from "@/lib/constants";
+import { TOKEN_ABI, ROLES } from "@/lib/abis";
+import { getReadProvider } from "@/lib/provider";
 
 function getReadContract() {
   return new ethers.Contract(CPC_SECURITY_ID, TOKEN_ABI, getReadProvider());
@@ -71,7 +53,7 @@ export function useIsAgent(address: string | undefined) {
     queryKey: ["token", "hasRole", "agent", address],
     queryFn: async () => {
       const contract = getReadContract();
-      const result: boolean = await contract.hasRole(AGENT_ROLE, address);
+      const result: boolean = await contract.hasRole(ROLES.AGENT, address);
       return result;
     },
     enabled: !!address,
@@ -95,7 +77,7 @@ export function useIsAdmin(address: string | undefined) {
     queryKey: ["token", "hasRole", "admin", address],
     queryFn: async () => {
       const contract = getReadContract();
-      const result: boolean = await contract.hasRole(DEFAULT_ADMIN_ROLE, address);
+      const result: boolean = await contract.hasRole(ROLES.DEFAULT_ADMIN, address);
       return result;
     },
     enabled: !!address,

@@ -3,7 +3,8 @@
 import { useCallback } from "react";
 import { ethers } from "ethers";
 import { identityRegistryAbi, claimIssuerAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES, JSON_RPC_URL } from "@/lib/constants";
+import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { getReadProvider } from "@/lib/provider";
 
 /** Claim topic IDs used in our T-REX deployment. */
 export const CLAIM_TOPICS = { KYC: 1, AML: 2, ACCREDITED: 7 } as const;
@@ -15,15 +16,11 @@ export interface ClaimStatus {
   accredited: boolean;
 }
 
-function getProvider() {
-  return new ethers.JsonRpcProvider(JSON_RPC_URL);
-}
-
 function getRegistryContract() {
   return new ethers.Contract(
     CONTRACT_ADDRESSES.identityRegistry,
     identityRegistryAbi,
-    getProvider(),
+    getReadProvider(),
   );
 }
 
@@ -71,7 +68,7 @@ export function useIdentity() {
       const identityAddr: string = await registryContract.identity(address);
       if (identityAddr === ethers.ZeroAddress) return none;
 
-      const provider = getProvider();
+      const provider = getReadProvider();
       const identityContract = new ethers.Contract(identityAddr, claimIssuerAbi, provider);
 
       const [kycClaims, amlClaims, accreditedClaims] = await Promise.all([

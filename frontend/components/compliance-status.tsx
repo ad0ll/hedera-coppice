@@ -7,7 +7,8 @@ import { useIdentity, type ClaimStatus } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
 import { signAuthMessage } from "@/lib/auth";
 import { countryRestrictModuleAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS, JSON_RPC_URL } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/constants";
+import { getReadProvider } from "@/lib/provider";
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
@@ -66,6 +67,15 @@ function makeInitialSteps(): OnboardStep[] {
   }));
 }
 
+const CHECK_LABELS = [
+  "On-Chain Identity",
+  "KYC Credential",
+  "AML Credential",
+  "Accredited Credential",
+  "Jurisdiction Check",
+  "Transfer Eligibility",
+] as const;
+
 export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?: (eligible: boolean) => void }) {
   const { address } = useConnection();
   const { isRegistered, getCountry, getClaimStatus } = useIdentity();
@@ -82,15 +92,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const runChecksRef = useRef<(() => void) | null>(null);
   const hasRunForRef = useRef<string | null>(null);
   const minDelay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-  const CHECK_LABELS = [
-    "On-Chain Identity",
-    "KYC Credential",
-    "AML Credential",
-    "Accredited Credential",
-    "Jurisdiction Check",
-    "Transfer Eligibility",
-  ] as const;
 
   useEffect(() => {
     if (!address) return;
@@ -172,7 +173,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           let countryCheckFailed = false;
           if (country > 0 && COUNTRY_RESTRICT_MODULE_ADDRESS !== ethers.ZeroAddress) {
             try {
-              const provider = new ethers.JsonRpcProvider(JSON_RPC_URL);
+              const provider = getReadProvider();
               const restrictModule = new ethers.Contract(
                 COUNTRY_RESTRICT_MODULE_ADDRESS,
                 countryRestrictModuleAbi,

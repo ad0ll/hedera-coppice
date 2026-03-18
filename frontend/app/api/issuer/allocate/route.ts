@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
 import { z } from "zod";
 import { getClient, getOperatorKey } from "@/lib/hedera";
-import { verifyAuth } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/format";
+import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
 
 const allocateBodySchema = z.object({
   project: z.string().nonempty(),
@@ -22,25 +22,17 @@ export const allocateResponseSchema = z.object({
 export type AllocateResponse = z.infer<typeof allocateResponseSchema>;
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const parsed = allocateBodySchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-  }
-  const { project, category, amount, currency, signerAddress, message: authMessage, signature } = parsed.data;
+  const bodyResult = await parseRequestBody(request, allocateBodySchema);
+  if ("error" in bodyResult) return bodyResult.error;
+  const { project, category, amount, currency, signerAddress, message: authMessage, signature } = bodyResult.data;
 
   // Verify wallet signature — any agent can allocate proceeds (frontend gates via useIsAgent)
-  try {
-    await verifyAuth(authMessage, signature, signerAddress);
-  } catch (err: unknown) {
-    const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
-  }
+  const authError = await verifyAuthOrError(authMessage, signature, signerAddress);
+  if (authError) return authError;
 
-  const impactTopicId = process.env.IMPACT_TOPIC_ID;
-  if (!impactTopicId) {
-    return NextResponse.json({ error: "IMPACT_TOPIC_ID not configured" }, { status: 500 });
-  }
+  const topicEnv = requireEnv("IMPACT_TOPIC_ID");
+  if ("error" in topicEnv) return topicEnv.error;
+  const impactTopicId = topicEnv.value;
 
   // Check HCS message size before submitting
   const payload = {
