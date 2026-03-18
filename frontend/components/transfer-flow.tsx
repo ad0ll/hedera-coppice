@@ -106,7 +106,6 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          investorAddress: address,
           amount: Number(amount),
           message,
           signature,
@@ -134,7 +133,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
 
   return (
     <div className="card">
-      <h3 className="card-title">Purchase Bond Tokens</h3>
+      <h2 className="card-title">Purchase Bond Tokens</h2>
 
       {!enabled && (
         <p className="text-sm text-text-muted mb-4">

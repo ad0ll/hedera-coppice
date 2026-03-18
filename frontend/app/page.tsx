@@ -13,6 +13,7 @@ import { useHTS } from "@/hooks/use-hts";
 import { FaucetButton } from "@/components/faucet-button";
 import { useGuardian } from "@/hooks/use-guardian";
 import { ImpactSummary } from "@/components/guardian/impact-summary";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function InvestorPortal() {
   const { address } = useConnection();
@@ -58,17 +59,23 @@ export default function InvestorPortal() {
 
       {guardianData && (
         <div className="animate-entrance" style={{ "--index": 1 }}>
-          <ImpactSummary data={guardianData} />
+          <SectionErrorBoundary section="impact summary">
+            <ImpactSummary data={guardianData} />
+          </SectionErrorBoundary>
         </div>
       )}
 
       <div className="animate-entrance" style={{ "--index": 2 }}>
-        <ComplianceStatus onEligibilityChange={setEligible} />
+        <SectionErrorBoundary section="compliance checks">
+          <ComplianceStatus onEligibilityChange={setEligible} />
+        </SectionErrorBoundary>
       </div>
 
       {address && (
         <div className="animate-entrance" style={{ "--index": 3 }}>
-          <TransferFlow enabled={eligible} />
+          <SectionErrorBoundary section="purchase flow">
+            <TransferFlow enabled={eligible} />
+          </SectionErrorBoundary>
         </div>
       )}
 
@@ -81,13 +88,13 @@ export default function InvestorPortal() {
           />
         ) : (
           <div className="bg-surface-2 border-y border-border full-bleed">
-            <div className="max-w-7xl mx-auto flex divide-x divide-border">
-              <div className="flex-1 py-5 pr-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-2 divide-x divide-border">
+              <div className="py-5 pr-6">
                 <p className="stat-label mb-1">CPC Balance</p>
                 <p className="font-display text-3xl text-white">{cpcBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice Green Bond</p>
               </div>
-              <div className="flex-1 py-5 pl-6">
+              <div className="py-5 pl-6">
                 <p className="stat-label mb-1">eUSD Balance</p>
                 <p className="font-display text-3xl text-bond-green">{displayEusdBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice USD</p>

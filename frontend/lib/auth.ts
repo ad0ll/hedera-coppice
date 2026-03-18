@@ -41,19 +41,14 @@ function validateTimestamp(message: string): void {
 }
 
 /**
- * Server-side: verify an EIP-191 signature matches the expected address.
- * Pure cryptographic verification — no RPC call needed.
- * Rejects signatures older than 60 seconds.
+ * Server-side: recover the signer's address from an EIP-191 signature.
+ * Validates timestamp freshness (rejects signatures older than 60s).
+ * Returns the checksummed recovered address.
  */
-export async function verifyAuth(
+export function recoverAuthAddress(
   message: string,
   signature: string,
-  expectedAddress: string,
-): Promise<void> {
+): string {
   validateTimestamp(message);
-
-  const recovered = ethers.verifyMessage(message, signature);
-  if (recovered.toLowerCase() !== expectedAddress.toLowerCase()) {
-    throw new Error("Invalid signature");
-  }
+  return ethers.verifyMessage(message, signature);
 }

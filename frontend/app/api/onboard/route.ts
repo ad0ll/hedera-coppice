@@ -11,10 +11,9 @@ import {
   identityAddClaimAbi,
 } from "@/lib/onchain-id";
 import { withRetry } from "@/lib/retry";
-import { parseRequestBody, verifyAuthOrError, normalizeAddress } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
 
 const onboardBodySchema = z.object({
-  investorAddress: z.string().nonempty(),
   country: z.number().int().positive(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
@@ -59,15 +58,12 @@ function sseEncode(event: OnboardEvent): string {
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, onboardBodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { investorAddress, country, message, signature } = bodyResult.data;
+  const { country, message, signature } = bodyResult.data;
 
-  const addrResult = normalizeAddress(investorAddress);
-  if ("error" in addrResult) return addrResult.error;
-  const investor = addrResult.address;
-
-  // Verify wallet signature — proves caller owns the investor wallet
-  const authError = await verifyAuthOrError(message, signature, investor);
-  if (authError) return authError;
+  // Recover wallet address from signature — proves caller owns the wallet
+  const authResult = recoverAddressOrError(message, signature);
+  if ("error" in authResult) return authResult.error;
+  const investor = authResult.address;
 
   // Pre-flight: check env vars and registration status before starting SSE stream
   let implAuthorityAddress: string;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import { z } from "zod";
-import { verifyAuth } from "@/lib/auth";
+import { recoverAuthAddress } from "@/lib/auth";
 import { getErrorMessage } from "@/lib/format";
 
 /**
@@ -26,20 +26,19 @@ export async function parseRequestBody<T>(
 }
 
 /**
- * Verify an auth signature or return a 401 response.
- * Returns undefined on success.
+ * Recover the signer address from a signed message, or return a 401 response.
+ * Returns the checksummed address on success.
  */
-export async function verifyAuthOrError(
+export function recoverAddressOrError(
   message: string,
   signature: string,
-  expectedAddress: string,
-): Promise<NextResponse | undefined> {
+): { address: string } | { error: NextResponse } {
   try {
-    await verifyAuth(message, signature, expectedAddress);
-    return undefined;
+    const address = recoverAuthAddress(message, signature);
+    return { address };
   } catch (err: unknown) {
     const msg = getErrorMessage(err, 0, "Auth failed");
-    return NextResponse.json({ error: msg }, { status: 401 });
+    return { error: NextResponse.json({ error: msg }, { status: 401 }) };
   }
 }
 

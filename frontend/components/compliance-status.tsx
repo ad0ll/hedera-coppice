@@ -231,7 +231,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          investorAddress: address,
           country: selectedCountry,
           message,
           signature,
@@ -337,7 +336,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     return (
       <div className="card-flush">
         <div className="px-6 py-4 border-b border-border/50">
-          <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
+          <h2 className="text-lg font-semibold text-white">Compliance Status</h2>
         </div>
         <div className="px-6 py-4 space-y-1">
           {["On-Chain Identity", "KYC Credential", "AML Credential", "Accredited Credential", "Jurisdiction Check", "Transfer Eligibility"].map((label) => (
@@ -361,7 +360,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between transition-all duration-300 ${
         allDone && eligible ? "bg-gradient-to-r from-bond-green/8 to-transparent" : allDone ? "bg-gradient-to-r from-bond-red/8 to-transparent" : ""
       }`}>
-        <h3 className="text-lg font-semibold text-white">Compliance Status</h3>
+        <h2 className="text-lg font-semibold text-white">Compliance Status</h2>
         {allDone && (
           <StatusBadge
             label={eligible ? "Eligible to Invest" : "Not Eligible"}
@@ -457,7 +456,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
       {/* Progressive onboarding steps — visible during and after onboarding */}
       {showOnboardResult && (
-        <div className="px-6 py-4 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5" aria-live="polite">
+        <div className="px-6 py-4 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5" aria-live="polite" aria-atomic="true">
           {!showOnboarding && (
             <div className="flex items-center gap-2 mb-4">
               <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
@@ -486,7 +485,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm ${
-                    step.status === "pending" ? "text-text-muted/40" :
+                    step.status === "pending" ? "text-text-muted" :
                     step.status === "error" ? "text-bond-red" :
                     "text-white"
                   }`}>

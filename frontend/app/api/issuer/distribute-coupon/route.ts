@@ -4,12 +4,11 @@ import { z } from "zod";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
-import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError, requireEnv } from "@/lib/api-helpers";
 import { BOND_ABI, LCCF_ABI } from "@/lib/abis";
 
 const distributeBodySchema = z.object({
   couponId: z.number().int().nonnegative(),
-  address: z.string().nonempty(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
@@ -24,12 +23,11 @@ export type DistributeResponse = z.infer<typeof distributeResponseSchema>;
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, distributeBodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { couponId, address, message: authMessage, signature } = bodyResult.data;
+  const { couponId, message: authMessage, signature } = bodyResult.data;
 
-  const signerAddress = ethers.getAddress(address);
-
-  const authError = await verifyAuthOrError(authMessage, signature, signerAddress);
-  if (authError) return authError;
+  // Recover wallet address from signature — validates auth
+  const authResult = recoverAddressOrError(authMessage, signature);
+  if ("error" in authResult) return authResult.error;
 
   const lccfEnv = requireEnv("LIFECYCLE_CASH_FLOW_ADDRESS");
   if ("error" in lccfEnv) return lccfEnv.error;

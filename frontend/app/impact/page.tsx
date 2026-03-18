@@ -6,10 +6,11 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ProjectCard } from "@/components/guardian/project-card";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { AllocationBar } from "@/components/guardian/allocation-bar";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 function MetricsSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="animate-pulse">
           <div className="h-3 w-20 bg-surface-3 rounded mb-2" />
@@ -66,7 +67,7 @@ export default function ImpactPage() {
         {isLoading ? (
           <MetricsSkeleton />
         ) : (
-          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
             {metrics.map((m) => (
               <div key={m.label}>
                 <p className="stat-label mb-1.5">{m.label}</p>
@@ -82,6 +83,7 @@ export default function ImpactPage() {
 
       {error && (
         <div
+          role="alert"
           className="card-static border-bond-amber/30 animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
@@ -97,17 +99,19 @@ export default function ImpactPage() {
           className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
-          <SptStatus
-            totalVerified={data.totalVerifiedCO2e}
-            target={data.sptTarget}
-            met={data.sptMet}
-          />
-          <AllocationBar
-            allocated={data.totalAllocatedEUSD}
-            total={data.totalIssuanceEUSD}
-            percent={data.allocationPercent}
-            projects={data.projects}
-          />
+          <SectionErrorBoundary section="impact data">
+            <SptStatus
+              totalVerified={data.totalVerifiedCO2e}
+              target={data.sptTarget}
+              met={data.sptMet}
+            />
+            <AllocationBar
+              allocated={data.totalAllocatedEUSD}
+              total={data.totalIssuanceEUSD}
+              percent={data.allocationPercent}
+              projects={data.projects}
+            />
+          </SectionErrorBoundary>
         </div>
       )}
 

@@ -5,11 +5,10 @@ import { EUSD_EVM_ADDRESS, CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage, eusdFromRaw } from "@/lib/format";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
-import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError, requireEnv } from "@/lib/api-helpers";
 import { ERC20_ABI, SECURITY_MINT_ABI, EUSD_DECIMALS } from "@/lib/abis";
 
 const purchaseBodySchema = z.object({
-  investorAddress: z.string().nonempty(),
   amount: z.number().positive(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
@@ -25,12 +24,11 @@ export type PurchaseResponse = z.infer<typeof purchaseResponseSchema>;
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, purchaseBodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { investorAddress, amount, message, signature } = bodyResult.data;
+  const { amount, message, signature } = bodyResult.data;
 
-  const investor = ethers.getAddress(investorAddress);
-
-  const authError = await verifyAuthOrError(message, signature, investor);
-  if (authError) return authError;
+  const authResult = recoverAddressOrError(message, signature);
+  if ("error" in authResult) return authResult.error;
+  const investor = authResult.address;
 
   try {
     // 1. Check eUSD balance via Mirror Node

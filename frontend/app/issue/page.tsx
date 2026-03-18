@@ -26,6 +26,7 @@ import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/rou
 import { useCoupons } from "@/hooks/use-coupons";
 import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -82,7 +83,7 @@ export default function IssuerDashboard() {
       await fetchAPI("/api/demo/grant-agent-role", grantAgentRoleResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ investorAddress: address, message, signature }),
+        body: JSON.stringify({ message, signature }),
       });
       promoteOp.setStatus({ type: "success", msg: "Agent role granted — loading dashboard..." });
       await refetchIsAgent();
@@ -158,7 +159,6 @@ export default function IssuerDashboard() {
           category,
           amount: Number(proceedsAmount),
           currency: "USD",
-          signerAddress: address,
           message: authMessage,
           signature,
         }),
@@ -183,7 +183,6 @@ export default function IssuerDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           couponId: selectedCouponId,
-          address,
           message: authMessage,
           signature,
         }),
@@ -211,7 +210,7 @@ export default function IssuerDashboard() {
 
   if (isCheckingAgent) {
     return (
-      <div className="card p-12 text-center">
+      <div className="card-static p-12 text-center">
         <span className="spinner w-6 h-6" role="status" aria-label="Checking authorization" />
         <p className="text-text-muted text-sm mt-4">Checking authorization...</p>
       </div>
@@ -262,7 +261,9 @@ export default function IssuerDashboard() {
 
       {/* Stats Banner */}
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-        <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
+        <SectionErrorBoundary section="issuer stats">
+          <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
+        </SectionErrorBoundary>
       </div>
 
       {/* SPT Status */}
@@ -279,13 +280,15 @@ export default function IssuerDashboard() {
 
       {/* Holders Table */}
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-        <HoldersTable holders={holders} loading={holdersLoading} />
+        <SectionErrorBoundary section="token holders">
+          <HoldersTable holders={holders} loading={holdersLoading} />
+        </SectionErrorBoundary>
       </div>
 
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
         <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Mint */}
           <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>

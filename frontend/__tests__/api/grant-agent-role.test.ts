@@ -36,10 +36,12 @@ vi.mock("@/lib/deployer", () => ({
   getServerProvider: vi.fn().mockReturnValue({}),
 }));
 
-// Mock auth — accept all signatures
-const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
+const FAKE_ADDRESS = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
+
+// Mock auth — return fake address by default
+const mockRecoverAuthAddress = vi.fn().mockReturnValue(FAKE_ADDRESS);
 vi.mock("@/lib/auth", () => ({
-  verifyAuth: (...args: unknown[]) => mockVerifyAuth(...args),
+  recoverAuthAddress: (...args: unknown[]) => mockRecoverAuthAddress(...args),
 }));
 
 // Mock constants
@@ -49,8 +51,6 @@ vi.mock("@/lib/constants", () => ({
 
 // Set env vars
 process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
-
-const FAKE_ADDRESS = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/demo/grant-agent-role", {
@@ -82,29 +82,16 @@ describe("POST /api/demo/grant-agent-role", () => {
     expect(data.error).toBe("Invalid JSON");
   });
 
-  it("rejects missing investorAddress", async () => {
+  it("rejects missing message", async () => {
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
-    const res = await POST(makeRequest({ message: "test", signature: "0xsig" }));
+    const res = await POST(makeRequest({ signature: "0xsig" }));
     expect(res.status).toBe(400);
-  });
-
-  it("rejects invalid address", async () => {
-    const { POST } = await import("@/app/api/demo/grant-agent-role/route");
-    const res = await POST(makeRequest({
-      investorAddress: "not-an-address",
-      message: "test",
-      signature: "0xsig",
-    }));
-    expect(res.status).toBe(400);
-    const data = await res.json();
-    expect(data.error).toBe("Invalid address");
   });
 
   it("rejects invalid signature", async () => {
-    mockVerifyAuth.mockRejectedValueOnce(new Error("Invalid signature"));
+    mockRecoverAuthAddress.mockImplementationOnce(() => { throw new Error("Invalid signature"); });
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ADDRESS,
       message: "test",
       signature: "0xbadsig",
     }));
@@ -115,7 +102,6 @@ describe("POST /api/demo/grant-agent-role", () => {
     mockHasRole.mockResolvedValueOnce(true);
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ADDRESS,
       message: "test",
       signature: "0xsig",
     }));
@@ -128,7 +114,6 @@ describe("POST /api/demo/grant-agent-role", () => {
     mockGrantRole.mockRejectedValueOnce(new Error("Roles: account already has role"));
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ADDRESS,
       message: "test",
       signature: "0xsig",
     }));
@@ -140,7 +125,6 @@ describe("POST /api/demo/grant-agent-role", () => {
   it("succeeds and returns txHash", async () => {
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ADDRESS,
       message: "test",
       signature: "0xsig",
     }));

@@ -17,7 +17,7 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
 
   return (
     <div className="bg-surface-2 border-y border-border full-bleed">
-      <div className="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 divide-x divide-border">
+      <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 divide-x divide-border">
         <div className="py-5 pr-6">
           <p className="stat-label mb-1">Total Supply</p>
           <p className="font-display text-3xl text-white">{supplyDisplay}</p>

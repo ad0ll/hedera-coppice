@@ -29,9 +29,9 @@ vi.mock("@/lib/hedera", () => ({
   getOperatorKey: vi.fn().mockReturnValue({}),
 }));
 
-// Mock auth — accept all signatures in tests
+// Mock auth — return deployer address by default
 vi.mock("@/lib/auth", () => ({
-  verifyAuth: vi.fn().mockResolvedValue(undefined),
+  recoverAuthAddress: vi.fn().mockReturnValue("0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE"),
 }));
 
 const originalEnv = { ...process.env };
@@ -51,7 +51,6 @@ function validBody(overrides: Record<string, unknown> = {}): Record<string, unkn
     category: "Renewable Energy",
     amount: 50000,
     currency: "USD",
-    signerAddress: "0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE",
     message: "auth",
     signature: "0xsig",
     ...overrides,
@@ -111,7 +110,6 @@ describe("POST /api/issuer/allocate", () => {
     const body = validBody();
     delete body.message;
     delete body.signature;
-    delete body.signerAddress;
     const res = await POST(makeRequest(body));
     expect(res.status).toBe(400);
     const data = await res.json();

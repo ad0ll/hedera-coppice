@@ -5,6 +5,7 @@ import { AuditEventFeed } from "@/components/audit-event-feed";
 import { GuardianEvents } from "@/components/guardian/guardian-events";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { APPROVAL_EVENTS, RESTRICTION_EVENTS } from "@/lib/event-types";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function ComplianceMonitor() {
   const { events } = useHCSAudit("audit");
@@ -18,25 +19,28 @@ export default function ComplianceMonitor() {
       <h1 className="page-title animate-entrance" style={{ "--index": 0 } as React.CSSProperties}>Compliance Monitor</h1>
 
       <div className="bg-surface-2 border-y border-border full-bleed animate-entrance" style={{ "--index": 1 } as React.CSSProperties}>
-        <div className="max-w-7xl mx-auto flex divide-x divide-border">
-          <div className="flex-1 py-6 pr-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-3 divide-x divide-border">
+          <div className="py-6 pr-4 sm:pr-6">
             <p className="stat-label mb-2">Total Events</p>
-            <p className="font-display text-5xl text-white">{events.length}</p>
+            <p className="font-display text-3xl sm:text-5xl text-white">{events.length}</p>
           </div>
-          <div className="flex-1 py-6 px-6">
+          <div className="py-6 px-4 sm:px-6">
             <p className="stat-label mb-2">Approvals</p>
-            <p className="font-display text-5xl text-bond-green">{approvals}</p>
+            <p className="font-display text-3xl sm:text-5xl text-bond-green">{approvals}</p>
           </div>
-          <div className="flex-1 py-6 pl-6">
+          <div className="py-6 pl-4 sm:pl-6">
             <p className="stat-label mb-2">Restrictions</p>
-            <p className="font-display text-5xl text-bond-red">{restrictions}</p>
+            <p className="font-display text-3xl sm:text-5xl text-bond-red">{restrictions}</p>
           </div>
         </div>
       </div>
 
       {/* Tab toggle */}
-      <div className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+      <div role="tablist" aria-label="Event source" className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
         <button
+          role="tab"
+          aria-selected={tab === "onchain"}
+          aria-controls="panel-onchain"
           onClick={() => setTab("onchain")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
             tab === "onchain" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
@@ -45,6 +49,9 @@ export default function ComplianceMonitor() {
           On-Chain Events
         </button>
         <button
+          role="tab"
+          aria-selected={tab === "guardian"}
+          aria-controls="panel-guardian"
           onClick={() => setTab("guardian")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
             tab === "guardian" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
@@ -54,12 +61,14 @@ export default function ComplianceMonitor() {
         </button>
       </div>
 
-      <div className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
-        {tab === "onchain" ? (
-          <AuditEventFeed topicType="audit" />
-        ) : (
-          <GuardianEvents />
-        )}
+      <div id={`panel-${tab}`} role="tabpanel" aria-label={tab === "onchain" ? "On-Chain Events" : "Guardian Verification"} className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
+        <SectionErrorBoundary section="event feed">
+          {tab === "onchain" ? (
+            <AuditEventFeed topicType="audit" />
+          ) : (
+            <GuardianEvents />
+          )}
+        </SectionErrorBoundary>
       </div>
     </div>
   );

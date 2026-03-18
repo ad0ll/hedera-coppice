@@ -1,5 +1,6 @@
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 interface SptStatusProps {
   totalVerified: number;
@@ -27,12 +28,7 @@ export function SptStatus({
             {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
-        <div className="w-full h-1.5 bg-surface-3 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ${met ? "bg-bond-green" : "bg-bond-amber"}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <ProgressBar value={totalVerified} max={target} label="SPT Progress" color={met ? "green" : "amber"} size="sm" />
       </div>
     );
   }
@@ -59,12 +55,7 @@ export function SptStatus({
             {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
-        <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-700 ${met ? "bg-bond-green" : "bg-bond-amber"}`}
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <ProgressBar value={totalVerified} max={target} label="Sustainability Performance Target progress" color={met ? "green" : "amber"} />
         <p className="text-xs text-text-muted">
           {progress.toFixed(1)}% of target achieved
         </p>

@@ -4,11 +4,10 @@ import { z } from "zod";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet, getServerProvider } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
-import { parseRequestBody, verifyAuthOrError, normalizeAddress } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
 import { ROLES, ACCESS_CONTROL_ABI } from "@/lib/abis";
 
 const bodySchema = z.object({
-  investorAddress: z.string().nonempty(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
@@ -22,14 +21,12 @@ export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, bodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { investorAddress, message, signature } = bodyResult.data;
+  const { message, signature } = bodyResult.data;
 
-  const addrResult = normalizeAddress(investorAddress);
-  if ("error" in addrResult) return addrResult.error;
-  const address = addrResult.address;
-
-  const authError = await verifyAuthOrError(message, signature, address);
-  if (authError) return authError;
+  // Recover wallet address from signature — proves caller owns the wallet
+  const authResult = recoverAddressOrError(message, signature);
+  if ("error" in authResult) return authResult.error;
+  const address = authResult.address;
 
   try {
     const provider = getServerProvider();

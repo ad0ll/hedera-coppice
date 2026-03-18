@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { Spinner } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CPC_SECURITY_ID } from "@/lib/constants";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString("en-US", {
@@ -74,6 +75,7 @@ export default function CouponsPage() {
         <EmptyState
           icon={
             <svg
+              aria-hidden="true"
               className="w-6 h-6 text-bond-red"
               fill="none"
               viewBox="0 0 24 24"
@@ -107,6 +109,7 @@ export default function CouponsPage() {
         <EmptyState
           icon={
             <svg
+              aria-hidden="true"
               className="w-6 h-6 text-text-muted"
               fill="none"
               viewBox="0 0 24 24"
@@ -143,7 +146,7 @@ export default function CouponsPage() {
         className="bg-gradient-to-b from-surface-2 to-transparent full-bleed pb-2 animate-entrance"
         style={{ "--index": 1 } as React.CSSProperties}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 py-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
           <div>
             <p className="stat-label mb-1.5">Next Coupon</p>
             <p className="font-display text-3xl text-white">
@@ -173,71 +176,73 @@ export default function CouponsPage() {
       </div>
 
       {/* Coupon Periods */}
-      <section
-        className="animate-entrance"
-        style={{ "--index": 2 } as React.CSSProperties}
-      >
-        <h2 className="card-title">Coupon Periods</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {couponList.map((coupon, idx) => (
-            <div
-              key={coupon.id}
-              className="card-static flex flex-col gap-3 animate-entrance"
-              style={{ "--index": idx + 3 } as React.CSSProperties}
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-white">
-                  Coupon #{coupon.id}
-                </h3>
-                <StatusBadge
-                  label={STATUS_LABEL[coupon.status]}
-                  variant={STATUS_VARIANT[coupon.status]}
-                />
-              </div>
+      <SectionErrorBoundary section="coupon schedule">
+        <section
+          className="animate-entrance"
+          style={{ "--index": 2 } as React.CSSProperties}
+        >
+          <h2 className="card-title">Coupon Periods</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {couponList.map((coupon, idx) => (
+              <div
+                key={coupon.id}
+                className="card-static flex flex-col gap-3 animate-entrance"
+                style={{ "--index": idx + 3 } as React.CSSProperties}
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white">
+                    Coupon #{coupon.id}
+                  </h3>
+                  <StatusBadge
+                    label={STATUS_LABEL[coupon.status]}
+                    variant={STATUS_VARIANT[coupon.status]}
+                  />
+                </div>
 
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-muted">
-                  {formatDate(coupon.startDate)} &mdash;{" "}
-                  {formatDate(coupon.endDate)}
-                </span>
-                <span className="bg-surface-3 text-text-muted px-2 py-0.5 rounded font-medium">
-                  {coupon.periodDays} days
-                </span>
-              </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-text-muted">
+                    {formatDate(coupon.startDate)} &mdash;{" "}
+                    {formatDate(coupon.endDate)}
+                  </span>
+                  <span className="bg-surface-3 text-text-muted px-2 py-0.5 rounded font-medium">
+                    {coupon.periodDays} days
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-white/5">
-                <div>
-                  <p className="stat-label mb-1">Rate</p>
-                  <p className="font-mono text-sm text-white">
-                    {coupon.rateDisplay}
-                  </p>
+                <div className="grid grid-cols-2 gap-4 pt-1 border-t border-white/5">
+                  <div>
+                    <p className="stat-label mb-1">Rate</p>
+                    <p className="font-mono text-sm text-white">
+                      {coupon.rateDisplay}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="stat-label mb-1">Snapshot ID</p>
+                    <p className="font-mono text-sm text-white">
+                      {coupon.snapshotId > 0 ? coupon.snapshotId : "--"}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="stat-label mb-1">Snapshot ID</p>
-                  <p className="font-mono text-sm text-white">
-                    {coupon.snapshotId > 0 ? coupon.snapshotId : "--"}
-                  </p>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-1 border-t border-white/5">
-                <div>
-                  <p className="stat-label mb-1">Record Date</p>
-                  <p className="font-mono text-xs text-text-muted">
-                    {formatDate(coupon.recordDate)}
-                  </p>
-                </div>
-                <div>
-                  <p className="stat-label mb-1">Execution Date</p>
-                  <p className="font-mono text-xs text-text-muted">
-                    {formatDate(coupon.executionDate)}
-                  </p>
+                <div className="grid grid-cols-2 gap-4 pt-1 border-t border-white/5">
+                  <div>
+                    <p className="stat-label mb-1">Record Date</p>
+                    <p className="font-mono text-xs text-text-muted">
+                      {formatDate(coupon.recordDate)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="stat-label mb-1">Execution Date</p>
+                    <p className="font-mono text-xs text-text-muted">
+                      {formatDate(coupon.executionDate)}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
+      </SectionErrorBoundary>
 
       {/* Bond Info Footer */}
       <div

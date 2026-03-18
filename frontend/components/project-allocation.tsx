@@ -2,7 +2,7 @@
 
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
-import { CATEGORY_COLORS } from "@/lib/event-types";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 export function ProjectAllocation() {
   const { data } = useGuardian();
@@ -18,7 +18,7 @@ export function ProjectAllocation() {
   if (allocations.length === 0) {
     return (
       <div className="card-static">
-        <h3 className="card-title">Use of Proceeds</h3>
+        <h2 className="card-title">Use of Proceeds</h2>
         <p className="text-sm text-text-muted">No allocations recorded yet.</p>
       </div>
     );
@@ -33,7 +33,7 @@ export function ProjectAllocation() {
 
   return (
     <div className="card-static">
-      <h3 className="card-title">Use of Proceeds</h3>
+      <h2 className="card-title">Use of Proceeds</h2>
 
       <div className="space-y-2 mb-6">
         {Object.entries(totalByCategory).map(([category, total]) => {
@@ -46,12 +46,7 @@ export function ProjectAllocation() {
                   {formatNumber(total)} eUSD ({pct.toFixed(0)}%)
                 </span>
               </div>
-              <div className="h-2 bg-surface-3 rounded-full overflow-hidden">
-                <div
-                  className={`h-full rounded-full ${CATEGORY_COLORS[category] || CATEGORY_COLORS.Other}`}
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
+              <ProgressBar value={total} max={grandTotal} label={`${category} allocation`} />
             </div>
           );
         })}

@@ -3,14 +3,13 @@ import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
 import { z } from "zod";
 import { getClient, getOperatorKey } from "@/lib/hedera";
 import { getErrorMessage } from "@/lib/format";
-import { parseRequestBody, verifyAuthOrError, requireEnv } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError, requireEnv } from "@/lib/api-helpers";
 
 const allocateBodySchema = z.object({
   project: z.string().nonempty(),
   category: z.string().nonempty(),
   amount: z.number().positive(),
   currency: z.string().optional().default("USD"),
-  signerAddress: z.string().nonempty(),
   message: z.string().nonempty(),
   signature: z.string().nonempty(),
 });
@@ -24,11 +23,11 @@ export type AllocateResponse = z.infer<typeof allocateResponseSchema>;
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, allocateBodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { project, category, amount, currency, signerAddress, message: authMessage, signature } = bodyResult.data;
+  const { project, category, amount, currency, message: authMessage, signature } = bodyResult.data;
 
-  // Verify wallet signature — any agent can allocate proceeds (frontend gates via useIsAgent)
-  const authError = await verifyAuthOrError(authMessage, signature, signerAddress);
-  if (authError) return authError;
+  // Recover wallet address from signature — any agent can allocate proceeds (frontend gates via useIsAgent)
+  const authResult = recoverAddressOrError(authMessage, signature);
+  if ("error" in authResult) return authResult.error;
 
   const topicEnv = requireEnv("IMPACT_TOPIC_ID");
   if ("error" in topicEnv) return topicEnv.error;
