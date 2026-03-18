@@ -19,7 +19,8 @@ export function useTokenRead() {
       const result: bigint = await contract.totalSupply();
       return result;
     },
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   const paused = useQuery({
@@ -29,7 +30,8 @@ export function useTokenRead() {
       const result: boolean = await contract.isPaused();
       return result;
     },
-    refetchInterval: 10_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   return { totalSupply, paused };
@@ -44,7 +46,8 @@ export function useTokenBalance(address: string | undefined) {
       return result;
     },
     enabled: !!address,
-    refetchInterval: 10_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
   });
 }
 

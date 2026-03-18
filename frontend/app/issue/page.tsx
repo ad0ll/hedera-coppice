@@ -341,10 +341,10 @@ export default function IssuerDashboard() {
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="mint-to">Recipient address</label>
                 <input id="mint-to" type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
-                  placeholder="Recipient address (0x...)" className="input" />
+                  placeholder="Recipient address (0x...)" className="input" aria-required="true" />
                 <label className="sr-only" htmlFor="mint-amount">Mint amount</label>
                 <input id="mint-amount" type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
-                  placeholder="Amount (CPC)" min="0" className="input" />
+                  placeholder="Amount (CPC)" min="0" className="input" aria-required="true" />
                 <button onClick={handleMint} disabled={loading || !mintTo || !mintAmount}
                   className="w-full btn-primary">
                   {loading ? "Minting..." : "Mint"}
@@ -361,14 +361,14 @@ export default function IssuerDashboard() {
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="project-name">Project name</label>
                 <input id="project-name" type="text" value={project} onChange={(e) => setProject(e.target.value)}
-                  placeholder="Project name" className="input" />
+                  placeholder="Project name" className="input" aria-required="true" />
                 <label className="sr-only" htmlFor="project-category">Category</label>
                 <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input">
                   {BOND_CATEGORIES.map((cat) => <option key={cat}>{cat}</option>)}
                 </select>
                 <label className="sr-only" htmlFor="proceeds-amount">Amount in USD</label>
                 <input id="proceeds-amount" type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
-                  placeholder="Amount (USD)" min="0" className="input" />
+                  placeholder="Amount (USD)" min="0" className="input" aria-required="true" />
                 <button onClick={handleAllocateProceeds} disabled={!project || !proceedsAmount}
                   className="w-full btn-outline-amber">
                   Record Allocation

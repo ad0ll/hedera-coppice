@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -7,13 +8,16 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 export function ProjectAllocation() {
   const { data } = useGuardian();
 
-  const allocations = (data?.projects ?? [])
-    .filter((p) => p.allocation)
-    .map((p) => ({
-      name: p.registration.ProjectName,
-      category: p.registration.ICMACategory,
-      amount: p.allocation!.AllocatedAmountEUSD,
-    }));
+  const allocations = useMemo(() =>
+    (data?.projects ?? [])
+      .filter((p) => p.allocation)
+      .map((p) => ({
+        name: p.registration.ProjectName,
+        category: p.registration.ICMACategory,
+        amount: p.allocation!.AllocatedAmountEUSD,
+      })),
+    [data?.projects],
+  );
 
   if (allocations.length === 0) {
     return (

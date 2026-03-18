@@ -61,7 +61,7 @@ export function SptStatus({
         </p>
       </div>
       {projectCount !== undefined && (
-        <div className="grid grid-cols-3 gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
           <div>
             <span className="text-text-muted">Current Rate</span>
             <p className="font-mono text-white mt-0.5">4.25%</p>

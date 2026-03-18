@@ -109,9 +109,10 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
         <>
           <button
             onClick={() => setExpanded(!expanded)}
+            aria-expanded={expanded}
             className="w-full text-left text-xs text-text-muted hover:text-white transition-colors pt-3 mt-3 border-t border-border/30 flex items-center gap-1"
           >
-            <svg className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M9 18l6-6-6-6" />
             </svg>
             {expanded ? "Hide Evidence" : "View Evidence Chain"}

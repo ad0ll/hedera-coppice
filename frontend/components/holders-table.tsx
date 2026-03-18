@@ -41,11 +41,11 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50">
-                <th className="px-6 py-3 text-left stat-label font-medium">Address</th>
-                <th className="px-6 py-3 text-right stat-label font-medium">Balance</th>
-                <th className="px-6 py-3 text-center stat-label font-medium">Verified</th>
-                <th className="px-6 py-3 text-center stat-label font-medium">Status</th>
-                <th className="px-6 py-3 text-right stat-label font-medium w-10"><span className="sr-only">Links</span></th>
+                <th className="px-3 sm:px-6 py-3 text-left stat-label font-medium">Address</th>
+                <th className="px-3 sm:px-6 py-3 text-right stat-label font-medium">Balance</th>
+                <th className="px-3 sm:px-6 py-3 text-center stat-label font-medium">Verified</th>
+                <th className="px-3 sm:px-6 py-3 text-center stat-label font-medium">Status</th>
+                <th className="px-3 sm:px-6 py-3 text-right stat-label font-medium w-10"><span className="sr-only">Links</span></th>
               </tr>
             </thead>
             <tbody>
@@ -53,7 +53,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
                 const label = holderLabel(h.address);
                 return (
                   <tr key={h.address} className="border-b border-border/20 last:border-0 hover:bg-surface-3/30 transition-colors">
-                    <td className="px-6 py-3">
+                    <td className="px-3 sm:px-6 py-3">
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-white">{abbreviateAddress(h.address)}</span>
                         {label && (
@@ -61,23 +61,23 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-3 text-right font-mono text-white">
+                    <td className="px-3 sm:px-6 py-3 text-right font-mono text-white">
                       {formatBalance(h.balance)}
                     </td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 sm:px-6 py-3 text-center">
                       <StatusBadge
                         label={h.verified ? "Verified" : "Unverified"}
                         variant={h.verified ? "green" : "red"}
                       />
                     </td>
-                    <td className="px-6 py-3 text-center">
+                    <td className="px-3 sm:px-6 py-3 text-center">
                       {h.frozen ? (
                         <StatusBadge label="Frozen" variant="red" />
                       ) : (
                         <StatusBadge label="Active" variant="green" />
                       )}
                     </td>
-                    <td className="px-6 py-3 text-right">
+                    <td className="px-3 sm:px-6 py-3 text-right">
                       <a
                         href={`https://hashscan.io/testnet/account/${h.address}`}
                         target="_blank"

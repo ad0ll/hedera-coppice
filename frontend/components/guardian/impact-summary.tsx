@@ -17,7 +17,7 @@ export function ImpactSummary({ data }: ImpactSummaryProps) {
           variant={data.sptMet ? "green" : "amber"}
         />
       </div>
-      <div className="grid grid-cols-3 gap-6 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-6 mb-4">
         <div>
           <p className="stat-label mb-1">Verified CO₂e</p>
           <p className="font-mono text-lg text-white">

@@ -26,7 +26,7 @@ export function Nav() {
             <Link href="/" className="flex items-center gap-2 group focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green rounded-lg">
               <svg viewBox="0 0 32 32" className="w-7 h-7" aria-hidden="true">
                 <rect width="32" height="32" rx="6" fill="currentColor" className="text-surface-3" />
-                <path d="M16 6C11 11 9 16 11 21C12 24 14 26 16 27C18 26 20 24 21 21C23 16 21 11 16 6Z" fill="#10b981" opacity="0.9"/>
+                <path d="M16 6C11 11 9 16 11 21C12 24 14 26 16 27C18 26 20 24 21 21C23 16 21 11 16 6Z" className="fill-bond-green" opacity="0.9"/>
               </svg>
               <span className="text-lg font-semibold tracking-tight text-white">
                 Coppice
@@ -47,7 +47,7 @@ export function Nav() {
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 {mobileMenuOpen ? (
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 ) : (

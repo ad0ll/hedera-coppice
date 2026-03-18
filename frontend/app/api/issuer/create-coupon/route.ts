@@ -4,7 +4,7 @@ import { z } from "zod";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
-import { parseRequestBody, verifyAuthOrError } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
 import { BOND_ABI } from "@/lib/abis";
 
 const createCouponBodySchema = z.object({
@@ -68,10 +68,8 @@ export async function POST(request: NextRequest) {
   if ("error" in bodyResult) return bodyResult.error;
   const body = bodyResult.data;
 
-  const signerAddress = ethers.getAddress(body.address);
-
-  const authError = await verifyAuthOrError(body.message, body.signature, signerAddress);
-  if (authError) return authError;
+  const authResult = recoverAddressOrError(body.message, body.signature);
+  if ("error" in authResult) return authResult.error;
 
   try {
     const wallet = getDeployerWallet();

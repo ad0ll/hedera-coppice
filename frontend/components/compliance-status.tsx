@@ -91,6 +91,8 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   const [onboardError, setOnboardError] = useState<string | null>(null);
   const runChecksRef = useRef<(() => void) | null>(null);
   const hasRunForRef = useRef<string | null>(null);
+  const onEligibilityChangeRef = useRef(onEligibilityChange);
+  onEligibilityChangeRef.current = onEligibilityChange;
   const minDelay = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       if (!registered) {
         setChecks(notRegisteredResults);
         setEligible(false);
-        onEligibilityChange?.(false);
+        onEligibilityChangeRef.current?.(false);
         return;
       }
 
@@ -213,7 +215,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
       const allPass = results.every((r) => r.status === "pass");
       setEligible(allPass);
-      onEligibilityChange?.(allPass);
+      onEligibilityChangeRef.current?.(allPass);
     }
 
     runChecksRef.current = runChecks;
@@ -225,10 +227,10 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       hasRunForRef.current = null;
       setChecks([]);
       setEligible(false);
-      onEligibilityChange?.(false);
+      onEligibilityChangeRef.current?.(false);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- isRegistered, getCountry, getIdentity, getClaimStatus, canTransfer are useCallback-wrapped with stable deps
-  }, [address, onEligibilityChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onEligibilityChange accessed via ref; isRegistered, getCountry, getIdentity, getClaimStatus, canTransfer are useCallback-wrapped with stable deps
+  }, [address]);
 
   const handleOnboard = useCallback(async () => {
     if (!address || onboarding) return;
