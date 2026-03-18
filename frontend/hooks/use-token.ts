@@ -5,13 +5,15 @@ import { ethers } from "ethers";
 import { useAts } from "@/contexts/ats-context";
 import { CPC_SECURITY_ID, JSON_RPC_URL } from "@/lib/constants";
 
+const AGENT_ROLE = "0xc4aed0454da9bde6defa5baf93bb49d4690626fc243d138104e12d1def783ea6";
+const DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
 const TOKEN_ABI = [
   "function totalSupply() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
   "function isPaused() view returns (bool)",
-  "function isAgent(address) view returns (bool)",
+  "function hasRole(bytes32 role, address account) view returns (bool)",
   "function isFrozen(address) view returns (bool)",
-  "function owner() view returns (address)",
   "function mint(address to, uint256 amount)",
   "function pause()",
   "function unpause()",
@@ -66,10 +68,10 @@ export function useTokenBalance(address: string | undefined) {
 
 export function useIsAgent(address: string | undefined) {
   return useQuery({
-    queryKey: ["token", "isAgent", address],
+    queryKey: ["token", "hasRole", "agent", address],
     queryFn: async () => {
       const contract = getReadContract();
-      const result: boolean = await contract.isAgent(address);
+      const result: boolean = await contract.hasRole(AGENT_ROLE, address);
       return result;
     },
     enabled: !!address,
@@ -88,14 +90,15 @@ export function useIsFrozen(address: string | undefined) {
   });
 }
 
-export function useTokenOwner() {
+export function useIsAdmin(address: string | undefined) {
   return useQuery({
-    queryKey: ["token", "owner"],
+    queryKey: ["token", "hasRole", "admin", address],
     queryFn: async () => {
       const contract = getReadContract();
-      const result: string = await contract.owner();
+      const result: boolean = await contract.hasRole(DEFAULT_ADMIN_ROLE, address);
       return result;
     },
+    enabled: !!address,
   });
 }
 

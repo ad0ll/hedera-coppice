@@ -11,11 +11,14 @@ import { WalletIcon } from "@/components/ui/icons";
 import { useTokenBalance } from "@/hooks/use-token";
 import { useHTS } from "@/hooks/use-hts";
 import { FaucetButton } from "@/components/faucet-button";
+import { useGuardian } from "@/hooks/use-guardian";
+import { ImpactSummary } from "@/components/guardian/impact-summary";
 
 export default function InvestorPortal() {
   const { address } = useConnection();
   const { data: cpcBalanceRaw } = useTokenBalance(address);
   const { getEusdBalance } = useHTS();
+  const { data: guardianData } = useGuardian();
   const [eligible, setEligible] = useState(false);
   const [eusdBalance, setEusdBalance] = useState<string>("--");
 
@@ -53,17 +56,23 @@ export default function InvestorPortal() {
       </div>
 
 
-      <div className="animate-entrance" style={{ "--index": 1 }}>
+      {guardianData && (
+        <div className="animate-entrance" style={{ "--index": 1 }}>
+          <ImpactSummary data={guardianData} />
+        </div>
+      )}
+
+      <div className="animate-entrance" style={{ "--index": 2 }}>
         <ComplianceStatus onEligibilityChange={setEligible} />
       </div>
 
       {address && (
-        <div className="animate-entrance" style={{ "--index": 2 }}>
+        <div className="animate-entrance" style={{ "--index": 3 }}>
           <TransferFlow enabled={eligible} />
         </div>
       )}
 
-      <div className="animate-entrance" style={{ "--index": 3 }}>
+      <div className="animate-entrance" style={{ "--index": 4 }}>
         {!address ? (
           <EmptyState
             icon={<WalletIcon className="w-6 h-6 text-text-muted" />}

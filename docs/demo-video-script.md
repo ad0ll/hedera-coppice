@@ -5,6 +5,47 @@ Green bonds are a 3 trillion dollar industry, but all currently implementations 
 Green Bonds served through Coppice are a compliant financial instrument, but the key 
 If you want to make sure that the green bonds you are buying are genuinely being invested into positive environment impacts, Coppice is your platform.
 
+Coppice integrates with two core Hedera services"
+
+1. Asset Tokenization Studio -> We use its backend + deployed contracts for managing KYC, Policies, and ERC-3643 stuffs. By using ATS, we don't have to reinvent the wheel and research + implement compliance for multiple companies
+2. Guardian -> A system for tracking MRV (oversimplified explanation)
+3. HCS (what does this stand for) -> Enablees creating a full audit trail for the whole lifecycle of a bond + tracking projects the fund has invested in
+
+Coppice's sits in front of an ATS + Guardian based backend with its own green bond specific frontend, and has it's own contract and HCS chain for tracking where funds have been allocated
+
+The problem with trad-fi Green Bonds:
+
+
+Why do green bonds:
+1. 
+2. Green bonds attract investors with the "Greenium"
+3. However, people generally, especially younger people, are extremely skeptical of ESG and Carbon Credits, for good reason
+
+I understand and wholly sympathize with the people who roll their eyes when you talk about blockchain and environmental impact in the same sentence. 
+
+While Hedera has put more effort into environmental good than I'm used to seeing w/ other blockchains, it is objectively true that cryptocurrency broadly negatively impacts the climate.
+
+The thing that we need to communicate to investors is that the reason we should move this on chain is because blockchain, as a technology, genuinely addresses the inefficiencies and problems that investors in web2 green bonds have right now:
+1. A lack of transparency + accountability for which projects are being funded
+2. Poor and low quality tracking of outcomes from funded projects
+3. Awareness and concern for greenwashing, financial products + environmental good are often mutually exclusive in practice
+(Need to get more diversity)
+
+Bringing this on chain makes sense for two reasons:
+1. First, smart contracts + existing open source infrastructure simplify compliance. ERC-3643 is idiot-proof, it has the rules for onboarding investors built in, letting us keep our team lean. I'm in this hackathon as a solo developer, I would not have been able to put this together in a week if I had to learn about all regulations in depth.
+2. Block chains + W3C Verified Credentials do support variations of privacy laws in different regulatory environments
+2. The block chain's distributed infrastructure and transparency ensures that investors can always see the data. This increased level of scrutiny is a counter-weight to the bond issuer that forces them to be accountable to a vision that genuinely (improves the environment).
+
+
+This is all
+
+
+Challenges with this product:
+1. Political risk:
+2. 
+
+Solution: Broadly speaking, the solution for this is to first launch the product in the EU, which is the most invested. Later expand to China and the US at least.
+
 
 **Max length:** 5 minutes (hard limit per hackathon rules)
 **Target length:** 4:30 (leave buffer -- judges penalize overtime, never under-time)

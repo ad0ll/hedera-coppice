@@ -44,6 +44,10 @@ export const CONTRACT_ADDRESSES = {
 export const COUNTRY_RESTRICT_MODULE_ADDRESS: string =
   process.env.NEXT_PUBLIC_COUNTRY_RESTRICT_MODULE_ADDRESS || "0x0000000000000000000000000000000000000000";
 
+// Guardian API (server-side only)
+export const GUARDIAN_API_URL = (process.env.GUARDIAN_API_URL || "https://guardian.coppice.cc").trim();
+export const GUARDIAN_POLICY_ID = (process.env.GUARDIAN_POLICY_ID || "").trim();
+
 // Bond details — display defaults (will be supplemented by on-chain data from ATS)
 export const BOND_DETAILS = {
   name: "Coppice Green Bond",

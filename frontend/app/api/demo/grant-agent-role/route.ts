@@ -18,9 +18,11 @@ export const grantAgentRoleResponseSchema = z.object({
 });
 export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema>;
 
-const tokenAbi = [
-  "function isAgent(address account) view returns (bool)",
-  "function addAgent(address account)",
+const AGENT_ROLE = "0xc4aed0454da9bde6defa5baf93bb49d4690626fc243d138104e12d1def783ea6";
+
+const accessControlAbi = [
+  "function hasRole(bytes32 role, address account) view returns (bool)",
+  "function grantRole(bytes32 role, address account)",
 ];
 
 export async function POST(request: NextRequest) {
@@ -53,18 +55,18 @@ export async function POST(request: NextRequest) {
   try {
     const provider = getServerProvider();
     const wallet = getDeployerWallet();
-    const tokenContract = new ethers.Contract(CPC_SECURITY_ID, tokenAbi, wallet);
-    const readOnlyContract = new ethers.Contract(CPC_SECURITY_ID, tokenAbi, provider);
+    const tokenContract = new ethers.Contract(CPC_SECURITY_ID, accessControlAbi, wallet);
+    const readOnlyContract = new ethers.Contract(CPC_SECURITY_ID, accessControlAbi, provider);
 
     // Check if already an agent
-    const alreadyAgent = await readOnlyContract.isAgent(address);
+    const alreadyAgent = await readOnlyContract.hasRole(AGENT_ROLE, address);
 
     if (alreadyAgent) {
       return NextResponse.json({ error: "Address is already an agent" }, { status: 409 });
     }
 
-    // Call token.addAgent(address) as deployer (owner)
-    const tx = await tokenContract.addAgent(address);
+    // Call token.grantRole(AGENT_ROLE, address) as deployer (admin)
+    const tx = await tokenContract.grantRole(AGENT_ROLE, address);
     const receipt = await tx.wait();
 
     if (!receipt || receipt.status !== 1) {
@@ -74,8 +76,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: true, txHash: receipt.hash });
   } catch (err: unknown) {
     const message = getErrorMessage(err, 200, "Failed to grant agent role");
-    // Handle race condition: addAgent reverts with "already has role" if
-    // a concurrent request promoted the same address between our isAgent check and addAgent call
+    // Handle race condition: grantRole reverts with "already has role" if
+    // a concurrent request promoted the same address between our hasRole check and grantRole call
     if (message.includes("already has role")) {
       return NextResponse.json({ error: "Address is already an agent" }, { status: 409 });
     }

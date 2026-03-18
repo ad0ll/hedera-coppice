@@ -1,6 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
 const PORT = parseInt(process.env.E2E_PORT || "3100", 10);
+const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`;
+const isRemote = !!process.env.E2E_BASE_URL;
 
 export default defineConfig({
   testDir: "./tests",
@@ -11,16 +13,21 @@ export default defineConfig({
   reporter: "html",
   timeout: 60000,
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: BASE_URL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
-  webServer: {
-    command: `cd ../frontend && npx next dev --port ${PORT}`,
-    port: PORT,
-    reuseExistingServer: !process.env.CI,
-    timeout: 30000,
-  },
+  // Only start local dev server when not targeting a remote URL
+  ...(isRemote
+    ? {}
+    : {
+        webServer: {
+          command: `cd ../frontend && npx next dev --port ${PORT}`,
+          port: PORT,
+          reuseExistingServer: !process.env.CI,
+          timeout: 30000,
+        },
+      }),
   projects: [
     {
       name: "chromium",

@@ -1,0 +1,10 @@
+node_modules
+contracts/artifacts
+contracts/cache
+contracts/typechain-types
+services
+scripts
+e2e
+reference
+docs
+.git

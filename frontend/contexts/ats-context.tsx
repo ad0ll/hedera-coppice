@@ -46,7 +46,7 @@ export function AtsProvider({ children }: { children: ReactNode }) {
         setAddress(undefined);
         setSigner(null);
       } else {
-        setAddress(accounts[0].toLowerCase());
+        setAddress(ethers.getAddress(accounts[0]));
       }
     };
 
@@ -69,7 +69,7 @@ export function AtsProvider({ children }: { children: ReactNode }) {
           const s = await bp.getSigner();
           setProvider(bp);
           setSigner(s);
-          setAddress((await s.getAddress()).toLowerCase());
+          setAddress(await s.getAddress());
         }
       } catch {
         // Not connected
@@ -91,7 +91,7 @@ export function AtsProvider({ children }: { children: ReactNode }) {
       const addr = await s.getAddress();
       setProvider(bp);
       setSigner(s);
-      setAddress(addr.toLowerCase());
+      setAddress(ethers.getAddress(addr));
     } finally {
       setIsConnecting(false);
     }

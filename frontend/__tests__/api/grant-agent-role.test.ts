@@ -2,18 +2,18 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { NextRequest } from "next/server";
 
 // Mock contract method behavior
-const mockIsAgent = vi.fn().mockResolvedValue(false);
-const mockAddAgent = vi.fn().mockResolvedValue({
+const mockHasRole = vi.fn().mockResolvedValue(false);
+const mockGrantRole = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
 });
 
 // ethers.Contract mock — returns an object with both read and write methods.
 // The route creates two Contract instances (one with provider, one with wallet).
-// Both get the same mock methods so we can control behavior via mockIsAgent/mockAddAgent.
+// Both get the same mock methods so we can control behavior via mockHasRole/mockGrantRole.
 function MockContract() {
   return {
-    isAgent: (...args: unknown[]) => mockIsAgent(...args),
-    addAgent: (...args: unknown[]) => mockAddAgent(...args),
+    hasRole: (...args: unknown[]) => mockHasRole(...args),
+    grantRole: (...args: unknown[]) => mockGrantRole(...args),
   };
 }
 
@@ -63,8 +63,8 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
 describe("POST /api/demo/grant-agent-role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockIsAgent.mockResolvedValue(false);
-    mockAddAgent.mockResolvedValue({
+    mockHasRole.mockResolvedValue(false);
+    mockGrantRole.mockResolvedValue({
       wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
     });
   });
@@ -112,7 +112,7 @@ describe("POST /api/demo/grant-agent-role", () => {
   });
 
   it("returns 409 when address is already an agent", async () => {
-    mockIsAgent.mockResolvedValueOnce(true);
+    mockHasRole.mockResolvedValueOnce(true);
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_ADDRESS,
@@ -124,8 +124,8 @@ describe("POST /api/demo/grant-agent-role", () => {
     expect(data.error).toMatch(/already/i);
   });
 
-  it("returns 409 when addAgent reverts with 'already has role' (TOCTOU race)", async () => {
-    mockAddAgent.mockRejectedValueOnce(new Error("Roles: account already has role"));
+  it("returns 409 when grantRole reverts with 'already has role' (TOCTOU race)", async () => {
+    mockGrantRole.mockRejectedValueOnce(new Error("Roles: account already has role"));
     const { POST } = await import("@/app/api/demo/grant-agent-role/route");
     const res = await POST(makeRequest({
       investorAddress: FAKE_ADDRESS,
@@ -148,6 +148,6 @@ describe("POST /api/demo/grant-agent-role", () => {
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.txHash).toBe("0xtxhash");
-    expect(mockAddAgent).toHaveBeenCalledTimes(1);
+    expect(mockGrantRole).toHaveBeenCalledTimes(1);
   });
 });

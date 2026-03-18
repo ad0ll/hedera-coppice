@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useConnection } from "@/contexts/ats-context";
-import { useTokenRead, useTokenWrite, useIsAgent, useTokenOwner } from "@/hooks/use-token";
+import { useTokenRead, useTokenWrite, useIsAgent, useIsAdmin } from "@/hooks/use-token";
 import { useHolders } from "@/hooks/use-holders";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { IssuerStats } from "@/components/issuer-stats";
@@ -24,14 +24,16 @@ import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/ro
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
 import { useCoupons } from "@/hooks/use-coupons";
+import { useGuardian } from "@/hooks/use-guardian";
+import { SptStatus } from "@/components/guardian/spt-status";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
   const { totalSupply, paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
   const { data: isAuthorized, isLoading: isCheckingAgent, refetch: refetchIsAgent } = useIsAgent(address);
-  const { data: tokenOwner } = useTokenOwner();
-  const isOwner = address && tokenOwner ? address.toLowerCase() === tokenOwner.toLowerCase() : false;
+  const { data: isAdmin } = useIsAdmin(address);
+  const isOwner = isAdmin ?? false;
 
   // HCS events — used for holders table and activity feed
   const { events: auditEvents, loading: auditLoading } = useHCSAudit("audit");
@@ -66,6 +68,8 @@ export default function IssuerDashboard() {
   const distributeOp = useOperationStatus();
   const { data: coupons = [] } = useCoupons();
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
+
+  const { data: guardianData } = useGuardian();
 
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
@@ -218,7 +222,7 @@ export default function IssuerDashboard() {
       <EmptyState
         icon={<ShieldCheckIcon className="w-6 h-6 text-bond-amber" />}
         title="Become an Issuer"
-        description="Grant yourself the agent role to manage tokens, view holders, and control trading. This demonstrates ERC-3643 role-based access control."
+        description="Grant yourself the agent role to manage tokens, view holders, and control trading. This demonstrates ATS (Asset Tokenization Studio) role-based access control."
         variant="default"
         action={
           <div className="space-y-3 max-w-sm mx-auto">
@@ -259,6 +263,18 @@ export default function IssuerDashboard() {
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
         <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
       </div>
+
+      {/* SPT Status */}
+      {guardianData && (
+        <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <SptStatus
+            totalVerified={guardianData.totalVerifiedCO2e}
+            target={guardianData.sptTarget}
+            met={guardianData.sptMet}
+            projectCount={guardianData.projects.length}
+          />
+        </div>
+      )}
 
       {/* Holders Table */}
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
