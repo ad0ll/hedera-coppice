@@ -152,6 +152,7 @@ export async function GET() {
 
     const data: GuardianData = {
       bondFramework,
+      bondFrameworkEvidence: bondFrameworkResults[0]?.evidence,
       projects: guardianProjects,
       totalAllocatedEUSD: totalAllocated,
       totalIssuanceEUSD: totalIssuance,

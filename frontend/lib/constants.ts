@@ -7,6 +7,9 @@ export const ATS_FACTORY = process.env.NEXT_PUBLIC_ATS_FACTORY || "0.0.7708432";
 export const CPC_SECURITY_ID: string =
   process.env.NEXT_PUBLIC_CPC_SECURITY_ID || "0x0000000000000000000000000000000000000000";
 
+// CPC Bond Token Hedera account ID (for Mirror Node queries)
+export const CPC_TOKEN_ID = process.env.NEXT_PUBLIC_CPC_TOKEN_ID || "0.0.8254921";
+
 // eUSD HTS token EVM address (long-zero format per HIP-218)
 // HTS token 0.0.8214937 -> 8214937 decimal -> 0x7D5999 hex -> padded to 20 bytes
 export const EUSD_EVM_ADDRESS: string =

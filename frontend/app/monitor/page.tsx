@@ -6,9 +6,11 @@ import { GuardianEvents } from "@/components/guardian/guardian-events";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { APPROVAL_EVENTS, RESTRICTION_EVENTS } from "@/lib/event-types";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { useCoupons } from "@/hooks/use-coupons";
 
 export default function ComplianceMonitor() {
   const { events } = useHCSAudit("audit");
+  const { data: coupons } = useCoupons();
   const [tab, setTab] = useState<"onchain" | "guardian">("onchain");
 
   const approvals = events.filter((e) => APPROVAL_EVENTS.has(e.type)).length;
@@ -35,8 +37,53 @@ export default function ComplianceMonitor() {
         </div>
       </div>
 
+      {/* Coupon Activity */}
+      {coupons && coupons.length > 0 && (
+        <section className="animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+          <h2 className="card-title">Coupon Activity</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {coupons.map((c) => (
+              <div key={c.id} className="card-static text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-white text-sm">Coupon #{c.id}</span>
+                  <span className={`px-2 py-0.5 rounded font-medium ${
+                    c.status === "paid" ? "bg-bond-green/15 text-bond-green" :
+                    c.status === "executable" ? "bg-bond-green/15 text-bond-green" :
+                    "bg-bond-amber/15 text-bond-amber"
+                  }`}>
+                    {c.status === "paid" ? "Distributed" : c.status === "executable" ? "Ready" : c.status === "record" ? "Record" : "Upcoming"}
+                  </span>
+                </div>
+                <div className="space-y-1 text-text-muted">
+                  <div className="flex justify-between">
+                    <span>Rate</span>
+                    <span className="font-mono text-white">{c.rateDisplay}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Period</span>
+                    <span className="font-mono text-white">{c.periodDays}d</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Record</span>
+                    <span className="font-mono text-white">
+                      {new Date(c.recordDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Record Status</span>
+                    <span className={`font-mono ${c.snapshotId > 0 ? "text-bond-green" : "text-text-muted"}`}>
+                      {c.snapshotId > 0 ? "Captured" : "Pending"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Tab toggle */}
-      <div role="tablist" aria-label="Event source" className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 2 } as React.CSSProperties}>
+      <div role="tablist" aria-label="Event source" className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
         <button
           role="tab"
           aria-selected={tab === "onchain"}
@@ -61,7 +108,7 @@ export default function ComplianceMonitor() {
         </button>
       </div>
 
-      <div id={`panel-${tab}`} role="tabpanel" aria-label={tab === "onchain" ? "On-Chain Events" : "Guardian Verification"} className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
+      <div id={`panel-${tab}`} role="tabpanel" aria-label={tab === "onchain" ? "On-Chain Events" : "Guardian Verification"} className="animate-entrance" style={{ "--index": 4 } as React.CSSProperties}>
         <SectionErrorBoundary section="event feed">
           {tab === "onchain" ? (
             <AuditEventFeed topicType="audit" />

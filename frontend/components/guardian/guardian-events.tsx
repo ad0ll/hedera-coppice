@@ -10,7 +10,7 @@ function hashScanUrl(_topicId: string, messageId: string): string {
 }
 
 function ipfsUrl(hash: string): string {
-  return `https://dweb.link/ipfs/${hash}`;
+  return `/api/guardian/ipfs/${hash}`;
 }
 
 function abbreviateDid(did: string): string {

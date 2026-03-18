@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useCoupons } from "@/hooks/use-coupons";
 import type { CouponInfo } from "@/hooks/use-coupons";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -25,8 +25,8 @@ const STATUS_VARIANT: Record<CouponInfo["status"], "green" | "amber"> = {
 };
 
 const STATUS_LABEL: Record<CouponInfo["status"], string> = {
-  paid: "Paid",
-  executable: "Executable",
+  paid: "Distributed",
+  executable: "Ready",
   record: "Record Date Passed",
   upcoming: "Upcoming",
 };
@@ -46,6 +46,15 @@ export default function CouponsPage() {
   const { data: coupons, isLoading, isError } = useCoupons();
   const couponList = useMemo(() => coupons ?? [], [coupons]);
   const nextCouponDate = useMemo(() => getNextCouponDate(couponList), [couponList]);
+  const [showPaid, setShowPaid] = useState(false);
+  const visibleCoupons = useMemo(
+    () => couponList.filter((c) => showPaid || c.status !== "paid"),
+    [couponList, showPaid],
+  );
+  const paidCount = useMemo(
+    () => couponList.filter((c) => c.status === "paid").length,
+    [couponList],
+  );
 
   if (isLoading) {
     return (
@@ -181,9 +190,20 @@ export default function CouponsPage() {
           className="animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
-          <h2 className="card-title">Coupon Periods</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="card-title mb-0">Coupon Periods</h2>
+            {paidCount > 0 && (
+              <button
+                onClick={() => setShowPaid(!showPaid)}
+                className="text-xs text-text-muted hover:text-white transition-colors"
+                aria-pressed={showPaid}
+              >
+                {showPaid ? "Hide" : "Show"} paid ({paidCount})
+              </button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {couponList.map((coupon, idx) => (
+            {visibleCoupons.map((coupon, idx) => (
               <div
                 key={coupon.id}
                 className="card-static flex flex-col gap-3 animate-entrance"
@@ -217,9 +237,19 @@ export default function CouponsPage() {
                     </p>
                   </div>
                   <div>
-                    <p className="stat-label mb-1">Snapshot ID</p>
-                    <p className="font-mono text-sm text-white">
-                      {coupon.snapshotId > 0 ? coupon.snapshotId : "--"}
+                    <p className="stat-label mb-1">Record Status</p>
+                    <p className="font-mono text-sm text-white flex items-center gap-1.5">
+                      {coupon.snapshotId > 0 ? (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-bond-green" aria-hidden="true" />
+                          Captured
+                        </>
+                      ) : (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-text-muted/30" aria-hidden="true" />
+                          Pending
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>

@@ -145,6 +145,7 @@ export interface GuardianProject {
 
 export interface GuardianData {
   bondFramework: BondFrameworkCS | null;
+  bondFrameworkEvidence?: VCEvidence;
   projects: GuardianProject[];
   totalAllocatedEUSD: number;
   totalIssuanceEUSD: number;

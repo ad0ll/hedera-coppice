@@ -24,12 +24,15 @@ import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/ro
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
 import { createCouponResponseSchema } from "@/app/api/issuer/create-coupon/route";
+import { useQueryClient } from "@tanstack/react-query";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { useCoupons } from "@/hooks/use-coupons";
 import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function IssuerDashboard() {
+  const queryClient = useQueryClient();
   const { address } = useConnection();
   const { totalSupply, paused: pausedQuery } = useTokenRead();
   const { mint, pause, unpause, setAddressFrozen, loading } = useTokenWrite();
@@ -204,6 +207,7 @@ export default function IssuerDashboard() {
       });
       setLastCreateCouponTx(result.txHash);
       createCouponOp.setStatus({ type: "success", msg: `Coupon #${result.couponId} created at ${couponRate}%` });
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
       setCouponRate("");
       setCouponStartDate("");
       setCouponRecordDate("");
@@ -287,6 +291,26 @@ export default function IssuerDashboard() {
     );
   }
 
+  // --- Coupon date validation ---
+
+  function validateCouponDates(): string | null {
+    const now = Date.now();
+    if (couponStartDate && new Date(couponStartDate).getTime() <= now) {
+      return "Start date must be in the future";
+    }
+    if (couponStartDate && couponRecordDate && new Date(couponRecordDate) <= new Date(couponStartDate)) {
+      return "Record date must be after start date";
+    }
+    if (couponRecordDate && couponExecutionDate && new Date(couponExecutionDate) <= new Date(couponRecordDate)) {
+      return "Execution date must be after record date";
+    }
+    if (couponStartDate && couponEndDate && new Date(couponEndDate) <= new Date(couponStartDate)) {
+      return "End date must be after start date";
+    }
+    return null;
+  }
+  const couponDateError = validateCouponDates();
+
   // --- Main dashboard ---
 
   let idx = 0;
@@ -330,6 +354,11 @@ export default function IssuerDashboard() {
         </SectionErrorBoundary>
       </div>
 
+      {/* Use of Proceeds */}
+      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <ProjectAllocation />
+      </div>
+
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
         <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
@@ -350,6 +379,7 @@ export default function IssuerDashboard() {
                   {loading ? "Minting..." : "Mint"}
                 </button>
                 <StatusMessage status={mintOp.status} />
+                <p className="text-xs text-text-muted">Creates new CPC tokens (issuer operation). Investors purchase CPC with eUSD on the Invest page.</p>
               </div>
             </Card>
           </div>
@@ -358,6 +388,12 @@ export default function IssuerDashboard() {
           <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>
               <h3 className="card-title">Allocate Proceeds</h3>
+              {guardianData && (
+                <p className="text-xs text-text-muted -mt-1 mb-2">
+                  {formatNumber(totalAllocated)} / {formatNumber(guardianData.totalIssuanceEUSD)} eUSD allocated
+                  ({guardianData.allocationPercent}%)
+                </p>
+              )}
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="project-name">Project name</label>
                 <input id="project-name" type="text" value={project} onChange={(e) => setProject(e.target.value)}
@@ -388,7 +424,12 @@ export default function IssuerDashboard() {
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="freeze-addr">Wallet address to freeze/unfreeze</label>
                 <input id="freeze-addr" type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
-                  placeholder="Wallet address (0x...)" className="input" />
+                  placeholder="Wallet address (0x...)" className="input" list="holder-addresses" />
+                <datalist id="holder-addresses">
+                  {holders.map((h) => (
+                    <option key={h.address} value={h.address} />
+                  ))}
+                </datalist>
                 <div className="flex gap-2">
                   <button onClick={() => handleFreeze("freeze")}
                     disabled={loading || !freezeAddr || !isDeployer}
@@ -444,15 +485,17 @@ export default function IssuerDashboard() {
                   className="input"
                 >
                   <option value="">Select a coupon...</option>
-                  {coupons.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      Coupon #{c.id} - {c.rateDisplay}
-                    </option>
-                  ))}
+                  {coupons
+                    .filter((c) => c.snapshotId === 0)
+                    .map((c) => (
+                      <option key={c.id} value={c.id}>
+                        Coupon #{c.id} — {c.rateDisplay} ({c.status})
+                      </option>
+                    ))}
                 </select>
                 <button
                   onClick={handleDistribute}
-                  disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || selectedCoupon?.status === "paid" || distributing}
+                  disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || distributing}
                   className="w-full btn-primary"
                 >
                   {distributing ? "Distributing..." : "Distribute"}
@@ -500,7 +543,10 @@ export default function IssuerDashboard() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="coupon-start" className="text-xs text-text-muted mb-1 block">Start Date</label>
+                  <label htmlFor="coupon-start" className="text-xs text-text-muted mb-1 flex items-center">
+                    Start Date
+                    <InfoTooltip text="When the coupon period begins. Must be in the future." />
+                  </label>
                   <input
                     id="coupon-start"
                     type="datetime-local"
@@ -510,7 +556,10 @@ export default function IssuerDashboard() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="coupon-record" className="text-xs text-text-muted mb-1 block">Record Date</label>
+                  <label htmlFor="coupon-record" className="text-xs text-text-muted mb-1 flex items-center">
+                    Record Date
+                    <InfoTooltip text="Cutoff for determining holders. Must be after start date." />
+                  </label>
                   <input
                     id="coupon-record"
                     type="datetime-local"
@@ -520,7 +569,10 @@ export default function IssuerDashboard() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="coupon-execution" className="text-xs text-text-muted mb-1 block">Execution Date</label>
+                  <label htmlFor="coupon-execution" className="text-xs text-text-muted mb-1 flex items-center">
+                    Execution Date
+                    <InfoTooltip text="When distribution can be executed. Must be after record date." />
+                  </label>
                   <input
                     id="coupon-execution"
                     type="datetime-local"
@@ -530,7 +582,10 @@ export default function IssuerDashboard() {
                   />
                 </div>
                 <div>
-                  <label htmlFor="coupon-end" className="text-xs text-text-muted mb-1 block">End Date</label>
+                  <label htmlFor="coupon-end" className="text-xs text-text-muted mb-1 flex items-center">
+                    End Date
+                    <InfoTooltip text="End of the coupon period. Must be after start date." />
+                  </label>
                   <input
                     id="coupon-end"
                     type="datetime-local"
@@ -539,16 +594,17 @@ export default function IssuerDashboard() {
                     className="input"
                   />
                 </div>
+                {couponDateError && (
+                  <p className="text-xs text-bond-red">{couponDateError}</p>
+                )}
                 <button
                   onClick={handleCreateCoupon}
-                  disabled={!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || creatingCoupon}
+                  disabled={!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || creatingCoupon || !!couponDateError}
                   className="w-full btn-primary"
                 >
                   {creatingCoupon ? "Creating..." : "Create Coupon"}
                 </button>
-                {!isDeployer && (
-                  <p className="text-xs text-text-muted">Only the bond issuer can create coupons (requires CORPORATE_ACTION role).</p>
-                )}
+                <p className="text-xs text-text-muted">Creates a new coupon period on the bond contract. Requires CORPORATE_ACTION role (executed by deployer).</p>
                 <StatusMessage status={createCouponOp.status} />
                 {lastCreateCouponTx && createCouponOp.status?.type === "success" && (
                   <a
@@ -565,11 +621,6 @@ export default function IssuerDashboard() {
             </Card>
           </div>
         </div>
-      </div>
-
-      {/* Use of Proceeds */}
-      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-        <ProjectAllocation />
       </div>
 
       {/* Activity Feed */}

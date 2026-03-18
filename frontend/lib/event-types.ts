@@ -7,6 +7,8 @@ export const EVENT_TYPES = {
   WALLET_FROZEN: "WALLET_FROZEN",
   WALLET_UNFROZEN: "WALLET_UNFROZEN",
   PROCEEDS_ALLOCATED: "PROCEEDS_ALLOCATED",
+  COUPON_CREATED: "COUPON_CREATED",
+  COUPON_DISTRIBUTED: "COUPON_DISTRIBUTED",
 } as const;
 
 export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
@@ -17,6 +19,8 @@ export const APPROVAL_EVENTS: ReadonlySet<string> = new Set([
   EVENT_TYPES.MINT,
   EVENT_TYPES.TOKEN_UNPAUSED,
   EVENT_TYPES.WALLET_UNFROZEN,
+  EVENT_TYPES.COUPON_CREATED,
+  EVENT_TYPES.COUPON_DISTRIBUTED,
 ]);
 
 /** Event types that represent restrictions / negative actions. */
@@ -34,6 +38,8 @@ export const EVENT_BADGE_CLASSES: Record<string, string> = {
   [EVENT_TYPES.WALLET_FROZEN]: "bg-bond-red/15 text-bond-red",
   [EVENT_TYPES.WALLET_UNFROZEN]: "bg-bond-green/15 text-bond-green",
   [EVENT_TYPES.PROCEEDS_ALLOCATED]: "bg-bond-amber/15 text-bond-amber",
+  [EVENT_TYPES.COUPON_CREATED]: "bg-bond-teal/15 text-bond-teal",
+  [EVENT_TYPES.COUPON_DISTRIBUTED]: "bg-bond-green/15 text-bond-green",
 };
 
 /** Bond proceeds allocation categories with their display colors. */

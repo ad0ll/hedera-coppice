@@ -12,6 +12,7 @@ import { getReadProvider } from "@/lib/provider";
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
 import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
+import { TxLink, AddressLink } from "@/components/ui/hashscan-link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { z } from "zod";
 import { onboardEventSchema, type OnboardEvent } from "@/app/api/onboard/route";
@@ -20,7 +21,7 @@ interface CheckResult {
   label: string;
   status: "pass" | "fail" | "loading";
   detail?: string;
-  link?: { href: string; label: string };
+  link?: { type: "tx"; hash: string } | { type: "contract"; address: string };
 }
 
 /** Countries available for demo onboarding. Sorted by label for the dropdown. */
@@ -98,10 +99,10 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   useEffect(() => {
     if (!address) return;
 
-    function claimTxLink(claimTxs: ClaimTransactions, topic: number, label: string): CheckResult["link"] {
+    function claimTxLink(claimTxs: ClaimTransactions, topic: number): CheckResult["link"] {
       const txHash = claimTxs.get(topic);
       if (!txHash) return undefined;
-      return { href: `https://hashscan.io/testnet/transaction/${txHash}`, label };
+      return { type: "tx", hash: txHash };
     }
 
     function buildResults(claims: ClaimStatus, registered: boolean, countryResult: { country: number; isRestricted: boolean; countryCheckFailed: boolean }, transferAllowed: boolean, claimTxs: ClaimTransactions): CheckResult[] {
@@ -111,11 +112,11 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           label: "On-Chain Identity",
           status: registered ? "pass" : "fail",
           detail: registered ? "Identity contract linked" : "No identity found",
-          link: registered ? { href: `https://hashscan.io/testnet/contract/${CONTRACT_ADDRESSES.identityRegistry}`, label: "Registry" } : undefined,
+          link: registered ? { type: "contract", address: CONTRACT_ADDRESSES.identityRegistry } : undefined,
         },
-        { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing", link: claims.kyc ? claimTxLink(claimTxs, CLAIM_TOPICS.KYC, "Tx") : undefined },
-        { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing", link: claims.aml ? claimTxLink(claimTxs, CLAIM_TOPICS.AML, "Tx") : undefined },
-        { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing", link: claims.accredited ? claimTxLink(claimTxs, CLAIM_TOPICS.ACCREDITED, "Tx") : undefined },
+        { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing", link: claims.kyc ? claimTxLink(claimTxs, CLAIM_TOPICS.KYC) : undefined },
+        { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing", link: claims.aml ? claimTxLink(claimTxs, CLAIM_TOPICS.AML) : undefined },
+        { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing", link: claims.accredited ? claimTxLink(claimTxs, CLAIM_TOPICS.ACCREDITED) : undefined },
         {
           label: "Jurisdiction Check",
           status: countryResult.countryCheckFailed ? "fail" : countryResult.isRestricted ? "fail" : "pass",
@@ -129,7 +130,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           label: "Transfer Eligibility",
           status: transferAllowed ? "pass" : "fail",
           detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance",
-          link: { href: `https://hashscan.io/testnet/contract/${CONTRACT_ADDRESSES.compliance}`, label: "Compliance" },
+          link: { type: "contract", address: CONTRACT_ADDRESSES.compliance },
         },
       ];
     }
@@ -412,10 +413,13 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 </span>
               )}
               {check.link && check.status === "pass" && (
-                <a href={check.link.href} target="_blank" rel="noopener noreferrer"
-                  className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">
-                  {check.link.label}
-                </a>
+                <span className="text-[10px]">
+                  {check.link.type === "tx" ? (
+                    <TxLink hash={check.link.hash} prefixLen={6} />
+                  ) : (
+                    <AddressLink address={check.link.address} type="contract" prefixLen={6} suffixLen={4} />
+                  )}
+                </span>
               )}
             </div>
           </div>

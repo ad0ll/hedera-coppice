@@ -22,11 +22,13 @@ export interface CouponInfo {
 function getCouponStatus(coupon: {
   recordDate: number;
   executionDate: number;
+  snapshotId: number;
 }): CouponInfo["status"] {
   const now = Math.floor(Date.now() / 1000);
   if (now < coupon.recordDate) return "upcoming";
   if (now < coupon.executionDate) return "record";
-  return "paid";
+  if (coupon.snapshotId > 0) return "paid";
+  return "executable";
 }
 
 export function useCoupons() {
@@ -65,6 +67,7 @@ export function useCoupons() {
             status: getCouponStatus({
               recordDate: Number(c.recordDate),
               executionDate: Number(c.executionDate),
+              snapshotId: Number(registered.snapshotId),
             }),
             periodDays,
           };

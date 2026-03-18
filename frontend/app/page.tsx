@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useConnection } from "@/contexts/ats-context";
 import { formatBalance, formatNumber } from "@/lib/format";
 import { BondDetails } from "@/components/bond-details";
@@ -9,7 +9,7 @@ import { TransferFlow } from "@/components/transfer-flow";
 import { EmptyState } from "@/components/ui/empty-state";
 import { WalletIcon } from "@/components/ui/icons";
 import { useTokenBalance } from "@/hooks/use-token";
-import { useHTS } from "@/hooks/use-hts";
+import { useEusdBalance, useInvalidateEusdBalance } from "@/hooks/use-eusd-balance";
 import { FaucetButton } from "@/components/faucet-button";
 import { useGuardian } from "@/hooks/use-guardian";
 import { ImpactSummary } from "@/components/guardian/impact-summary";
@@ -18,37 +18,15 @@ import { SectionErrorBoundary } from "@/components/section-error-boundary";
 export default function InvestorPortal() {
   const { address } = useConnection();
   const { data: cpcBalanceRaw } = useTokenBalance(address);
-  const { getEusdBalance } = useHTS();
+  const { data: eusdBalanceRaw } = useEusdBalance(address);
+  const invalidateEusd = useInvalidateEusdBalance();
   const { data: guardianData } = useGuardian();
   const [eligible, setEligible] = useState(false);
-  const [eusdBalance, setEusdBalance] = useState<string>("--");
 
   const cpcBalance = cpcBalanceRaw != null ? formatBalance(cpcBalanceRaw) : "--";
-
-  const refreshEusdBalance = useCallback(async () => {
-    if (!address) return;
-    const eusd = await getEusdBalance(address);
-    setEusdBalance(formatNumber(eusd, { minimumFractionDigits: 2 }));
-  }, [address, getEusdBalance]);
-
-  useEffect(() => {
-    if (!address) return;
-    let cancelled = false;
-    const load = async () => {
-      const eusd = await getEusdBalance(address);
-      if (!cancelled) {
-        setEusdBalance(formatNumber(eusd, { minimumFractionDigits: 2 }));
-      }
-    };
-    load();
-    const interval = setInterval(load, 10000);
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [address, getEusdBalance]);
-
-  const displayEusdBalance = address ? eusdBalance : "--";
+  const displayEusdBalance = address && eusdBalanceRaw != null
+    ? formatNumber(eusdBalanceRaw, { minimumFractionDigits: 2 })
+    : "--";
 
   return (
     <div className="space-y-8">
@@ -98,7 +76,7 @@ export default function InvestorPortal() {
                 <p className="stat-label mb-1">eUSD Balance</p>
                 <p className="font-display text-3xl text-bond-green">{displayEusdBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice USD</p>
-                <FaucetButton onSuccess={refreshEusdBalance} />
+                <FaucetButton onSuccess={invalidateEusd} />
               </div>
             </div>
           </div>

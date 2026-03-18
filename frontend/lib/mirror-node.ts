@@ -67,3 +67,42 @@ export type MirrorTopicMessage = z.infer<typeof mirrorTopicMessageSchema>;
 export type MirrorTopicMessagesResponse = z.infer<
   typeof mirrorTopicMessagesResponseSchema
 >;
+
+const mirrorTokenBalanceEntrySchema = z.object({
+  account: z.string(),
+  balance: z.number(),
+});
+
+const mirrorTokenBalancesSchema = z.object({
+  balances: z.array(mirrorTokenBalanceEntrySchema).optional(),
+  links: z.object({ next: z.string().nullish() }).optional(),
+});
+
+/** Get all accounts holding a specific token with non-zero balances. */
+export async function getTokenHolders(tokenId: string): Promise<string[]> {
+  const accounts: string[] = [];
+  let path: string | null = `/api/v1/tokens/${tokenId}/balances?account.balance=gt:0&limit=100`;
+
+  while (path) {
+    const data: z.infer<typeof mirrorTokenBalancesSchema> = await fetchMirrorNode(path, mirrorTokenBalancesSchema);
+    for (const entry of data.balances ?? []) {
+      accounts.push(entry.account);
+    }
+    path = data.links?.next ?? null;
+  }
+  return accounts;
+}
+
+const mirrorAccountDetailSchema = z.object({
+  account: z.string(),
+  evm_address: z.string(),
+});
+
+/** Resolve a Hedera account ID to an EVM address via Mirror Node. */
+export async function getEvmAddress(accountId: string): Promise<string> {
+  const data = await fetchMirrorNode(
+    `/api/v1/accounts/${accountId}`,
+    mirrorAccountDetailSchema,
+  );
+  return data.evm_address;
+}

@@ -129,9 +129,11 @@ export default function ImpactPage() {
           </div>
         ) : data && data.projects.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.projects.map((p) => (
-              <ProjectCard key={p.registration.ProjectName} project={p} />
-            ))}
+            {[...data.projects]
+              .sort((a, b) => a.registration.ProjectName.localeCompare(b.registration.ProjectName))
+              .map((p) => (
+                <ProjectCard key={p.registration.ProjectName} project={p} />
+              ))}
           </div>
         ) : (
           <div className="card-static text-sm text-text-muted">
@@ -145,7 +147,19 @@ export default function ImpactPage() {
         <section className="animate-entrance" style={{ "--index": 4 } as React.CSSProperties}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="card-title mb-0">ICMA Compliance Evidence</h2>
-            <StatusBadge label="Guardian Verified" variant="green" />
+            <div className="flex items-center gap-2">
+              {data.bondFrameworkEvidence && (
+                <a
+                  href={`/api/guardian/ipfs/${data.bondFrameworkEvidence.hash}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors"
+                >
+                  View VC
+                </a>
+              )}
+              <StatusBadge label="Guardian Verified" variant="green" />
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Use of Proceeds */}
@@ -190,7 +204,18 @@ export default function ImpactPage() {
                 <p className="text-xs text-text-muted">{data.bondFramework.RegulatoryFrameworks}</p>
               )}
               {data.bondFramework.EUTaxonomyAlignmentPercent != null && (
-                <p className="text-xs text-text-muted mt-1">EU Taxonomy alignment: {data.bondFramework.EUTaxonomyAlignmentPercent}%</p>
+                <p className="text-xs text-text-muted mt-1">
+                  EU Taxonomy alignment: {data.bondFramework.EUTaxonomyAlignmentPercent}%
+                  {" "}
+                  <a
+                    href="https://www.icmagroup.org/green-social-and-sustainability-bonds/green-bond-principles-gbp/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-bond-green hover:text-bond-green/80 transition-colors"
+                  >
+                    (ICMA GBP)
+                  </a>
+                </p>
               )}
             </div>
           </div>

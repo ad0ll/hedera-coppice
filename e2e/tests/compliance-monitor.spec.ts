@@ -31,8 +31,13 @@ test.describe("Compliance Monitor", () => {
 
   test("should show Guardian verification tab", async ({ page }) => {
     await page.goto("/monitor");
-    await expect(page.getByRole("button", { name: "Guardian Verification" })).toBeVisible();
-    await page.getByRole("button", { name: "Guardian Verification" }).click();
+    // Wait for page content to render (coupon activity section loads async)
+    await expect(page.getByText("Total Events")).toBeVisible({ timeout: 10000 });
+    // Tab is below the coupon activity grid — scroll to it first
+    const guardianTab = page.getByRole("tab", { name: "Guardian Verification" });
+    await guardianTab.scrollIntoViewIfNeeded({ timeout: 15000 });
+    await expect(guardianTab).toBeVisible();
+    await guardianTab.click();
     // Wait for Audit Event Feed to disappear (confirms tab switched)
     await expect(page.getByText("Audit Event Feed")).not.toBeVisible({ timeout: 5000 });
     // Now wait for Guardian content: events, loading, or empty state

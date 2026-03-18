@@ -38,6 +38,7 @@ export function AddressLink({ address, type = "account", prefixLen = 6, suffixLe
       title={address}
     >
       {abbreviateAddress(address, prefixLen, suffixLen)}
+      <ExternalLinkIcon />
     </a>
   );
 }

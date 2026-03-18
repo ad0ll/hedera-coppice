@@ -115,8 +115,9 @@ test.describe("Write Operations (Testnet)", () => {
     // so we need a generous timeout to avoid flakes.
     await expect(page.getByText(/[1-9]\d* events/)).toBeVisible({ timeout: 30000 });
 
-    // Verify stats cards show non-zero values
-    const totalText = await page.locator('.text-5xl').first().textContent();
+    // Verify stats cards show non-zero values — target the "Total Events" stat specifically
+    const totalEventsSection = page.getByText("Total Events").locator("..");
+    const totalText = await totalEventsSection.locator("p.font-display").textContent();
     expect(parseInt(totalText || "0")).toBeGreaterThan(0);
 
     // Verify filter buttons appear for event types

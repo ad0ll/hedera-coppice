@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
 import { tokenAbi, identityRegistryAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES } from "@/lib/constants";
+import { CONTRACT_ADDRESSES, CPC_TOKEN_ID } from "@/lib/constants";
 import { getReadProvider } from "@/lib/provider";
+import { getTokenHolders, getEvmAddress } from "@/lib/mirror-node";
 import type { AuditEvent } from "@/hooks/use-hcs-audit";
 
 const ZERO = ethers.ZeroAddress.toLowerCase();
@@ -30,26 +31,15 @@ export function extractHolderAddresses(events: AuditEvent[]): string[] {
 }
 
 /**
- * Hook that derives token holders from HCS audit events, then reads
- * balanceOf, isFrozen, and isVerified for each address.
+ * Hook that discovers token holders from Mirror Node (primary)
+ * and HCS audit events (supplementary), then reads on-chain data.
  */
 export function useHolders(events: AuditEvent[]) {
   const [holders, setHolders] = useState<HolderInfo[]>([]);
   const [fetched, setFetched] = useState(false);
-  const prevAddressKeyRef = useRef<string>("");
-
-  const addresses = useMemo(() => extractHolderAddresses(events), [events]);
-  const addressKey = useMemo(() => [...addresses].sort().join(","), [addresses]);
-
-  const canFetch = addresses.length > 0;
+  const prevKeyRef = useRef<string>("");
 
   useEffect(() => {
-    if (!canFetch) return;
-
-    // Skip if addresses haven't changed and we already have data
-    if (addressKey === prevAddressKeyRef.current && fetched) return;
-    prevAddressKeyRef.current = addressKey;
-
     let cancelled = false;
 
     async function fetchHolderData() {
@@ -57,14 +47,46 @@ export function useHolders(events: AuditEvent[]) {
       const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
       const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
 
-      const validAddresses = addresses.filter((a) => ethers.isAddress(a));
+      // Primary: Mirror Node token balances (discovers ALL holders)
+      const allAddresses = new Set<string>();
+      try {
+        if (CPC_TOKEN_ID) {
+          const holderAccountIds = await getTokenHolders(CPC_TOKEN_ID);
+          const evmPromises = holderAccountIds.map(async (accountId) => {
+            try {
+              return await getEvmAddress(accountId);
+            } catch {
+              return null;
+            }
+          });
+          const evmAddresses = await Promise.all(evmPromises);
+          for (const addr of evmAddresses) {
+            if (addr) allAddresses.add(addr.toLowerCase());
+          }
+        }
+      } catch {
+        // Fall through to HCS-based discovery
+      }
+
+      // Supplementary: HCS audit events
+      const hcsAddresses = extractHolderAddresses(events);
+      for (const addr of hcsAddresses) {
+        allAddresses.add(addr.toLowerCase());
+      }
+
+      const validAddresses = [...allAddresses].filter((a) => ethers.isAddress(a));
+      const addressKey = [...validAddresses].sort().join(",");
+
+      // Skip if nothing changed and we already have data
+      if (addressKey === prevKeyRef.current && fetched) return;
+      prevKeyRef.current = addressKey;
 
       const promises = validAddresses.map(async (address) => {
         try {
           const [balance, frozen, verified] = await Promise.all([
             tokenContract.balanceOf(address),
-            tokenContract.isFrozen(address),
-            registryContract.isVerified(address),
+            tokenContract.isFrozen(address).catch(() => false),
+            registryContract.isVerified(address).catch(() => false),
           ]);
           return { address, balance, frozen, verified };
         } catch {
@@ -88,10 +110,8 @@ export function useHolders(events: AuditEvent[]) {
       cancelled = true;
       clearInterval(interval);
     };
-  }, [addressKey, addresses, canFetch, fetched]);
+  }, [events, fetched]);
 
-  // Derive loading from state: loading if we can fetch but haven't yet, or if there are events but no addresses resolved
-  const loading = canFetch ? !fetched : events.length > 0 && !fetched;
-
+  const loading = !fetched;
   return { holders, loading };
 }
