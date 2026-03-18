@@ -18,7 +18,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, getErrorMessage } from "@/lib/format";
-import { BOND_CATEGORIES, EVENT_TYPES } from "@/lib/event-types";
+import { BOND_CATEGORIES } from "@/lib/event-types";
 import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
@@ -40,16 +40,10 @@ export default function IssuerDashboard() {
 
   // HCS events — used for holders table and activity feed
   const { events: auditEvents, loading: auditLoading } = useHCSAudit("audit");
-  const { events: impactEvents } = useHCSAudit("impact");
   const { holders, loading: holdersLoading } = useHolders(auditEvents);
 
   const isPaused = pausedQuery.data ?? null;
   const supply = totalSupply.data;
-
-  // Calculate total allocated from impact events
-  const totalAllocated = impactEvents
-    .filter((e) => e.type === EVENT_TYPES.PROCEEDS_ALLOCATED)
-    .reduce((sum, e) => sum + parseFloat(e.data.amount || "0"), 0);
 
   // Form state
   const [mintTo, setMintTo] = useState("");
@@ -69,10 +63,12 @@ export default function IssuerDashboard() {
   const [selectedCouponId, setSelectedCouponId] = useState<number | null>(null);
   const [distributing, setDistributing] = useState(false);
   const distributeOp = useOperationStatus();
+  const [lastDistributeTx, setLastDistributeTx] = useState<string | null>(null);
   const { data: coupons = [] } = useCoupons();
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
 
   const { data: guardianData } = useGuardian();
+  const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
 
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
@@ -178,6 +174,7 @@ export default function IssuerDashboard() {
   async function handleDistribute() {
     if (selectedCouponId === null || !address || distributing) return;
     distributeOp.clear();
+    setLastDistributeTx(null);
     setDistributing(true);
     try {
       const { message: authMessage, signature } = await signAuthMessage(address, "Distribute Coupon");
@@ -191,7 +188,8 @@ export default function IssuerDashboard() {
           signature,
         }),
       });
-      distributeOp.setStatus({ type: "success", msg: `Coupon #${selectedCouponId} distributed (tx: ${abbreviateAddress(result.txHash, 10, 0)})` });
+      setLastDistributeTx(result.txHash);
+      distributeOp.setStatus({ type: "success", msg: `Coupon #${selectedCouponId} distributed successfully.` });
     } catch (err: unknown) {
       distributeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Distribution failed") });
     } finally {
@@ -327,6 +325,9 @@ export default function IssuerDashboard() {
                   className="w-full btn-outline-amber">
                   Record Allocation
                 </button>
+                {!isDeployer && (
+                  <p className="text-xs text-text-muted">Available to all agents — records fund allocation to HCS audit trail.</p>
+                )}
                 <StatusMessage status={proceedsOp.status} />
               </div>
             </Card>
@@ -403,20 +404,31 @@ export default function IssuerDashboard() {
                 </select>
                 <button
                   onClick={handleDistribute}
-                  disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || distributing}
+                  disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || selectedCoupon?.status === "paid" || distributing}
                   className="w-full btn-primary"
                 >
                   {distributing ? "Distributing..." : "Distribute"}
                 </button>
                 {selectedCoupon && (
                   <p className="text-xs text-text-muted">
-                    {selectedCoupon.status === "upcoming" && "This coupon has not reached its record date yet."}
-                    {selectedCoupon.status === "record" && "Record date passed. Awaiting execution date."}
+                    {selectedCoupon.status === "upcoming" && `Record date: ${new Date(selectedCoupon.recordDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}. Distribution available after execution date.`}
+                    {selectedCoupon.status === "record" && `Record date passed. Execution date: ${new Date(selectedCoupon.executionDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.`}
                     {selectedCoupon.status === "executable" && "Ready for distribution."}
-                    {selectedCoupon.status === "paid" && "This coupon has been paid / is past execution date."}
+                    {selectedCoupon.status === "paid" && "This coupon has already been distributed."}
                   </p>
                 )}
                 <StatusMessage status={distributeOp.status} />
+                {lastDistributeTx && distributeOp.status?.type === "success" && (
+                  <a
+                    href={`https://hashscan.io/testnet/transaction/${lastDistributeTx}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
+                  >
+                    View on HashScan
+                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+                  </a>
+                )}
               </div>
             </Card>
           </div>

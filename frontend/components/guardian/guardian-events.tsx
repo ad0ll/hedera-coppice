@@ -3,12 +3,12 @@
 import { useGuardian } from "@/hooks/use-guardian";
 import type { GuardianProject, VCEvidence } from "@/lib/guardian-types";
 
-function hashScanUrl(topicId: string, messageId: string): string {
-  return `https://hashscan.io/testnet/topic/${topicId}/message/${messageId}`;
+function hashScanUrl(_topicId: string, messageId: string): string {
+  return `https://hashscan.io/testnet/transaction/${messageId}`;
 }
 
 function ipfsUrl(hash: string): string {
-  return `https://ipfs.io/ipfs/${hash}`;
+  return `https://dweb.link/ipfs/${hash}`;
 }
 
 function abbreviateDid(did: string): string {
@@ -116,7 +116,10 @@ export function GuardianEvents() {
                   {TYPE_LABELS[event.type]}
                 </span>
                 <span className="text-xs text-text-muted">
-                  {new Date(event.date).toLocaleDateString()}
+                  {new Date(event.date).toLocaleString("en-US", {
+                    month: "short", day: "numeric", year: "numeric",
+                    hour: "2-digit", minute: "2-digit",
+                  })}
                 </span>
               </div>
               <p className="text-sm text-white font-medium">{event.projectName}</p>

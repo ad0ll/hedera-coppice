@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useConnection, useAts } from "@/contexts/ats-context";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
+import { useHTS } from "@/hooks/use-hts";
 import { signAuthMessage } from "@/lib/auth";
 import { fetchAPI } from "@/lib/api-client";
 import { purchaseResponseSchema } from "@/app/api/purchase/route";
@@ -22,9 +23,20 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
   const { signer } = useAts();
   const { isVerified } = useIdentity();
   const { canTransfer } = useCompliance();
+  const { getEusdBalance } = useHTS();
   const [amount, setAmount] = useState("");
   const [steps, setSteps] = useState<Step[]>([]);
   const [running, setRunning] = useState(false);
+  const [eusdBalance, setEusdBalance] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!address) return;
+    let cancelled = false;
+    getEusdBalance(address).then((bal) => {
+      if (!cancelled) setEusdBalance(bal);
+    });
+    return () => { cancelled = true; };
+  }, [address, getEusdBalance]);
 
   // Look up the deployer address from DEMO_WALLETS
   const deployerEntry = Object.entries(DEMO_WALLETS).find(
@@ -110,7 +122,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
     } catch (err: unknown) {
       const failIndex = newSteps.findIndex((s) => s.status === "active");
       if (failIndex >= 0) {
-        const message = getErrorMessage(err, 60, "Transaction failed");
+        const message = getErrorMessage(err, 200, "Transaction failed");
         newSteps[failIndex] = {
           label: newSteps[failIndex].label,
           status: "error",
@@ -147,7 +159,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         />
         <button
           onClick={handlePurchase}
-          disabled={!enabled || running || !amount}
+          disabled={!enabled || running || !amount || (eusdBalance !== null && Number(amount) > eusdBalance)}
           className="btn-primary px-6 disabled:cursor-not-allowed"
         >
           {running ? "Processing..." : "Purchase"}
@@ -155,9 +167,16 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       </div>
 
       {amount && enabled && !running && steps.length === 0 && (
-        <p className="text-xs text-text-muted">
-          Cost: <span className="text-white font-mono">{Number(amount).toLocaleString("en-US")}</span> eUSD (1:1 exchange rate)
-        </p>
+        <div>
+          <p className="text-xs text-text-muted">
+            Cost: <span className="text-white font-mono">{Number(amount).toLocaleString("en-US")}</span> eUSD (1:1 exchange rate)
+          </p>
+          {eusdBalance !== null && Number(amount) > eusdBalance && (
+            <p className="text-xs text-bond-red mt-1">
+              Insufficient eUSD balance ({eusdBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })} available)
+            </p>
+          )}
+        </div>
       )}
 
       {steps.length > 0 && (

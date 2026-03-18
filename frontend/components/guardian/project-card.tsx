@@ -5,6 +5,16 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { VCEvidenceRow } from "@/components/guardian/vc-evidence";
 import type { GuardianProject, Indicator } from "@/lib/guardian-types";
 
+function downloadJson(data: Record<string, unknown>, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 const CATEGORY_BADGE_COLORS: Record<string, string> = {
   "Renewable Energy": "bg-bond-green/15 text-bond-green",
   "Sustainable Water Management": "bg-bond-teal/15 text-bond-teal",
@@ -150,6 +160,21 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
                     <p className="italic text-text-muted/80 mt-1">&ldquo;{project.verification.VerifierNotes}&rdquo;</p>
                   )}
                 </VCEvidenceRow>
+              )}
+              {(project.registrationDocument || project.allocationDocument || project.mrvDocument || project.verificationDocument) && (
+                <button
+                  onClick={() => {
+                    const evidence: Record<string, unknown> = {};
+                    if (project.registrationDocument) evidence.registration = project.registrationDocument;
+                    if (project.allocationDocument) evidence.allocation = project.allocationDocument;
+                    if (project.mrvDocument) evidence.mrv = project.mrvDocument;
+                    if (project.verificationDocument) evidence.verification = project.verificationDocument;
+                    downloadJson(evidence, `${project.registration.ProjectName.replace(/\s+/g, "-").toLowerCase()}-evidence.json`);
+                  }}
+                  className="w-full text-center text-xs text-text-muted hover:text-white transition-colors py-2 mt-2 border-t border-border/30"
+                >
+                  Download Evidence Chain (JSON)
+                </button>
               )}
             </div>
           )}

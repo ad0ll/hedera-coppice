@@ -5,6 +5,7 @@ import type { CouponInfo } from "@/hooks/use-coupons";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Spinner } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
+import { CPC_SECURITY_ID } from "@/lib/constants";
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString("en-US", {
@@ -258,6 +259,15 @@ export default function CouponsPage() {
             LifeCycleCashFlow contract, using ATS snapshots to determine holder
             balances at the record date.
           </p>
+          <a
+            href={`https://hashscan.io/testnet/contract/${CPC_SECURITY_ID}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors mt-3"
+          >
+            View bond contract on HashScan
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
+          </a>
         </div>
       </div>
     </div>

@@ -19,6 +19,7 @@ interface CheckResult {
   label: string;
   status: "pass" | "fail" | "loading";
   detail?: string;
+  link?: { href: string; label: string };
 }
 
 /** Countries available for demo onboarding. Sorted by label for the dropdown. */
@@ -97,7 +98,12 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     function buildResults(claims: ClaimStatus, registered: boolean, countryResult: { country: number; isRestricted: boolean; countryCheckFailed: boolean }, transferAllowed: boolean): CheckResult[] {
       const countryLabel = COUNTRY_NAMES[countryResult.country] || `Code ${countryResult.country}`;
       return [
-        { label: "On-Chain Identity", status: registered ? "pass" : "fail", detail: registered ? "Identity contract linked" : "No identity found" },
+        {
+          label: "On-Chain Identity",
+          status: registered ? "pass" : "fail",
+          detail: registered ? "Identity contract linked" : "No identity found",
+          link: registered ? { href: `https://hashscan.io/testnet/contract/${CONTRACT_ADDRESSES.identityRegistry}`, label: "Registry" } : undefined,
+        },
         { label: "KYC Credential", status: claims.kyc ? "pass" : "fail", detail: claims.kyc ? "Verified" : "Missing" },
         { label: "AML Credential", status: claims.aml ? "pass" : "fail", detail: claims.aml ? "Verified" : "Missing" },
         { label: "Accredited Credential", status: claims.accredited ? "pass" : "fail", detail: claims.accredited ? "Verified" : "Missing" },
@@ -110,7 +116,12 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
               ? `${countryLabel} - Restricted`
               : `${countryLabel} - Approved`,
         },
-        { label: "Transfer Eligibility", status: transferAllowed ? "pass" : "fail", detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance" },
+        {
+          label: "Transfer Eligibility",
+          status: transferAllowed ? "pass" : "fail",
+          detail: transferAllowed ? "Transfer permitted" : "Transfer blocked by compliance",
+          link: { href: `https://hashscan.io/testnet/contract/${CONTRACT_ADDRESSES.compliance}`, label: "Compliance" },
+        },
       ];
     }
 
@@ -376,11 +387,19 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
               </div>
               <span className="text-sm text-white">{check.label}</span>
             </div>
-            {check.detail && (
-              <span className={`text-xs ${check.status === "pass" ? "text-text-muted" : "text-bond-red/80"}`}>
-                {check.detail}
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              {check.detail && (
+                <span className={`text-xs ${check.status === "pass" ? "text-text-muted" : "text-bond-red/80"}`}>
+                  {check.detail}
+                </span>
+              )}
+              {check.link && check.status === "pass" && (
+                <a href={check.link.href} target="_blank" rel="noopener noreferrer"
+                  className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">
+                  {check.link.label}
+                </a>
+              )}
+            </div>
           </div>
         ))}
       </div>

@@ -1,8 +1,9 @@
 "use client";
 
+import type React from "react";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
-import { abbreviateAddress } from "@/lib/format";
-import { ExternalLinkIcon, Spinner } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/icons";
+import { AddressLink, TxLink } from "@/components/ui/hashscan-link";
 import type { AuditEvent } from "@/hooks/use-hcs-audit";
 
 function formatTimestamp(ts: number | string): string {
@@ -17,21 +18,21 @@ function formatTimestamp(ts: number | string): string {
   });
 }
 
-function eventSummary(event: AuditEvent): string {
+function eventSummary(event: AuditEvent): React.ReactNode {
   const d = event.data;
   switch (event.type) {
     case "MINT":
-      return `Minted ${d.amount ?? "?"} CPC to ${abbreviateAddress(d.to ?? "", 6, 4)}`;
+      return <>Minted {d.amount ?? "?"} CPC to <AddressLink address={d.to ?? ""} /></>;
     case "TRANSFER":
-      return `${abbreviateAddress(d.from ?? "", 6, 4)} sent ${d.amount ?? "?"} CPC to ${abbreviateAddress(d.to ?? "", 6, 4)}`;
+      return <><AddressLink address={d.from ?? ""} /> sent {d.amount ?? "?"} CPC to <AddressLink address={d.to ?? ""} /></>;
     case "TOKEN_PAUSED":
-      return `Token paused by ${abbreviateAddress(d.by ?? "", 6, 4)}`;
+      return <>Token paused by <AddressLink address={d.by ?? ""} /></>;
     case "TOKEN_UNPAUSED":
-      return `Token unpaused by ${abbreviateAddress(d.by ?? "", 6, 4)}`;
+      return <>Token unpaused by <AddressLink address={d.by ?? ""} /></>;
     case "WALLET_FROZEN":
-      return `Froze ${abbreviateAddress(d.address ?? d.wallet ?? "", 6, 4)}`;
+      return <>Froze <AddressLink address={d.address ?? d.wallet ?? ""} /></>;
     case "WALLET_UNFROZEN":
-      return `Unfroze ${abbreviateAddress(d.address ?? d.wallet ?? "", 6, 4)}`;
+      return <>Unfroze <AddressLink address={d.address ?? d.wallet ?? ""} /></>;
     default:
       return event.type;
   }
@@ -69,15 +70,9 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
                   {formatTimestamp(event.consensusTimestamp || event.ts)}
                 </span>
                 {event.tx && (
-                  <a
-                    href={`https://hashscan.io/testnet/transaction/${event.tx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-text-muted hover:text-bond-green transition-colors shrink-0"
-                    title={event.tx}
-                  >
-                    <ExternalLinkIcon />
-                  </a>
+                  <span className="shrink-0 text-xs">
+                    <TxLink hash={event.tx} prefixLen={8} />
+                  </span>
                 )}
               </div>
             ))}

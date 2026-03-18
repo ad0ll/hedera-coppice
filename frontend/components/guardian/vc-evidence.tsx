@@ -6,12 +6,12 @@ function abbreviateDid(did: string): string {
   return accountId ? `did:hedera:...${accountId}` : did.slice(0, 20) + "...";
 }
 
-function hashScanUrl(topicId: string, messageId: string): string {
-  return `https://hashscan.io/testnet/topic/${topicId}/message/${messageId}`;
+function hashScanUrl(_topicId: string, messageId: string): string {
+  return `https://hashscan.io/testnet/transaction/${messageId}`;
 }
 
 function ipfsUrl(hash: string): string {
-  return `https://ipfs.io/ipfs/${hash}`;
+  return `https://dweb.link/ipfs/${hash}`;
 }
 
 interface VCEvidenceRowProps {
@@ -34,7 +34,10 @@ export function VCEvidenceRow({ label, evidence, children }: VCEvidenceRowProps)
         </p>
         <p>
           <span className="text-text-muted/60">Date: </span>
-          {new Date(evidence.issuanceDate).toLocaleDateString()}
+          {new Date(evidence.issuanceDate).toLocaleString("en-US", {
+            month: "short", day: "numeric", year: "numeric",
+            hour: "2-digit", minute: "2-digit",
+          })}
         </p>
         {children}
       </div>

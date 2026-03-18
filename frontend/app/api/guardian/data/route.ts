@@ -50,6 +50,7 @@ async function guardianLogin(username: string, password: string): Promise<string
 interface FetchResult<T> {
   cs: T;
   evidence: VCEvidence;
+  rawDocument: Record<string, unknown>;
 }
 
 async function fetchViewerBlock<T>(
@@ -73,6 +74,7 @@ async function fetchViewerBlock<T>(
       issuanceDate: doc.document.issuanceDate,
       proofType: doc.document.proof.type,
     },
+    rawDocument: doc.document as Record<string, unknown>,
   }));
 }
 
@@ -121,12 +123,16 @@ export async function GET() {
       return {
         registration: reg.cs,
         registrationEvidence: reg.evidence,
+        registrationDocument: reg.rawDocument,
         allocation: alloc?.cs,
         allocationEvidence: alloc?.evidence,
+        allocationDocument: alloc?.rawDocument,
         mrvReport: mrv?.cs,
         mrvEvidence: mrv?.evidence,
+        mrvDocument: mrv?.rawDocument,
         verification: verif?.cs,
         verificationEvidence: verif?.evidence,
+        verificationDocument: verif?.rawDocument,
         isVerified: verif?.cs.Opinion === "Approved" || verif?.cs.Opinion === "Conditional",
         verifiedCO2e: verif?.cs.VerifiedGHGReduced ?? 0,
         createDate: reg.evidence.issuanceDate,

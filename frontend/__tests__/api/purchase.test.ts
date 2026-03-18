@@ -8,7 +8,7 @@ const mockTransferFrom = vi.fn().mockResolvedValue({
 const mockTransfer = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xrefundhash" }),
 });
-const mockMint = vi.fn().mockResolvedValue({
+const mockIssue = vi.fn().mockResolvedValue({
   wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
 });
 
@@ -16,7 +16,7 @@ function MockContract() {
   return {
     transferFrom: (...args: unknown[]) => mockTransferFrom(...args),
     transfer: (...args: unknown[]) => mockTransfer(...args),
-    mint: (...args: unknown[]) => mockMint(...args),
+    issue: (...args: unknown[]) => mockIssue(...args),
   };
 }
 
@@ -83,7 +83,7 @@ describe("POST /api/purchase", () => {
     mockTransferFrom.mockResolvedValue({
       wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
     });
-    mockMint.mockResolvedValue({
+    mockIssue.mockResolvedValue({
       wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xtxhash" }),
     });
   });

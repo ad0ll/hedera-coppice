@@ -150,6 +150,10 @@ describe("GET /api/guardian/data", () => {
     expect(data.projects[0].registrationEvidence.hash).toBe("mockHash123");
     expect(data.projects[0].registrationEvidence.topicId).toBe("0.0.1234");
     expect(data.projects[0].registrationEvidence.issuer).toBe("did:hedera:testnet:mock_0.0.5678");
+
+    // Raw VC documents for download
+    expect(data.projects[0].registrationDocument).toBeTruthy();
+    expect(data.projects[0].registrationDocument.credentialSubject).toBeTruthy();
   });
 
   it("matches projects to allocations by ProjectName", async () => {

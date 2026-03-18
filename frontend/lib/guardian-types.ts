@@ -128,12 +128,16 @@ export interface VCEvidence {
 export interface GuardianProject {
   registration: ProjectRegistrationCS;
   registrationEvidence?: VCEvidence;
+  registrationDocument?: Record<string, unknown>;
   allocation?: FundAllocationCS;
   allocationEvidence?: VCEvidence;
+  allocationDocument?: Record<string, unknown>;
   mrvReport?: MRVReportCS;
   mrvEvidence?: VCEvidence;
+  mrvDocument?: Record<string, unknown>;
   verification?: VerificationStatementCS;
   verificationEvidence?: VCEvidence;
+  verificationDocument?: Record<string, unknown>;
   isVerified: boolean;
   verifiedCO2e: number;
   createDate: string;

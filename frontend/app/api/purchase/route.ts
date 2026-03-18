@@ -26,9 +26,9 @@ const ERC20_ABI = [
   "function transfer(address to, uint256 amount) returns (bool)",
 ];
 
-// ATS Security mint ABI — the diamond proxy's ERC1400 facet
+// ATS Security issuance ABI — the diamond proxy's ERC1594 facet
 const SECURITY_MINT_ABI = [
-  "function mint(address to, uint256 value) external",
+  "function issue(address to, uint256 value, bytes data) external",
 ];
 
 export async function POST(request: NextRequest) {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
     try {
       const securityContract = new ethers.Contract(CPC_SECURITY_ID, SECURITY_MINT_ABI, wallet);
       const mintAmount = ethers.parseEther(String(amount));
-      const mintTx = await securityContract.mint(investor, mintAmount);
+      const mintTx = await securityContract.issue(investor, mintAmount, "0x");
       const mintReceipt = await mintTx.wait();
       mintTxHash = mintReceipt?.hash;
     } catch (mintErr: unknown) {
