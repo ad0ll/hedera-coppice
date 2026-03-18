@@ -486,7 +486,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className={`text-sm ${
-                    step.status === "pending" ? "text-text-muted/40" :
+                    step.status === "pending" ? "text-text-muted" :
                     step.status === "error" ? "text-bond-red" :
                     "text-white"
                   }`}>

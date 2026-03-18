@@ -128,7 +128,7 @@ export function GuardianEvents() {
               </div>
               <p className="text-sm text-white font-medium">{event.projectName}</p>
               <p className="text-xs text-text-muted mt-0.5">{event.detail}</p>
-              <p className="text-[10px] text-text-muted/60 mt-1 font-mono">
+              <p className="text-[10px] text-text-muted mt-1 font-mono">
                 Signed by {abbreviateDid(event.evidence.issuer)}
               </p>
             </div>

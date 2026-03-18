@@ -55,7 +55,7 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
                 <span className="text-xs text-text-muted flex-1 truncate">
                   {eventSummary(event)}
                 </span>
-                <span className="text-[11px] text-text-muted/60 shrink-0">
+                <span className="text-[11px] text-text-muted shrink-0">
                   {formatTimestamp(event.consensusTimestamp || event.ts, { includeDate: true })}
                 </span>
                 {event.tx && (

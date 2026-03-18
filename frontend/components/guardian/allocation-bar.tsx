@@ -1,5 +1,6 @@
 import { formatNumber } from "@/lib/format";
 import type { GuardianProject } from "@/lib/guardian-types";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 interface AllocationBarProps {
   allocated: number;
@@ -21,12 +22,7 @@ export function AllocationBar({ allocated, total, percent, projects }: Allocatio
             {formatNumber(allocated)} / {formatNumber(total)} eUSD
           </span>
         </div>
-        <div className="w-full h-2 bg-surface-3 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-bond-green rounded-full transition-all duration-700"
-            style={{ width: `${percent}%` }}
-          />
-        </div>
+        <ProgressBar value={allocated} max={total} label="Use of proceeds allocation" />
         <p className="text-xs text-text-muted">{percent}% allocated</p>
       </div>
       {allocatedProjects.length > 0 && (

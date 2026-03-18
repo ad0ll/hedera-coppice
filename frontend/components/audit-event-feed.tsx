@@ -98,8 +98,8 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
                   <div className="text-xs text-text-muted mt-0.5">
                     {Object.entries(event.data || {}).map(([k, v]) => (
                       <span key={k} className="mr-3">
-                        <span className="text-text-muted/50">{k}:</span>{" "}
-                        <span className="text-white/70 font-mono">{v}</span>
+                        <span className="text-text-muted">{k}:</span>{" "}
+                        <span className="text-white font-mono">{v}</span>
                       </span>
                     ))}
                   </div>
