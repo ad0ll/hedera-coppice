@@ -57,3 +57,16 @@ export async function verifyAuth(
     throw new Error("Invalid signature");
   }
 }
+
+/**
+ * Server-side: recover the signer's address from an EIP-191 signature.
+ * Validates timestamp freshness (same rules as verifyAuth).
+ * Returns the checksummed recovered address.
+ */
+export function recoverAuthAddress(
+  message: string,
+  signature: string,
+): string {
+  validateTimestamp(message);
+  return ethers.verifyMessage(message, signature);
+}

@@ -31,10 +31,12 @@ vi.mock("ethers", async () => {
   };
 });
 
-// Mock auth — default: accept all signatures. Individual tests can override.
-const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
+const FAKE_ALICE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
+
+// Mock auth — default: return Alice's address. Individual tests can override.
+const mockRecoverAuthAddress = vi.fn().mockReturnValue(FAKE_ALICE_ADDR);
 vi.mock("@/lib/auth", () => ({
-  verifyAuth: (...args: unknown[]) => mockVerifyAuth(...args),
+  recoverAuthAddress: (...args: unknown[]) => mockRecoverAuthAddress(...args),
 }));
 
 // Mock deployer utilities
@@ -63,8 +65,6 @@ vi.mock("@/lib/mirror-node", () => ({
 process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
 process.env.EUSD_TOKEN_ID = "0.0.8214937";
 
-const FAKE_ALICE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
-
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/purchase", {
     method: "POST",
@@ -88,7 +88,7 @@ describe("POST /api/purchase", () => {
     });
   });
 
-  it("rejects missing investorAddress", async () => {
+  it("rejects missing message and signature", async () => {
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({ amount: 10 }));
     expect(res.status).toBe(400);
@@ -96,9 +96,9 @@ describe("POST /api/purchase", () => {
     expect(data.error).toBe("Invalid request");
   });
 
-  it("rejects non-string investorAddress", async () => {
+  it("rejects missing signature", async () => {
     const { POST } = await import("@/app/api/purchase/route");
-    const res = await POST(makeRequest({ investorAddress: 123, amount: 10 }));
+    const res = await POST(makeRequest({ amount: 10, message: "test" }));
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toBe("Invalid request");
@@ -106,15 +106,16 @@ describe("POST /api/purchase", () => {
 
   it("rejects missing amount", async () => {
     const { POST } = await import("@/app/api/purchase/route");
-    const res = await POST(makeRequest({ investorAddress: FAKE_ALICE_ADDR }));
+    const res = await POST(makeRequest({ message: "test", signature: "0xsig" }));
     expect(res.status).toBe(400);
   });
 
   it("rejects zero amount", async () => {
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: 0,
+      message: "test",
+      signature: "0xsig",
     }));
     expect(res.status).toBe(400);
   });
@@ -122,8 +123,9 @@ describe("POST /api/purchase", () => {
   it("rejects negative amount", async () => {
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: -5,
+      message: "test",
+      signature: "0xsig",
     }));
     expect(res.status).toBe(400);
   });
@@ -131,21 +133,11 @@ describe("POST /api/purchase", () => {
   it("rejects string amount", async () => {
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: "10",
+      message: "test",
+      signature: "0xsig",
     }));
     expect(res.status).toBe(400);
-  });
-
-  it("rejects missing auth signature", async () => {
-    const { POST } = await import("@/app/api/purchase/route");
-    const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
-      amount: 10,
-    }));
-    expect(res.status).toBe(400);
-    const data = await res.json();
-    expect(data.error).toBe("Invalid request");
   });
 
   it("rejects insufficient eUSD balance", async () => {
@@ -154,7 +146,6 @@ describe("POST /api/purchase", () => {
 
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: 10,
       message: "test",
       signature: "0xsig",
@@ -167,7 +158,6 @@ describe("POST /api/purchase", () => {
   it("succeeds with valid inputs, auth, and sufficient balance", async () => {
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: 5,
       message: "test",
       signature: "0xsig",
@@ -179,11 +169,10 @@ describe("POST /api/purchase", () => {
     expect(data.transferTxHash).toBe("0xtxhash");
   });
 
-  it("rejects when verifyAuth throws (invalid signature)", async () => {
-    mockVerifyAuth.mockRejectedValueOnce(new Error("Invalid signature"));
+  it("rejects when recoverAuthAddress throws (invalid signature)", async () => {
+    mockRecoverAuthAddress.mockImplementationOnce(() => { throw new Error("Invalid signature"); });
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: 5,
       message: "test",
       signature: "0xbadsig",
@@ -201,7 +190,6 @@ describe("POST /api/purchase", () => {
 
     const { POST } = await import("@/app/api/purchase/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_ALICE_ADDR,
       amount: 5,
       message: "test",
       signature: "0xsig",

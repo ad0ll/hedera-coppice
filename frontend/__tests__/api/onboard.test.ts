@@ -70,10 +70,12 @@ vi.mock("@/lib/deployer", () => ({
   getServerProvider: vi.fn().mockReturnValue({}),
 }));
 
-// Mock auth — default: accept all signatures
-const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
+const FAKE_INVESTOR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
+
+// Mock auth — default: return the fake investor address
+const mockRecoverAuthAddress = vi.fn().mockReturnValue(FAKE_INVESTOR);
 vi.mock("@/lib/auth", () => ({
-  verifyAuth: (...args: unknown[]) => mockVerifyAuth(...args),
+  recoverAuthAddress: (...args: unknown[]) => mockRecoverAuthAddress(...args),
 }));
 
 // Mock retry — execute immediately without retries
@@ -98,8 +100,6 @@ process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
 process.env.CLAIM_ISSUER_SIGNING_KEY = "0x" + "cc".repeat(32);
 process.env.IDENTITY_IMPL_AUTHORITY_ADDRESS = "0x078090f14B9Ac2a4a57A65Da1b085281A50D8fd7";
 process.env.CLAIM_ISSUER_ADDRESS = "0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A";
-
-const FAKE_INVESTOR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
 
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/onboard", {
@@ -153,22 +153,9 @@ describe("POST /api/onboard", () => {
     expect(res.status).toBe(400);
   });
 
-  it("rejects missing investorAddress", async () => {
-    const { POST } = await import("@/app/api/onboard/route");
-    const res = await POST(makeRequest({
-      country: 840,
-      message: "test",
-      signature: "0xsig",
-    }));
-    expect(res.status).toBe(400);
-    const data = await res.json();
-    expect(data.error).toBe("Invalid request");
-  });
-
   it("rejects missing country", async () => {
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       message: "test",
       signature: "0xsig",
     }));
@@ -178,30 +165,15 @@ describe("POST /api/onboard", () => {
   it("rejects missing message/signature", async () => {
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
     }));
     expect(res.status).toBe(400);
   });
 
-  it("rejects invalid investor address", async () => {
+  it("rejects when recoverAuthAddress throws (invalid signature)", async () => {
+    mockRecoverAuthAddress.mockImplementationOnce(() => { throw new Error("Invalid signature"); });
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: "not-an-address",
-      country: 840,
-      message: "test",
-      signature: "0xsig",
-    }));
-    expect(res.status).toBe(400);
-    const data = await res.json();
-    expect(data.error).toBe("Invalid address");
-  });
-
-  it("rejects when verifyAuth throws (invalid signature)", async () => {
-    mockVerifyAuth.mockRejectedValueOnce(new Error("Invalid signature"));
-    const { POST } = await import("@/app/api/onboard/route");
-    const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
       message: "test",
       signature: "0xbadsig",
@@ -216,7 +188,6 @@ describe("POST /api/onboard", () => {
     mockIdentity.mockResolvedValueOnce("0xExistingIdentity");
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
       message: "test",
       signature: "0xsig",
@@ -230,7 +201,6 @@ describe("POST /api/onboard", () => {
   it("streams SSE events for successful onboarding", async () => {
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
       message: "test",
       signature: "0xsig",
@@ -278,7 +248,6 @@ describe("POST /api/onboard", () => {
     });
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
       message: "test",
       signature: "0xsig",
@@ -299,7 +268,6 @@ describe("POST /api/onboard", () => {
 
     const { POST } = await import("@/app/api/onboard/route");
     const res = await POST(makeRequest({
-      investorAddress: FAKE_INVESTOR,
       country: 840,
       message: "test",
       signature: "0xsig",

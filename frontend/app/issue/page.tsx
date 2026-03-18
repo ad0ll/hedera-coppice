@@ -83,7 +83,7 @@ export default function IssuerDashboard() {
       await fetchAPI("/api/demo/grant-agent-role", grantAgentRoleResponseSchema, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ investorAddress: address, message, signature }),
+        body: JSON.stringify({ message, signature }),
       });
       promoteOp.setStatus({ type: "success", msg: "Agent role granted — loading dashboard..." });
       await refetchIsAgent();
@@ -159,7 +159,6 @@ export default function IssuerDashboard() {
           category,
           amount: Number(proceedsAmount),
           currency: "USD",
-          signerAddress: address,
           message: authMessage,
           signature,
         }),
@@ -184,7 +183,6 @@ export default function IssuerDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           couponId: selectedCouponId,
-          address,
           message: authMessage,
           signature,
         }),

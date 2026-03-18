@@ -1,6 +1,6 @@
 // ATS deployment (Hedera testnet)
-export const ATS_RESOLVER = "0.0.7707874";
-export const ATS_FACTORY = "0.0.7708432";
+export const ATS_RESOLVER = process.env.NEXT_PUBLIC_ATS_RESOLVER || "0.0.7707874";
+export const ATS_FACTORY = process.env.NEXT_PUBLIC_ATS_FACTORY || "0.0.7708432";
 
 // CPC Bond Token — created via ATS factory
 // Update after running scripts/ats-setup.ts
@@ -9,7 +9,8 @@ export const CPC_SECURITY_ID: string =
 
 // eUSD HTS token EVM address (long-zero format per HIP-218)
 // HTS token 0.0.8214937 -> 8214937 decimal -> 0x7D5999 hex -> padded to 20 bytes
-export const EUSD_EVM_ADDRESS: string = "0x00000000000000000000000000000000007D5999";
+export const EUSD_EVM_ADDRESS: string =
+  process.env.NEXT_PUBLIC_EUSD_EVM_ADDRESS || "0x00000000000000000000000000000000007D5999";
 
 export const MIRROR_NODE_URL =
   process.env.NEXT_PUBLIC_HEDERA_MIRROR_NODE || "https://testnet.mirrornode.hedera.com";

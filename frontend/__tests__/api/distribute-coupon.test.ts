@@ -43,10 +43,12 @@ vi.mock("ethers", async () => {
   };
 });
 
-// Mock auth — default: accept all signatures. Individual tests can override.
-const mockVerifyAuth = vi.fn().mockResolvedValue(undefined);
+const FAKE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
+
+// Mock auth — default: return fake address. Individual tests can override.
+const mockRecoverAuthAddress = vi.fn().mockReturnValue(FAKE_ADDR);
 vi.mock("@/lib/auth", () => ({
-  verifyAuth: (...args: unknown[]) => mockVerifyAuth(...args),
+  recoverAuthAddress: (...args: unknown[]) => mockRecoverAuthAddress(...args),
 }));
 
 // Mock deployer utilities
@@ -66,8 +68,6 @@ vi.mock("@/lib/constants", () => ({
 process.env.DEPLOYER_PRIVATE_KEY = "0x" + "dd".repeat(32);
 process.env.LIFECYCLE_CASH_FLOW_ADDRESS = "0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350";
 
-const FAKE_ADDR = "0x4f9ad4Fd6623b23beD45e47824B1F224dA21D762";
-
 function makeRequest(body: Record<string, unknown>): NextRequest {
   return new NextRequest("http://localhost:3000/api/issuer/distribute-coupon", {
     method: "POST",
@@ -79,7 +79,6 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
 function validBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     couponId: 1,
-    address: FAKE_ADDR,
     message: "auth",
     signature: "0xsig",
     ...overrides,
@@ -111,7 +110,7 @@ describe("POST /api/issuer/distribute-coupon", () => {
     mockExecuteDistribution.mockResolvedValue({
       wait: vi.fn().mockResolvedValue({ status: 1, hash: "0xdistributehash" }),
     });
-    mockVerifyAuth.mockResolvedValue(undefined);
+    mockRecoverAuthAddress.mockReturnValue(FAKE_ADDR);
   });
 
   it("rejects missing couponId (400)", async () => {
@@ -124,10 +123,10 @@ describe("POST /api/issuer/distribute-coupon", () => {
     expect(data.error).toBe("Invalid request");
   });
 
-  it("rejects missing address (400)", async () => {
+  it("rejects missing message (400)", async () => {
     const { POST } = await import("@/app/api/issuer/distribute-coupon/route");
     const body = validBody();
-    delete body.address;
+    delete body.message;
     const res = await POST(makeRequest(body));
     expect(res.status).toBe(400);
   });
@@ -141,7 +140,7 @@ describe("POST /api/issuer/distribute-coupon", () => {
   });
 
   it("rejects invalid signature (401)", async () => {
-    mockVerifyAuth.mockRejectedValueOnce(new Error("Invalid signature"));
+    mockRecoverAuthAddress.mockImplementationOnce(() => { throw new Error("Invalid signature"); });
     const { POST } = await import("@/app/api/issuer/distribute-coupon/route");
     const res = await POST(makeRequest(validBody()));
     expect(res.status).toBe(401);

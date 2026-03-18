@@ -231,7 +231,6 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          investorAddress: address,
           country: selectedCountry,
           message,
           signature,
