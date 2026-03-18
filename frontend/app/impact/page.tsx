@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ProjectCard } from "@/components/guardian/project-card";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { AllocationBar } from "@/components/guardian/allocation-bar";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 function MetricsSkeleton() {
   return (
@@ -98,17 +99,19 @@ export default function ImpactPage() {
           className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
-          <SptStatus
-            totalVerified={data.totalVerifiedCO2e}
-            target={data.sptTarget}
-            met={data.sptMet}
-          />
-          <AllocationBar
-            allocated={data.totalAllocatedEUSD}
-            total={data.totalIssuanceEUSD}
-            percent={data.allocationPercent}
-            projects={data.projects}
-          />
+          <SectionErrorBoundary section="impact data">
+            <SptStatus
+              totalVerified={data.totalVerifiedCO2e}
+              target={data.sptTarget}
+              met={data.sptMet}
+            />
+            <AllocationBar
+              allocated={data.totalAllocatedEUSD}
+              total={data.totalIssuanceEUSD}
+              percent={data.allocationPercent}
+              projects={data.projects}
+            />
+          </SectionErrorBoundary>
         </div>
       )}
 

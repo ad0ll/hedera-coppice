@@ -13,6 +13,7 @@ import { useHTS } from "@/hooks/use-hts";
 import { FaucetButton } from "@/components/faucet-button";
 import { useGuardian } from "@/hooks/use-guardian";
 import { ImpactSummary } from "@/components/guardian/impact-summary";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function InvestorPortal() {
   const { address } = useConnection();
@@ -58,17 +59,23 @@ export default function InvestorPortal() {
 
       {guardianData && (
         <div className="animate-entrance" style={{ "--index": 1 }}>
-          <ImpactSummary data={guardianData} />
+          <SectionErrorBoundary section="impact summary">
+            <ImpactSummary data={guardianData} />
+          </SectionErrorBoundary>
         </div>
       )}
 
       <div className="animate-entrance" style={{ "--index": 2 }}>
-        <ComplianceStatus onEligibilityChange={setEligible} />
+        <SectionErrorBoundary section="compliance checks">
+          <ComplianceStatus onEligibilityChange={setEligible} />
+        </SectionErrorBoundary>
       </div>
 
       {address && (
         <div className="animate-entrance" style={{ "--index": 3 }}>
-          <TransferFlow enabled={eligible} />
+          <SectionErrorBoundary section="purchase flow">
+            <TransferFlow enabled={eligible} />
+          </SectionErrorBoundary>
         </div>
       )}
 

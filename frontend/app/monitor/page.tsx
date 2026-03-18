@@ -5,6 +5,7 @@ import { AuditEventFeed } from "@/components/audit-event-feed";
 import { GuardianEvents } from "@/components/guardian/guardian-events";
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { APPROVAL_EVENTS, RESTRICTION_EVENTS } from "@/lib/event-types";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function ComplianceMonitor() {
   const { events } = useHCSAudit("audit");
@@ -61,11 +62,13 @@ export default function ComplianceMonitor() {
       </div>
 
       <div id={`panel-${tab}`} role="tabpanel" aria-label={tab === "onchain" ? "On-Chain Events" : "Guardian Verification"} className="animate-entrance" style={{ "--index": 3 } as React.CSSProperties}>
-        {tab === "onchain" ? (
-          <AuditEventFeed topicType="audit" />
-        ) : (
-          <GuardianEvents />
-        )}
+        <SectionErrorBoundary section="event feed">
+          {tab === "onchain" ? (
+            <AuditEventFeed topicType="audit" />
+          ) : (
+            <GuardianEvents />
+          )}
+        </SectionErrorBoundary>
       </div>
     </div>
   );

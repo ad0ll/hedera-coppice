@@ -26,6 +26,7 @@ import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/rou
 import { useCoupons } from "@/hooks/use-coupons";
 import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
+import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 export default function IssuerDashboard() {
   const { address } = useConnection();
@@ -262,7 +263,9 @@ export default function IssuerDashboard() {
 
       {/* Stats Banner */}
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-        <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
+        <SectionErrorBoundary section="issuer stats">
+          <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
+        </SectionErrorBoundary>
       </div>
 
       {/* SPT Status */}
@@ -279,7 +282,9 @@ export default function IssuerDashboard() {
 
       {/* Holders Table */}
       <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-        <HoldersTable holders={holders} loading={holdersLoading} />
+        <SectionErrorBoundary section="token holders">
+          <HoldersTable holders={holders} loading={holdersLoading} />
+        </SectionErrorBoundary>
       </div>
 
       {/* Operation Cards — 2x2 grid */}
