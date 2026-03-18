@@ -47,15 +47,6 @@ export const BOND_CATEGORIES = [
 
 export type BondCategory = (typeof BOND_CATEGORIES)[number];
 
-export const CATEGORY_COLORS: Record<string, string> = {
-  "Renewable Energy": "bg-bond-green",
-  "Energy Efficiency": "bg-bond-amber",
-  "Clean Transportation": "bg-bond-red",
-  "Sustainable Water": "bg-bond-green-dim",
-  "Green Buildings": "bg-bond-teal",
-  Other: "bg-text-muted",
-};
-
 /** ISO 3166-1 numeric country codes used in demo wallets and onboarding. */
 export const COUNTRY_NAMES: Record<number, string> = {
   156: "China",
