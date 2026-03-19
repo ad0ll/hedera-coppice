@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -10,7 +11,7 @@ import { SectionErrorBoundary } from "@/components/section-error-boundary";
 
 function MetricsSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
+    <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="animate-pulse">
           <div className="h-3 w-20 bg-surface-3 rounded mb-2" />
@@ -25,7 +26,7 @@ function MetricsSkeleton() {
 export default function ImpactPage() {
   const { data, isLoading, error } = useGuardian();
 
-  const metrics = data
+  const metrics = useMemo(() => data
     ? [
         {
           label: "tCO\u2082e Verified",
@@ -48,7 +49,7 @@ export default function ImpactPage() {
           unit: `${formatNumber(data.totalVerifiedCO2e)} / ${formatNumber(data.sptTarget)} tCO₂e`,
         },
       ]
-    : [];
+    : [], [data]);
 
   return (
     <div className="space-y-8">
@@ -67,11 +68,11 @@ export default function ImpactPage() {
         {isLoading ? (
           <MetricsSkeleton />
         ) : (
-          <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
             {metrics.map((m) => (
               <div key={m.label}>
                 <p className="stat-label mb-1.5">{m.label}</p>
-                <p className="font-display text-3xl text-white">
+                <p className="font-display text-3xl text-text">
                   <span className="font-mono">{m.value}</span>
                 </p>
                 <p className="text-xs text-text-muted mt-1">{m.unit}</p>
@@ -96,7 +97,7 @@ export default function ImpactPage() {
       {/* SPT + Allocation */}
       {data && (
         <div
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-entrance"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-entrance"
           style={{ "--index": 2 } as React.CSSProperties}
         >
           <SectionErrorBoundary section="impact data">
@@ -122,13 +123,13 @@ export default function ImpactPage() {
       >
         <h2 className="card-title">Project Portfolio</h2>
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="card-static animate-pulse h-32" />
             ))}
           </div>
         ) : data && data.projects.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[...data.projects]
               .sort((a, b) => a.registration.ProjectName.localeCompare(b.registration.ProjectName))
               .map((p) => (
@@ -153,7 +154,7 @@ export default function ImpactPage() {
                   href={`/api/guardian/ipfs/${data.bondFrameworkEvidence.hash}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors"
+                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors"
                 >
                   View VC
                 </a>
@@ -161,11 +162,11 @@ export default function ImpactPage() {
               <StatusBadge label="Guardian Verified" variant="green" />
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Use of Proceeds */}
             <div className="card-static">
               <p className="stat-label mb-2">Use of Proceeds</p>
-              <p className="text-sm text-white mb-1">{data.bondFramework.EligibleICMACategories}</p>
+              <p className="text-sm text-text mb-1">{data.bondFramework.EligibleICMACategories}</p>
               <p className="text-xs text-text-muted">
                 {data.allocationPercent}% allocated ({formatNumber(data.totalAllocatedEUSD)} / {formatNumber(data.totalIssuanceEUSD)} eUSD) across {data.projects.length} projects
               </p>
@@ -174,7 +175,7 @@ export default function ImpactPage() {
             {/* Project Evaluation & Selection */}
             <div className="card-static">
               <p className="stat-label mb-2">Project Evaluation</p>
-              <p className="text-sm text-white mb-1">
+              <p className="text-sm text-text mb-1">
                 {data.projects.filter(p => p.isVerified).length} of {data.projects.length} projects independently verified
               </p>
               <p className="text-xs text-text-muted">
@@ -185,21 +186,21 @@ export default function ImpactPage() {
             {/* Management of Proceeds */}
             <div className="card-static">
               <p className="stat-label mb-2">Management of Proceeds</p>
-              <p className="text-sm text-white mb-1">On-chain treasury with smart contract controls</p>
+              <p className="text-sm text-text mb-1">On-chain treasury with smart contract controls</p>
               <div className="flex gap-3 mt-1">
                 <a href={`https://hashscan.io/testnet/contract/${data.bondFramework.BondContractAddress}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-[10px] text-bond-green hover:text-bond-green/80">Bond Contract</a>
+                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80">Bond Contract</a>
                 <a href={`https://hashscan.io/testnet/contract/${data.bondFramework.LCCFContractAddress}`}
                   target="_blank" rel="noopener noreferrer"
-                  className="text-[10px] text-bond-green hover:text-bond-green/80">Payout Contract</a>
+                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80">Payout Contract</a>
               </div>
             </div>
 
             {/* Reporting */}
             <div className="card-static">
               <p className="stat-label mb-2">Reporting &amp; Frameworks</p>
-              <p className="text-sm text-white mb-1">{data.bondFramework.ReportingStandard}</p>
+              <p className="text-sm text-text mb-1">{data.bondFramework.ReportingStandard}</p>
               {data.bondFramework.RegulatoryFrameworks && (
                 <p className="text-xs text-text-muted">{data.bondFramework.RegulatoryFrameworks}</p>
               )}

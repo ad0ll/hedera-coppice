@@ -355,7 +355,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
     return (
       <div className="card-flush">
         <div className="px-6 py-4 border-b border-border/50">
-          <h2 className="text-lg font-semibold text-white">Compliance Status</h2>
+          <h2 className="text-lg font-semibold text-text">Compliance Status</h2>
         </div>
         <div className="px-6 py-4 space-y-1">
           {["On-Chain Identity", "KYC Credential", "AML Credential", "Accredited Credential", "Jurisdiction Check", "Transfer Eligibility"].map((label) => (
@@ -377,9 +377,9 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
   return (
     <div className="card-flush">
       <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between transition-all duration-300 ${
-        allDone && eligible ? "bg-gradient-to-r from-bond-green/8 to-transparent" : allDone ? "bg-gradient-to-r from-bond-red/8 to-transparent" : ""
+        allDone && eligible ? "bg-bond-green/8" : allDone ? "bg-bond-red/8" : ""
       }`}>
-        <h2 className="text-lg font-semibold text-white">Compliance Status</h2>
+        <h2 className="text-lg font-semibold text-text">Compliance Status</h2>
         {allDone && (
           <StatusBadge
             label={eligible ? "Eligible to Invest" : "Not Eligible"}
@@ -404,7 +404,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                   <span className="animate-icon-enter"><XIcon className="w-5 h-5 text-bond-red" /></span>
                 )}
               </div>
-              <span className="text-sm text-white">{check.label}</span>
+              <span className="text-sm text-text">{check.label}</span>
             </div>
             <div className="flex items-center gap-2">
               {check.detail && (
@@ -413,7 +413,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 </span>
               )}
               {check.link && check.status === "pass" && (
-                <span className="text-[10px]">
+                <span className="text-[11px] sm:text-xs">
                   {check.link.type === "tx" ? (
                     <TxLink hash={check.link.hash} prefixLen={6} />
                   ) : (
@@ -430,7 +430,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
       {showOnboarding && (
         <div className="px-6 py-6 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5">
           <div className="flex items-center gap-2 mb-4">
-            <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
+            <StatusBadge label="Demo" variant="amber" className="text-[11px] sm:text-xs uppercase tracking-wider" />
             <span className="text-xs text-text-muted">
               Register an on-chain identity to experience the full purchase flow.
             </span>
@@ -438,7 +438,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
           {!onboarding && (
             <>
-              <div className="flex gap-3 items-end mb-3">
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end mb-3">
                 <div className="flex-1">
                   <label htmlFor="onboard-country" className="sr-only">Select jurisdiction</label>
                   <select
@@ -481,7 +481,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
         <div className="px-6 py-4 border-t border-border/50 border-l-2 border-l-bond-amber bg-bond-amber/5" aria-live="polite" aria-atomic="true">
           {!showOnboarding && (
             <div className="flex items-center gap-2 mb-4">
-              <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider" />
+              <StatusBadge label="Demo" variant="amber" className="text-[11px] sm:text-xs uppercase tracking-wider" />
               <span className="text-xs text-text-muted">
                 On-chain identity registration
               </span>
@@ -509,7 +509,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                   <span className={`text-sm ${
                     step.status === "pending" ? "text-text-muted" :
                     step.status === "error" ? "text-bond-red" :
-                    "text-white"
+                    "text-text"
                   }`}>
                     {step.label}
                   </span>
@@ -519,7 +519,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                     href={`https://hashscan.io/testnet/transaction/${step.txHash}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-[11px] font-mono text-text-muted hover:text-bond-green transition-colors shrink-0"
+                    className="text-[11px] sm:text-xs font-mono text-text-muted hover:text-bond-green transition-colors shrink-0"
                     title={step.txHash}
                   >
                     {step.txHash.slice(0, 8)}...

@@ -33,7 +33,7 @@ export function StepProgress({ steps }: { steps: Step[] }) {
             <span className={`text-sm ${
               step.status === "pending" ? "text-text-muted" :
               step.status === "error" ? "text-bond-red" :
-              "text-white"
+              "text-text"
             }`}>
               {step.label}
             </span>

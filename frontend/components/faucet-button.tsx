@@ -105,7 +105,7 @@ export function FaucetButton({ onSuccess }: FaucetButtonProps) {
         className={`text-xs font-medium px-3 py-1.5 rounded transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green ${
           state === "success"
             ? "text-bond-green bg-bond-green/10 border border-bond-green/20"
-            : "text-text-muted hover:text-white bg-surface-3 hover:bg-surface-3/80 border border-border"
+            : "text-text-muted hover:text-text bg-surface-3 hover:bg-surface-3/80 border border-border"
         } disabled:opacity-50 disabled:cursor-not-allowed`}
       >
         {BUTTON_LABELS[state]}

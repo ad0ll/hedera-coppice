@@ -46,7 +46,7 @@ export function ProjectAllocation() {
             <div key={category}>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-text-muted">{category}</span>
-                <span className="text-white font-mono">
+                <span className="text-text font-mono">
                   {formatNumber(total)} eUSD ({pct.toFixed(0)}%)
                 </span>
               </div>
@@ -60,7 +60,7 @@ export function ProjectAllocation() {
         {allocations.map((a) => (
           <div key={a.name} className="flex items-center justify-between text-sm py-1 border-b border-border/30 last:border-0">
             <div>
-              <span className="text-white">{a.name}</span>
+              <span className="text-text">{a.name}</span>
               <span className="text-xs text-text-muted ml-2">{a.category}</span>
             </div>
             <span className="font-mono text-bond-green">

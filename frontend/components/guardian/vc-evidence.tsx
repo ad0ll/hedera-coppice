@@ -24,8 +24,8 @@ export function VCEvidenceRow({ label, evidence, children }: VCEvidenceRowProps)
   return (
     <div className="py-3 border-b border-border/30 last:border-0">
       <div className="flex items-center justify-between mb-1.5">
-        <p className="text-xs font-semibold text-white uppercase tracking-wider">{label}</p>
-        <p className="text-[10px] text-text-muted font-mono">{evidence.proofType}</p>
+        <p className="text-xs font-semibold text-text uppercase tracking-wider">{label}</p>
+        <p className="text-[11px] sm:text-xs text-text-muted font-mono">{evidence.proofType}</p>
       </div>
       <div className="space-y-1 text-xs text-text-muted">
         <p>
@@ -43,11 +43,11 @@ export function VCEvidenceRow({ label, evidence, children }: VCEvidenceRowProps)
       </div>
       <div className="flex gap-3 mt-2">
         <a href={ipfsUrl(evidence.hash)} target="_blank" rel="noopener noreferrer"
-          className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">
+          className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors">
           View on IPFS
         </a>
         <a href={hashScanUrl(evidence.topicId, evidence.messageId)} target="_blank" rel="noopener noreferrer"
-          className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors">
+          className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors">
           View on HashScan
         </a>
       </div>

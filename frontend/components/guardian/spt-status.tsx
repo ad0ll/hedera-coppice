@@ -24,7 +24,7 @@ export function SptStatus({
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">SPT Progress</span>
-          <span className="font-mono text-white">
+          <span className="font-mono text-text">
             {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
@@ -36,7 +36,7 @@ export function SptStatus({
   return (
     <div className="card-static">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-text">
           Sustainability Performance Target
         </h2>
         <StatusBadge
@@ -51,7 +51,7 @@ export function SptStatus({
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">Progress</span>
-          <span className="font-mono text-white">
+          <span className="font-mono text-text">
             {formatNumber(totalVerified)} / {formatNumber(target)} tCO₂e
           </span>
         </div>
@@ -64,7 +64,7 @@ export function SptStatus({
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
           <div>
             <span className="text-text-muted">Current Rate</span>
-            <p className="font-mono text-white mt-0.5">4.25%</p>
+            <p className="font-mono text-text mt-0.5">4.25%</p>
           </div>
           <div>
             <span className="text-text-muted">Penalty Rate</span>
@@ -72,7 +72,7 @@ export function SptStatus({
           </div>
           <div>
             <span className="text-text-muted">Projects</span>
-            <p className="font-mono text-white mt-0.5">{projectCount}</p>
+            <p className="font-mono text-text mt-0.5">{projectCount}</p>
           </div>
         </div>
       )}

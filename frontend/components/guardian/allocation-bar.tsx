@@ -14,11 +14,11 @@ export function AllocationBar({ allocated, total, percent, projects }: Allocatio
 
   return (
     <div className="card-static">
-      <h2 className="text-lg font-semibold text-white mb-3">Use of Proceeds</h2>
+      <h2 className="text-lg font-semibold text-text mb-3">Use of Proceeds</h2>
       <div className="space-y-2 mb-4">
         <div className="flex justify-between text-xs">
           <span className="text-text-muted">Allocated</span>
-          <span className="font-mono text-white">
+          <span className="font-mono text-text">
             {formatNumber(allocated)} / {formatNumber(total)} eUSD
           </span>
         </div>
@@ -35,7 +35,7 @@ export function AllocationBar({ allocated, total, percent, projects }: Allocatio
               <span className="text-text-muted">
                 {p.registration.ProjectName}
               </span>
-              <span className="font-mono text-white">
+              <span className="font-mono text-text">
                 {formatNumber(p.allocation!.AllocatedAmountEUSD)} eUSD (
                 {p.allocation!.ShareofFinancingPercent}%)
               </span>

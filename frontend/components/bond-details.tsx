@@ -26,7 +26,7 @@ export function BondDetails() {
               </svg>
             </div>
             <div>
-              <h1 className="font-display text-3xl text-white">{BOND_DETAILS.name}</h1>
+              <h1 className="font-display text-3xl text-text">{BOND_DETAILS.name}</h1>
               <p className="text-sm text-text-muted mt-0.5">{BOND_DETAILS.issuer}</p>
             </div>
           </div>
@@ -34,10 +34,10 @@ export function BondDetails() {
             <StatusBadge label={isPaused ? "Paused" : "Active"} variant={isPaused ? "red" : "green"} />
           )}
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
           <div>
             <p className="stat-label mb-1.5">Symbol</p>
-            <p className="font-display text-2xl text-white">{BOND_DETAILS.symbol}</p>
+            <p className="font-display text-2xl text-text">{BOND_DETAILS.symbol}</p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Coupon Rate</p>
@@ -45,11 +45,11 @@ export function BondDetails() {
           </div>
           <div>
             <p className="stat-label mb-1.5">Maturity</p>
-            <p className="font-display text-2xl text-white">{BOND_DETAILS.maturity}</p>
+            <p className="font-display text-2xl text-text">{BOND_DETAILS.maturity}</p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Total Supply</p>
-            <p className="font-display text-2xl text-white">{supply} <span className="text-xs text-text-muted font-normal font-sans">CPC</span></p>
+            <p className="font-display text-2xl text-text">{supply} <span className="text-xs text-text-muted font-normal font-sans">CPC</span></p>
           </div>
         </div>
       </div>

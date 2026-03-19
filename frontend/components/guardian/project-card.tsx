@@ -46,7 +46,7 @@ function renderIndicators(json: string, label: string) {
         {indicators.map((ind, i) => (
           <span key={i} className="text-xs">
             {i > 0 && " | "}
-            <span className="font-mono text-white/70">{formatNumber(ind.value)}</span> {ind.unit}
+            <span className="font-mono text-text/70">{formatNumber(ind.value)}</span> {ind.unit}
           </span>
         ))}
       </div>
@@ -63,7 +63,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
   return (
     <div className="card-static flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-white">{reg.ProjectName}</h3>
+        <h3 className="text-sm font-semibold text-text">{reg.ProjectName}</h3>
         <StatusBadge
           label={getVerificationStatus(project)}
           variant={getStatusVariant(project)}
@@ -83,7 +83,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
       </div>
       <div className="flex items-center justify-between text-xs text-text-muted">
         <span>{reg.Location}</span>
-        <span className="font-mono text-white">
+        <span className="font-mono text-text">
           {formatNumber(reg.Capacity)} {reg.CapacityUnit}
         </span>
       </div>
@@ -98,7 +98,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
       {project.allocation && (
         <div className="flex items-center justify-between text-xs">
           <span className="text-text-muted">Allocated</span>
-          <span className="font-mono text-white">
+          <span className="font-mono text-text">
             {formatNumber(project.allocation.AllocatedAmountEUSD)} eUSD
           </span>
         </div>
@@ -110,7 +110,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
           <button
             onClick={() => setExpanded(!expanded)}
             aria-expanded={expanded}
-            className="w-full text-left text-xs text-text-muted hover:text-white transition-colors pt-3 mt-3 border-t border-border/30 flex items-center gap-1"
+            className="w-full text-left text-xs text-text-muted hover:text-text transition-colors pt-3 mt-3 border-t border-border/30 flex items-center gap-1"
           >
             <svg className={`w-3 h-3 transition-transform ${expanded ? "rotate-90" : ""}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <path d="M9 18l6-6-6-6" />
@@ -173,7 +173,7 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
                     if (project.verificationDocument) evidence.verification = project.verificationDocument;
                     downloadJson(evidence, `${project.registration.ProjectName.replace(/\s+/g, "-").toLowerCase()}-evidence.json`);
                   }}
-                  className="w-full text-center text-xs text-text-muted hover:text-white transition-colors py-2 mt-2 border-t border-border/30"
+                  className="w-full text-center text-xs text-text-muted hover:text-text transition-colors py-2 mt-2 border-t border-border/30"
                 >
                   Download Evidence Chain (JSON)
                 </button>

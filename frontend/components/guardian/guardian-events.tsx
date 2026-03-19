@@ -126,7 +126,7 @@ export function GuardianEvents() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${TYPE_COLORS[event.type]}`}>
+                <span className={`text-[11px] sm:text-xs font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${TYPE_COLORS[event.type]}`}>
                   {TYPE_LABELS[event.type]}
                 </span>
                 <span className="text-xs text-text-muted">
@@ -136,17 +136,17 @@ export function GuardianEvents() {
                   })}
                 </span>
               </div>
-              <p className="text-sm text-white font-medium">{event.projectName}</p>
+              <p className="text-sm text-text font-medium">{event.projectName}</p>
               <p className="text-xs text-text-muted mt-0.5">{event.detail}</p>
-              <p className="text-[10px] text-text-muted mt-1 font-mono">
+              <p className="text-[11px] sm:text-xs text-text-muted mt-1 font-mono">
                 Signed by {abbreviateDid(event.evidence.issuer)}
               </p>
             </div>
             <div className="flex flex-col gap-1 shrink-0">
               <a href={ipfsUrl(event.evidence.hash)} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">IPFS</a>
+                className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">IPFS</a>
               <a href={hashScanUrl(event.evidence.topicId, event.evidence.messageId)} target="_blank" rel="noopener noreferrer"
-                className="text-[10px] text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">HashScan</a>
+                className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">HashScan</a>
             </div>
           </div>
         </div>

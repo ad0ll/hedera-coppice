@@ -20,7 +20,7 @@ export function EmptyState({ icon, title, description, variant = "default", acti
       <div className={`w-12 h-12 mx-auto mb-4 rounded-xl ${iconBg} flex items-center justify-center`}>
         {icon}
       </div>
-      <h2 className="text-xl font-semibold text-white mb-2">{title}</h2>
+      <h2 className="text-xl font-semibold text-text mb-2">{title}</h2>
       <p className="text-text-muted text-sm">{description}</p>
       {action && <div className="mt-4">{action}</div>}
     </div>

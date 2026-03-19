@@ -45,7 +45,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">
+        <h2 className="text-lg font-semibold text-text">
           {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
         </h2>
         <span className="text-xs text-text-muted font-mono">{events.length} events</span>
@@ -60,8 +60,8 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
               aria-pressed={filter === type}
               className={`text-xs px-3 py-2 min-h-[44px] min-w-[44px] rounded-md transition-colors ${
                 filter === type
-                  ? "bg-surface-3 text-white border border-border/50"
-                  : "text-text-muted hover:text-white hover:bg-surface-3/50"
+                  ? "bg-surface-3 text-text border border-border/50"
+                  : "text-text-muted hover:text-text hover:bg-surface-3/50"
               }`}
             >
               {type}
@@ -77,7 +77,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           <div className="space-y-1 max-h-96 overflow-y-auto">
             {sorted.map((event) => (
               <div key={event.sequenceNumber} className="flex items-start gap-3 py-2.5 border-b border-border/20 last:border-0 animate-feed-enter">
-                <span className={`text-[11px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
+                <span className={`text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
                   {event.type}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -100,7 +100,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
                     {Object.entries(event.data || {}).map(([k, v]) => (
                       <span key={k} className="mr-3">
                         <span className="text-text-muted">{k}:</span>{" "}
-                        <span className="text-white font-mono">{v}</span>
+                        <span className="text-text font-mono">{v}</span>
                       </span>
                     ))}
                   </div>

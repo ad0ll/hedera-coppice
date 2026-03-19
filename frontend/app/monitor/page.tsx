@@ -24,7 +24,7 @@ export default function ComplianceMonitor() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border">
           <div className="py-4 sm:py-6 sm:pr-6">
             <p className="stat-label mb-2">Total Events</p>
-            <p className="font-display text-3xl sm:text-5xl text-white">{events.length}</p>
+            <p className="font-display text-3xl sm:text-4xl lg:text-5xl text-text">{events.length}</p>
           </div>
           <div className="py-4 sm:py-6 sm:px-6">
             <p className="stat-label mb-2">Approvals</p>
@@ -45,7 +45,7 @@ export default function ComplianceMonitor() {
             {coupons.map((c) => (
               <div key={c.id} className="card-static text-xs">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-white text-sm">Coupon #{c.id}</span>
+                  <span className="font-semibold text-text text-sm">Coupon #{c.id}</span>
                   <span className={`px-2 py-0.5 rounded font-medium ${
                     c.status === "paid" ? "bg-bond-green/15 text-bond-green" :
                     c.status === "executable" ? "bg-bond-green/15 text-bond-green" :
@@ -57,15 +57,15 @@ export default function ComplianceMonitor() {
                 <div className="space-y-1 text-text-muted">
                   <div className="flex justify-between">
                     <span>Rate</span>
-                    <span className="font-mono text-white">{c.rateDisplay}</span>
+                    <span className="font-mono text-text">{c.rateDisplay}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Period</span>
-                    <span className="font-mono text-white">{c.periodDays}d</span>
+                    <span className="font-mono text-text">{c.periodDays}d</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Record</span>
-                    <span className="font-mono text-white">
+                    <span className="font-mono text-text">
                       {new Date(c.recordDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                     </span>
                   </div>
@@ -90,7 +90,7 @@ export default function ComplianceMonitor() {
           aria-controls="panel-onchain"
           onClick={() => setTab("onchain")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
-            tab === "onchain" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
+            tab === "onchain" ? "bg-surface-3 text-text font-medium" : "text-text-muted hover:text-text"
           }`}
         >
           On-Chain Events
@@ -101,7 +101,7 @@ export default function ComplianceMonitor() {
           aria-controls="panel-guardian"
           onClick={() => setTab("guardian")}
           className={`px-4 py-2 text-sm rounded-md transition-colors ${
-            tab === "guardian" ? "bg-surface-3 text-white font-medium" : "text-text-muted hover:text-white"
+            tab === "guardian" ? "bg-surface-3 text-text font-medium" : "text-text-muted hover:text-text"
           }`}
         >
           Guardian Verification

@@ -66,13 +66,13 @@ export default function InvestorPortal() {
           />
         ) : (
           <div className="bg-surface-2 border-y border-border full-bleed">
-            <div className="max-w-7xl mx-auto grid grid-cols-2 divide-x divide-border">
-              <div className="py-5 pr-6">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-border">
+              <div className="py-5 sm:pr-6">
                 <p className="stat-label mb-1">CPC Balance</p>
-                <p className="font-display text-3xl text-white">{cpcBalance}</p>
+                <p className="font-display text-3xl text-text">{cpcBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice Green Bond</p>
               </div>
-              <div className="py-5 pl-6">
+              <div className="py-5 sm:pl-6">
                 <p className="stat-label mb-1">eUSD Balance</p>
                 <p className="font-display text-3xl text-bond-green">{displayEusdBalance}</p>
                 <p className="text-xs text-text-muted mt-1">Coppice USD</p>

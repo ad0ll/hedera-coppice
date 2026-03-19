@@ -319,7 +319,7 @@ export default function IssuerDashboard() {
     <div className="space-y-6">
       {!isOwner && (
         <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
-          <StatusBadge label="Demo" variant="amber" className="text-[10px] uppercase tracking-wider shrink-0 mt-0.5" />
+          <StatusBadge label="Demo" variant="amber" className="text-[11px] sm:text-xs uppercase tracking-wider shrink-0 mt-0.5" />
           <p className="text-xs text-text-muted">
             You have the agent role for this demo session. In production, agent roles are managed by the token owner.
           </p>
@@ -362,7 +362,7 @@ export default function IssuerDashboard() {
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
         <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Mint */}
           <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
             <Card>

@@ -84,7 +84,7 @@ body::after {
 
 /* Card surfaces (includes glow hover effect) */
 .card {
-  @apply bg-surface-2 border border-border rounded-xl p-6;
+  @apply bg-surface-2 border border-border rounded-xl p-4 sm:p-6;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .card:hover {
@@ -95,16 +95,16 @@ body::after {
   @apply bg-surface-2 border border-border rounded-xl overflow-hidden;
 }
 .card-static {
-  @apply bg-surface-2 border border-border rounded-xl p-6;
+  @apply bg-surface-2 border border-border rounded-xl p-4 sm:p-6;
 }
 
 /* Typography */
 .page-title {
   font-family: var(--font-display), "Instrument Serif", Georgia, serif;
-  @apply text-3xl text-white;
+  @apply text-3xl text-text;
 }
 .card-title {
-  @apply text-lg font-semibold text-white mb-4;
+  @apply text-lg font-semibold text-text mb-4;
 }
 .stat-label {
   @apply text-xs text-text-muted uppercase tracking-wider;
@@ -123,7 +123,7 @@ body::after {
 
 /* Form inputs */
 .input {
-  @apply w-full bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-white text-sm
+  @apply w-full bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-text text-sm
     placeholder:text-text-muted/60
     focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20
     disabled:opacity-40

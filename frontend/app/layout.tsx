@@ -41,16 +41,17 @@ export default function RootLayout({
     <html lang="en" className={`${instrumentSerif.variable} ${bricolageGrotesque.variable} ${geistMono.variable}`}>
       <body className="min-h-screen bg-surface text-text flex flex-col">
         <Providers>
+          <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-bond-green focus:text-black focus:px-4 focus:py-2 focus:rounded-lg focus:text-sm focus:font-semibold">Skip to content</a>
           <Nav />
-          <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full" role="main">
+          <main id="main" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1 w-full" role="main">
             {children}
           </main>
           <footer className="border-t border-border/50 py-4" role="contentinfo">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between text-sm text-text-muted">
-              <a href="https://erc3643.info/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">
+              <a href="https://erc3643.info/" target="_blank" rel="noopener noreferrer" className="hover:text-text transition-colors">
                 ERC-3643 Compliant Green Bonds on Hedera
               </a>
-              <a href="https://hashscan.io/testnet" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-white transition-colors">
+              <a href="https://hashscan.io/testnet" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-text transition-colors">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-bond-green opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-bond-green" />

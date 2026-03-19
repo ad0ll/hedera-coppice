@@ -155,7 +155,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       {amount && enabled && !running && steps.length === 0 && (
         <div>
           <p className="text-xs text-text-muted">
-            Cost: <span className="text-white font-mono">{formatNumber(Number(amount))}</span> eUSD (1:1 exchange rate)
+            Cost: <span className="text-text font-mono">{formatNumber(Number(amount))}</span> eUSD (1:1 exchange rate)
           </p>
           {eusdBalance !== undefined && eusdBalance !== null && Number(amount) > eusdBalance && (
             <p className="text-xs text-bond-red mt-1">

@@ -155,28 +155,28 @@ export default function CouponsPage() {
         className="bg-gradient-to-b from-surface-2 to-transparent full-bleed pb-2 animate-entrance"
         style={{ "--index": 1 } as React.CSSProperties}
       >
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
           <div>
             <p className="stat-label mb-1.5">Next Coupon</p>
-            <p className="font-display text-3xl text-white">
+            <p className="font-display text-3xl text-text">
               <span className="font-mono text-2xl">{nextCouponDate}</span>
             </p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Annual Rate</p>
-            <p className="font-display text-3xl text-white">
+            <p className="font-display text-3xl text-text">
               <span className="font-mono">{latestRate}</span>
             </p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Total Coupons</p>
-            <p className="font-display text-3xl text-white">
+            <p className="font-display text-3xl text-text">
               <span className="font-mono">{couponList.length}</span>
             </p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Face Value</p>
-            <p className="font-display text-3xl text-white">
+            <p className="font-display text-3xl text-text">
               <span className="font-mono">$1,000</span>
             </p>
             <p className="text-xs text-text-muted mt-1">eUSD per bond</p>
@@ -195,14 +195,14 @@ export default function CouponsPage() {
             {paidCount > 0 && (
               <button
                 onClick={() => setShowPaid(!showPaid)}
-                className="text-xs text-text-muted hover:text-white transition-colors"
+                className="text-xs text-text-muted hover:text-text transition-colors"
                 aria-pressed={showPaid}
               >
                 {showPaid ? "Hide" : "Show"} paid ({paidCount})
               </button>
             )}
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {visibleCoupons.map((coupon, idx) => (
               <div
                 key={coupon.id}
@@ -210,7 +210,7 @@ export default function CouponsPage() {
                 style={{ "--index": idx + 3 } as React.CSSProperties}
               >
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-white">
+                  <h3 className="text-sm font-semibold text-text">
                     Coupon #{coupon.id}
                   </h3>
                   <StatusBadge
@@ -232,13 +232,13 @@ export default function CouponsPage() {
                 <div className="grid grid-cols-2 gap-4 pt-1 border-t border-white/5">
                   <div>
                     <p className="stat-label mb-1">Rate</p>
-                    <p className="font-mono text-sm text-white">
+                    <p className="font-mono text-sm text-text">
                       {coupon.rateDisplay}
                     </p>
                   </div>
                   <div>
                     <p className="stat-label mb-1">Record Status</p>
-                    <p className="font-mono text-sm text-white flex items-center gap-1.5">
+                    <p className="font-mono text-sm text-text flex items-center gap-1.5">
                       {coupon.snapshotId > 0 ? (
                         <>
                           <span className="w-2 h-2 rounded-full bg-bond-green" aria-hidden="true" />
@@ -281,7 +281,7 @@ export default function CouponsPage() {
       >
         <div className="card-static">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-text">
               Coppice Green Bond (CPC)
             </h2>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-medium border bg-bond-green/15 text-bond-green border-bond-green/20">

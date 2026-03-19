@@ -5,6 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { WalletButton } from "./wallet-button";
 
+const NAV_LINKS = [
+  { href: "/", label: "Invest" },
+  { href: "/coupons", label: "Coupons" },
+  { href: "/impact", label: "Impact" },
+  { href: "/issue", label: "Issuer" },
+  { href: "/monitor", label: "Compliance" },
+] as const;
+
 export function Nav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
@@ -14,12 +22,12 @@ export function Nav() {
     return `px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green ${
       isActive
         ? "bg-bond-green/10 text-bond-green"
-        : "text-text-muted hover:text-white"
+        : "text-text-muted hover:text-text"
     }`;
   }
 
   return (
-    <nav className="border-b border-border bg-surface/80 backdrop-blur-md sticky top-0 z-50" role="navigation" aria-label="Main navigation">
+    <nav className="border-b border-border bg-surface/95 sticky top-0 z-50" role="navigation" aria-label="Main navigation">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-4 sm:gap-8">
@@ -28,7 +36,7 @@ export function Nav() {
                 <rect width="32" height="32" rx="6" fill="currentColor" className="text-surface-3" />
                 <path d="M16 6C11 11 9 16 11 21C12 24 14 26 16 27C18 26 20 24 21 21C23 16 21 11 16 6Z" className="fill-bond-green" opacity="0.9"/>
               </svg>
-              <span className="text-lg font-semibold tracking-tight text-white">
+              <span className="text-lg font-semibold tracking-tight text-text">
                 Coppice
               </span>
             </Link>
@@ -43,7 +51,7 @@ export function Nav() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden p-2.5 rounded-lg text-text-muted hover:text-white hover:bg-surface-3/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green"
+              className="sm:hidden p-2.5 rounded-lg text-text-muted hover:text-text hover:bg-surface-3/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
             >
@@ -60,15 +68,9 @@ export function Nav() {
         </div>
       </div>
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-border bg-surface-2/95 backdrop-blur-md">
+        <div className="sm:hidden border-t border-border bg-surface-2">
           <div className="px-4 py-3 flex flex-wrap gap-1">
-            {[
-              { href: "/", label: "Invest" },
-              { href: "/coupons", label: "Coupons" },
-              { href: "/impact", label: "Impact" },
-              { href: "/issue", label: "Issuer" },
-              { href: "/monitor", label: "Compliance" },
-            ].map(({ href, label }) => {
+            {NAV_LINKS.map(({ href, label }) => {
               const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
               return (
                 <Link
@@ -78,7 +80,7 @@ export function Nav() {
                   className={`flex-1 text-center px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-bond-green/10 text-bond-green"
-                      : "text-text-muted hover:text-white hover:bg-surface-3/50"
+                      : "text-text-muted hover:text-text hover:bg-surface-3/50"
                   }`}
                 >
                   {label}

@@ -6,6 +6,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useMemo,
   type ReactNode,
 } from "react";
 import { ethers } from "ethers";
@@ -119,18 +120,21 @@ export function AtsProvider({ children }: { children: ReactNode }) {
     setSigner(null);
   }, []);
 
+  const value = useMemo(
+    () => ({
+      address,
+      isConnected: !!address,
+      isConnecting,
+      provider,
+      signer,
+      connect,
+      disconnect,
+    }),
+    [address, isConnecting, provider, signer, connect, disconnect],
+  );
+
   return (
-    <AtsContext.Provider
-      value={{
-        address,
-        isConnected: !!address,
-        isConnecting,
-        provider,
-        signer,
-        connect,
-        disconnect,
-      }}
-    >
+    <AtsContext.Provider value={value}>
       {children}
     </AtsContext.Provider>
   );

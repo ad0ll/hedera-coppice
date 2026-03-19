@@ -15,7 +15,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
     return (
       <div className="card-flush">
         <div className="px-6 py-4 border-b border-border/50">
-          <h2 className="text-lg font-semibold text-white">Token Holders</h2>
+          <h2 className="text-lg font-semibold text-text">Token Holders</h2>
         </div>
         <div className="px-6 py-8 flex items-center justify-center gap-3 text-text-muted text-sm" role="status">
           <Spinner aria-hidden />
@@ -28,7 +28,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Token Holders</h2>
+        <h2 className="text-lg font-semibold text-text">Token Holders</h2>
         <span className="text-xs text-text-muted font-mono">{holders.length} addresses</span>
       </div>
 
@@ -55,13 +55,13 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
                   <tr key={h.address} className="border-b border-border/20 last:border-0 hover:bg-surface-3/30 transition-colors">
                     <td className="px-3 sm:px-6 py-3">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-white">{abbreviateAddress(h.address)}</span>
+                        <span className="font-mono text-text">{abbreviateAddress(h.address)}</span>
                         {label && (
                           <span className="text-xs text-text-muted">({label})</span>
                         )}
                       </div>
                     </td>
-                    <td className="px-3 sm:px-6 py-3 text-right font-mono text-white">
+                    <td className="px-3 sm:px-6 py-3 text-right font-mono text-text">
                       {formatBalance(h.balance)}
                     </td>
                     <td className="px-3 sm:px-6 py-3 text-center">

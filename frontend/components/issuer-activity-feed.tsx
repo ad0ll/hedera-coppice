@@ -33,7 +33,7 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Recent Activity</h2>
+        <h2 className="text-lg font-semibold text-text">Recent Activity</h2>
         <span className="text-xs text-text-muted font-mono">{events.length} total events</span>
       </div>
 
@@ -49,13 +49,13 @@ export function IssuerActivityFeed({ events, loading }: { events: AuditEvent[]; 
           <div className="space-y-0.5 max-h-80 overflow-y-auto">
             {recent.map((event) => (
               <div key={event.sequenceNumber} className="flex items-center gap-3 py-2 border-b border-border/20 last:border-0">
-                <span className={`text-[10px] px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
+                <span className={`text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
                   {event.type}
                 </span>
                 <span className="text-xs text-text-muted flex-1 truncate">
                   {eventSummary(event)}
                 </span>
-                <span className="text-[11px] text-text-muted shrink-0">
+                <span className="text-[11px] sm:text-xs text-text-muted shrink-0">
                   {formatTimestamp(event.consensusTimestamp || event.ts, { includeDate: true })}
                 </span>
                 {event.tx && (
