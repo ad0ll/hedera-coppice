@@ -1,13 +1,10 @@
 import type { VCEvidence } from "@/lib/guardian-types";
+import { hashScanTxUrl } from "@/components/ui/hashscan-link";
 
 function abbreviateDid(did: string): string {
   const parts = did.split("_");
   const accountId = parts.length > 1 ? parts[parts.length - 1] : "";
   return accountId ? `did:hedera:...${accountId}` : did.slice(0, 20) + "...";
-}
-
-function hashScanUrl(_topicId: string, messageId: string): string {
-  return `https://hashscan.io/testnet/transaction/${messageId}`;
 }
 
 function ipfsUrl(hash: string): string {
@@ -29,11 +26,11 @@ export function VCEvidenceRow({ label, evidence, children }: VCEvidenceRowProps)
       </div>
       <div className="space-y-1 text-xs text-text-muted">
         <p>
-          <span className="text-text-muted/60">Signed by </span>
-          <span className="font-mono text-white/70">{abbreviateDid(evidence.issuer)}</span>
+          <span className="text-text-muted">Signed by </span>
+          <span className="font-mono text-text-muted">{abbreviateDid(evidence.issuer)}</span>
         </p>
         <p>
-          <span className="text-text-muted/60">Date: </span>
+          <span className="text-text-muted">Date: </span>
           {new Date(evidence.issuanceDate).toLocaleString("en-US", {
             month: "short", day: "numeric", year: "numeric",
             hour: "2-digit", minute: "2-digit",
@@ -46,7 +43,7 @@ export function VCEvidenceRow({ label, evidence, children }: VCEvidenceRowProps)
           className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors">
           View on IPFS
         </a>
-        <a href={hashScanUrl(evidence.topicId, evidence.messageId)} target="_blank" rel="noopener noreferrer"
+        <a href={hashScanTxUrl(evidence.messageId)} target="_blank" rel="noopener noreferrer"
           className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors">
           View on HashScan
         </a>

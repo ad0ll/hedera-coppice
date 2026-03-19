@@ -14,7 +14,7 @@ export function StepProgress({ steps }: { steps: Step[] }) {
   return (
     <div className="space-y-1 bg-surface-3/50 rounded-lg p-4" aria-live="polite" aria-atomic="true">
       {steps.map((step, i) => (
-        <div key={i} className="flex items-center gap-3 py-1.5">
+        <div key={i} className={`flex items-center gap-3 py-1.5 ${step.status !== "pending" ? "animate-feed-enter" : ""}`}>
           <div className="w-5 h-5 flex items-center justify-center shrink-0">
             {step.status === "pending" && (
               <div className="w-2 h-2 rounded-full bg-text-muted/30" />
@@ -23,10 +23,10 @@ export function StepProgress({ steps }: { steps: Step[] }) {
               <Spinner variant="amber" aria-label="Processing" />
             )}
             {step.status === "success" && (
-              <CheckIcon className="w-5 h-5 text-bond-green" />
+              <CheckIcon className="w-5 h-5 text-bond-green animate-icon-enter" />
             )}
             {step.status === "error" && (
-              <XIcon className="w-5 h-5 text-bond-red" />
+              <XIcon className="w-5 h-5 text-bond-red animate-icon-enter" />
             )}
           </div>
           <div className="min-w-0">

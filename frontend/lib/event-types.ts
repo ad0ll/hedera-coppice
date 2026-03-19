@@ -53,6 +53,22 @@ export const BOND_CATEGORIES = [
 
 export type BondCategory = (typeof BOND_CATEGORIES)[number];
 
+/** Coupon status → badge variant mapping. */
+export const COUPON_STATUS_VARIANT: Record<string, "green" | "amber"> = {
+  paid: "green",
+  executable: "green",
+  record: "amber",
+  upcoming: "amber",
+};
+
+/** Coupon status → display label mapping. */
+export const COUPON_STATUS_LABEL: Record<string, string> = {
+  paid: "Distributed",
+  executable: "Ready",
+  record: "Record Date Passed",
+  upcoming: "Upcoming",
+};
+
 /** ISO 3166-1 numeric country codes used in demo wallets and onboarding. */
 export const COUNTRY_NAMES: Record<number, string> = {
   156: "China",

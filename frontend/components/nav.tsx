@@ -68,7 +68,7 @@ export function Nav() {
         </div>
       </div>
       {mobileMenuOpen && (
-        <div className="sm:hidden border-t border-border bg-surface-2">
+        <div className="sm:hidden border-t border-border bg-surface-2 animate-nav-enter">
           <div className="px-4 py-3 flex flex-wrap gap-1">
             {NAV_LINKS.map(({ href, label }) => {
               const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);

@@ -25,25 +25,6 @@ body {
   background-color: var(--color-surface);
 }
 
-/* Background atmosphere — vignette + noise grain */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
-  pointer-events: none;
-  z-index: 1;
-}
-
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
-}
 
 /* Focus indicators for keyboard navigation */
 :focus-visible {
@@ -133,7 +114,7 @@ body::after {
 /* Buttons — @apply cannot chain custom classes, so base styles are inlined in each variant */
 .btn-primary {
   @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40
-    bg-bond-green text-black hover:bg-bond-green/90 transition-all;
+    bg-bond-green text-black hover:bg-bond-green/90 transition-colors;
 }
 .btn-outline-green {
   @apply py-2.5 rounded-lg text-sm font-semibold disabled:opacity-40 transition-colors
@@ -253,6 +234,79 @@ body::after {
 
 .animate-event-new {
   animation: event-highlight 1.5s ease-out;
+}
+
+/* Button press — subtle scale feedback on active */
+.btn-primary:active:not(:disabled),
+.btn-outline-green:active:not(:disabled),
+.btn-outline-red:active:not(:disabled),
+.btn-outline-amber:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn-primary,
+.btn-outline-green,
+.btn-outline-red,
+.btn-outline-amber {
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+/* Status message enter */
+@keyframes status-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.status-msg-success,
+.status-msg-error {
+  animation: status-enter 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Mobile nav slide-down */
+@keyframes nav-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-nav-enter {
+  animation: nav-slide-down 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Evidence expand — content fade-in */
+@keyframes expand-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-expand-enter {
+  animation: expand-enter 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tab panel crossfade */
+@keyframes tab-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-tab-enter {
+  animation: tab-fade 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Respect reduced motion preference */

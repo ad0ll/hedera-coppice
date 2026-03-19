@@ -8,6 +8,9 @@ import { Spinner } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { AddressLink } from "@/components/ui/hashscan-link";
+import { COUPON_STATUS_VARIANT, COUPON_STATUS_LABEL } from "@/lib/event-types";
+import { entranceProps } from "@/lib/animation";
 
 function formatDate(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString("en-US", {
@@ -16,20 +19,6 @@ function formatDate(timestamp: number): string {
     year: "numeric",
   });
 }
-
-const STATUS_VARIANT: Record<CouponInfo["status"], "green" | "amber"> = {
-  paid: "green",
-  executable: "green",
-  record: "amber",
-  upcoming: "amber",
-};
-
-const STATUS_LABEL: Record<CouponInfo["status"], string> = {
-  paid: "Distributed",
-  executable: "Ready",
-  record: "Record Date Passed",
-  upcoming: "Upcoming",
-};
 
 function getNextCouponDate(coupons: CouponInfo[]): string {
   const now = Math.floor(Date.now() / 1000);
@@ -60,8 +49,7 @@ export default function CouponsPage() {
     return (
       <div className="space-y-8">
         <h1
-          className="page-title animate-entrance"
-          style={{ "--index": 0 } as React.CSSProperties}
+          {...entranceProps(0, "page-title")}
         >
           Coupon Schedule
         </h1>
@@ -76,8 +64,7 @@ export default function CouponsPage() {
     return (
       <div className="space-y-8">
         <h1
-          className="page-title animate-entrance"
-          style={{ "--index": 0 } as React.CSSProperties}
+          {...entranceProps(0, "page-title")}
         >
           Coupon Schedule
         </h1>
@@ -110,8 +97,7 @@ export default function CouponsPage() {
     return (
       <div className="space-y-8">
         <h1
-          className="page-title animate-entrance"
-          style={{ "--index": 0 } as React.CSSProperties}
+          {...entranceProps(0, "page-title")}
         >
           Coupon Schedule
         </h1>
@@ -143,17 +129,13 @@ export default function CouponsPage() {
 
   return (
     <div className="space-y-8">
-      <h1
-        className="page-title animate-entrance"
-        style={{ "--index": 0 } as React.CSSProperties}
-      >
+      <h1 {...entranceProps(0, "page-title")}>
         Coupon Schedule
       </h1>
 
       {/* Summary Banner */}
       <div
-        className="bg-gradient-to-b from-surface-2 to-transparent full-bleed pb-2 animate-entrance"
-        style={{ "--index": 1 } as React.CSSProperties}
+        {...entranceProps(1, "bg-surface-2 border-y border-border full-bleed pb-2")}
       >
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
           <div>
@@ -187,8 +169,7 @@ export default function CouponsPage() {
       {/* Coupon Periods */}
       <SectionErrorBoundary section="coupon schedule">
         <section
-          className="animate-entrance"
-          style={{ "--index": 2 } as React.CSSProperties}
+          {...entranceProps(2)}
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="card-title mb-0">Coupon Periods</h2>
@@ -206,16 +187,15 @@ export default function CouponsPage() {
             {visibleCoupons.map((coupon, idx) => (
               <div
                 key={coupon.id}
-                className="card-static flex flex-col gap-3 animate-entrance"
-                style={{ "--index": idx + 3 } as React.CSSProperties}
+                {...entranceProps(idx + 3, "card-static flex flex-col gap-3")}
               >
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-semibold text-text">
                     Coupon #{coupon.id}
                   </h3>
                   <StatusBadge
-                    label={STATUS_LABEL[coupon.status]}
-                    variant={STATUS_VARIANT[coupon.status]}
+                    label={COUPON_STATUS_LABEL[coupon.status]}
+                    variant={COUPON_STATUS_VARIANT[coupon.status]}
                   />
                 </div>
 
@@ -276,8 +256,7 @@ export default function CouponsPage() {
 
       {/* Bond Info Footer */}
       <div
-        className="animate-entrance"
-        style={{ "--index": couponList.length + 3 } as React.CSSProperties}
+        {...entranceProps(couponList.length + 3)}
       >
         <div className="card-static">
           <div className="flex items-center justify-between mb-3">
@@ -294,15 +273,12 @@ export default function CouponsPage() {
             LifeCycleCashFlow contract, using ATS snapshots to determine holder
             balances at the record date.
           </p>
-          <a
-            href={`https://hashscan.io/testnet/contract/${CPC_SECURITY_ID}`}
-            target="_blank"
-            rel="noopener noreferrer"
+          <AddressLink
+            address={CPC_SECURITY_ID}
+            type="contract"
+            label="View bond contract on HashScan"
             className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors mt-3"
-          >
-            View bond contract on HashScan
-            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
-          </a>
+          />
         </div>
       </div>
     </div>

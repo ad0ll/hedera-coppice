@@ -8,10 +8,12 @@ import { ProjectCard } from "@/components/guardian/project-card";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { AllocationBar } from "@/components/guardian/allocation-bar";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { AddressLink } from "@/components/ui/hashscan-link";
+import { entranceProps } from "@/lib/animation";
 
 function MetricsSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
+    <div role="status" aria-label="Loading impact data" className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className="animate-pulse">
           <div className="h-3 w-20 bg-surface-3 rounded mb-2" />
@@ -53,17 +55,13 @@ export default function ImpactPage() {
 
   return (
     <div className="space-y-8">
-      <h1
-        className="page-title animate-entrance"
-        style={{ "--index": 0 } as React.CSSProperties}
-      >
+      <h1 {...entranceProps(0, "page-title")}>
         Environmental Impact
       </h1>
 
       {/* Metrics banner */}
       <div
-        className="bg-gradient-to-b from-surface-2 to-transparent full-bleed pb-2 animate-entrance"
-        style={{ "--index": 1 } as React.CSSProperties}
+        {...entranceProps(1, "bg-surface-2 border-y border-border full-bleed pb-2")}
       >
         {isLoading ? (
           <MetricsSkeleton />
@@ -85,8 +83,7 @@ export default function ImpactPage() {
       {error && (
         <div
           role="alert"
-          className="card-static border-bond-amber/30 animate-entrance"
-          style={{ "--index": 2 } as React.CSSProperties}
+          {...entranceProps(2, "card-static border-bond-amber/30")}
         >
           <p className="text-sm text-bond-amber">
             Guardian MRV data unavailable. Showing cached data if available.
@@ -97,8 +94,7 @@ export default function ImpactPage() {
       {/* SPT + Allocation */}
       {data && (
         <div
-          className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-entrance"
-          style={{ "--index": 2 } as React.CSSProperties}
+          {...entranceProps(2, "grid grid-cols-1 sm:grid-cols-2 gap-4")}
         >
           <SectionErrorBoundary section="impact data">
             <SptStatus
@@ -117,10 +113,7 @@ export default function ImpactPage() {
       )}
 
       {/* Project Portfolio */}
-      <section
-        className="animate-entrance"
-        style={{ "--index": 3 } as React.CSSProperties}
-      >
+      <section {...entranceProps(3)}>
         <h2 className="card-title">Project Portfolio</h2>
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -145,7 +138,7 @@ export default function ImpactPage() {
 
       {/* ICMA Compliance Evidence */}
       {data && data.bondFramework && (
-        <section className="animate-entrance" style={{ "--index": 4 } as React.CSSProperties}>
+        <section {...entranceProps(4)}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="card-title mb-0">ICMA Compliance Evidence</h2>
             <div className="flex items-center gap-2">
@@ -188,12 +181,10 @@ export default function ImpactPage() {
               <p className="stat-label mb-2">Management of Proceeds</p>
               <p className="text-sm text-text mb-1">On-chain treasury with smart contract controls</p>
               <div className="flex gap-3 mt-1">
-                <a href={`https://hashscan.io/testnet/contract/${data.bondFramework.BondContractAddress}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80">Bond Contract</a>
-                <a href={`https://hashscan.io/testnet/contract/${data.bondFramework.LCCFContractAddress}`}
-                  target="_blank" rel="noopener noreferrer"
-                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80">Payout Contract</a>
+                <AddressLink address={data.bondFramework.BondContractAddress} type="contract" label="Bond Contract"
+                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 inline-flex items-center gap-1" />
+                <AddressLink address={data.bondFramework.LCCFContractAddress} type="contract" label="Payout Contract"
+                  className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 inline-flex items-center gap-1" />
               </div>
             </div>
 

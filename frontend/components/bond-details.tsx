@@ -14,7 +14,7 @@ export function BondDetails() {
   const isPaused = paused.data ?? null;
 
   return (
-    <div className="full-bleed bg-gradient-to-b from-surface-2 to-transparent pb-8">
+    <div className="full-bleed bg-surface-2 border-y border-border pb-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between pt-2 pb-6">
           <div className="flex items-center gap-4">
@@ -26,7 +26,7 @@ export function BondDetails() {
               </svg>
             </div>
             <div>
-              <h1 className="font-display text-3xl text-text">{BOND_DETAILS.name}</h1>
+              <h2 className="font-display text-3xl text-text">{BOND_DETAILS.name}</h2>
               <p className="text-sm text-text-muted mt-0.5">{BOND_DETAILS.issuer}</p>
             </div>
           </div>

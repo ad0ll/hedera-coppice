@@ -146,6 +146,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
         <button
           onClick={handlePurchase}
           disabled={!enabled || running || !amount || (eusdBalance !== undefined && eusdBalance !== null && Number(amount) > eusdBalance)}
+          aria-busy={running}
           className="btn-primary px-6 disabled:cursor-not-allowed"
         >
           {running ? "Processing..." : "Purchase"}

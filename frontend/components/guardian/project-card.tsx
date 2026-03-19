@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { VCEvidenceRow } from "@/components/guardian/vc-evidence";
+import { TxLink } from "@/components/ui/hashscan-link";
 import type { GuardianProject, Indicator } from "@/lib/guardian-types";
 
 function downloadJson(data: Record<string, unknown>, filename: string) {
@@ -42,7 +43,7 @@ function renderIndicators(json: string, label: string) {
     const indicators: Indicator[] = JSON.parse(json);
     return (
       <div className="mt-1">
-        <span className="text-text-muted/60 text-xs">{label}: </span>
+        <span className="text-text-muted text-xs">{label}: </span>
         {indicators.map((ind, i) => (
           <span key={i} className="text-xs">
             {i > 0 && " | "}
@@ -119,45 +120,42 @@ export function ProjectCard({ project }: { project: GuardianProject }) {
           </button>
 
           {expanded && (
-            <div className="mt-3 pt-1">
+            <div className="mt-3 pt-1 animate-expand-enter">
               {project.registrationEvidence && (
                 <VCEvidenceRow label="Registration" evidence={project.registrationEvidence}>
                   {project.registration.EUTaxonomyActivityID && (
-                    <p><span className="text-text-muted/60">EU Taxonomy: </span>{project.registration.EUTaxonomyActivityID} ({project.registration.TaxonomyAlignmentStatus ?? "unknown"})</p>
+                    <p><span className="text-text-muted">EU Taxonomy: </span>{project.registration.EUTaxonomyActivityID} ({project.registration.TaxonomyAlignmentStatus ?? "unknown"})</p>
                   )}
                 </VCEvidenceRow>
               )}
               {project.allocationEvidence && project.allocation && (
                 <VCEvidenceRow label="Allocation" evidence={project.allocationEvidence}>
-                  <p><span className="text-text-muted/60">Amount: </span>{formatNumber(project.allocation.AllocatedAmountEUSD)} eUSD</p>
-                  <p><span className="text-text-muted/60">Purpose: </span>{project.allocation.Purpose}</p>
+                  <p><span className="text-text-muted">Amount: </span>{formatNumber(project.allocation.AllocatedAmountEUSD)} eUSD</p>
+                  <p><span className="text-text-muted">Purpose: </span>{project.allocation.Purpose}</p>
                   {project.allocation.HederaTransactionID && (
-                    <p><span className="text-text-muted/60">Hedera Tx: </span>
-                      <a href={`https://hashscan.io/testnet/transaction/${project.allocation.HederaTransactionID}`}
-                        target="_blank" rel="noopener noreferrer" className="font-mono text-bond-green hover:text-bond-green/80">
-                        {project.allocation.HederaTransactionID.slice(0, 30)}...
-                      </a>
+                    <p><span className="text-text-muted">Hedera Tx: </span>
+                      <TxLink hash={project.allocation.HederaTransactionID} prefixLen={30} />
                     </p>
                   )}
                 </VCEvidenceRow>
               )}
               {project.mrvEvidence && project.mrvReport && (
                 <VCEvidenceRow label="MRV Report" evidence={project.mrvEvidence}>
-                  <p><span className="text-text-muted/60">Period: </span>{project.mrvReport.ReportingPeriodStart} to {project.mrvReport.ReportingPeriodEnd}</p>
-                  <p><span className="text-text-muted/60">Methodology: </span>{project.mrvReport.Methodology}</p>
-                  <p><span className="text-text-muted/60">Standard: </span>{project.mrvReport.ReportingStandard}</p>
+                  <p><span className="text-text-muted">Period: </span>{project.mrvReport.ReportingPeriodStart} to {project.mrvReport.ReportingPeriodEnd}</p>
+                  <p><span className="text-text-muted">Methodology: </span>{project.mrvReport.Methodology}</p>
+                  <p><span className="text-text-muted">Standard: </span>{project.mrvReport.ReportingStandard}</p>
                   {renderIndicators(project.mrvReport.CoreIndicatorsJSON, "Core")}
                   {project.mrvReport.AdditionalIndicatorsJSON && renderIndicators(project.mrvReport.AdditionalIndicatorsJSON, "Additional")}
                 </VCEvidenceRow>
               )}
               {project.verificationEvidence && project.verification && (
                 <VCEvidenceRow label="Verification" evidence={project.verificationEvidence}>
-                  <p><span className="text-text-muted/60">Opinion: </span>
+                  <p><span className="text-text-muted">Opinion: </span>
                     <span className={project.verification.Opinion === "Approved" ? "text-bond-green" : "text-bond-amber"}>
                       {project.verification.Opinion}
                     </span>
                   </p>
-                  <p><span className="text-text-muted/60">Verified: </span>{formatNumber(project.verification.VerifiedGHGReduced)} tCO&#x2082;e</p>
+                  <p><span className="text-text-muted">Verified: </span>{formatNumber(project.verification.VerifiedGHGReduced)} tCO&#x2082;e</p>
                   {project.verification.VerifierNotes && (
                     <p className="italic text-text-muted/80 mt-1">&ldquo;{project.verification.VerifierNotes}&rdquo;</p>
                   )}

@@ -43,10 +43,12 @@ export function useCoupons() {
         const countNum = Number(count);
         if (countNum === 0) return [];
 
-        const coupons: CouponInfo[] = [];
-        // ATS coupon IDs are 1-indexed (getCoupon(0) reverts)
-        for (let i = 1; i <= countNum; i++) {
-          const registered = await bond.getCoupon(i);
+        // ATS coupon IDs are 1-indexed (getCoupon(0) reverts) — fetch all in parallel
+        const results = await Promise.all(
+          Array.from({ length: countNum }, (_, i) => bond.getCoupon(i + 1)),
+        );
+
+        return results.map((registered, i) => {
           const c = registered.coupon;
           const rate = Number(c.rate);
           const rateDecimals = Number(c.rateDecimals);
@@ -54,8 +56,8 @@ export function useCoupons() {
           const endDate = Number(c.endDate);
           const periodDays = Math.round((endDate - startDate) / 86400);
 
-          const info: CouponInfo = {
-            id: i,
+          return {
+            id: i + 1,
             recordDate: Number(c.recordDate),
             executionDate: Number(c.executionDate),
             startDate,
@@ -71,9 +73,7 @@ export function useCoupons() {
             }),
             periodDays,
           };
-          coupons.push(info);
-        }
-        return coupons;
+        });
       } catch (err) {
         console.error("[useCoupons] Failed to fetch coupon data:", err);
         throw err;

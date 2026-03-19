@@ -3,16 +3,19 @@
 import { useHCSAudit } from "@/hooks/use-hcs-audit";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
 import { formatTimestamp } from "@/lib/format";
-import { WarningIcon, Spinner, ExternalLinkIcon } from "@/components/ui/icons";
+import { WarningIcon, Spinner } from "@/components/ui/icons";
+import { TxLink } from "@/components/ui/hashscan-link";
 import { useState, useMemo } from "react";
 
 export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | "impact" }) {
   const { events, loading, topicMissing } = useHCSAudit(topicType);
   const [filter, setFilter] = useState<string>("ALL");
 
-  const eventTypes = useMemo(() => ["ALL", ...new Set(events.map((e) => e.type))], [events]);
-  const filtered = useMemo(() => filter === "ALL" ? events : events.filter((e) => e.type === filter), [events, filter]);
-  const sorted = useMemo(() => [...filtered].reverse(), [filtered]);
+  const { eventTypes, sorted } = useMemo(() => {
+    const types = ["ALL", ...new Set(events.map((e) => e.type))];
+    const filtered = filter === "ALL" ? events : events.filter((e) => e.type === filter);
+    return { eventTypes: types, sorted: [...filtered].reverse() };
+  }, [events, filter]);
 
   if (topicMissing) {
     return (
@@ -75,8 +78,8 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
           <p className="text-sm text-text-muted py-4 text-center">No events recorded yet.</p>
         ) : (
           <div className="space-y-1 max-h-96 overflow-y-auto">
-            {sorted.map((event) => (
-              <div key={event.sequenceNumber} className="flex items-start gap-3 py-2.5 border-b border-border/20 last:border-0 animate-feed-enter">
+            {sorted.map((event, i) => (
+              <div key={event.sequenceNumber} className={`flex items-start gap-3 py-2.5 border-b border-border/20 last:border-0${i < 10 ? " animate-feed-enter" : ""}`}>
                 <span className={`text-[11px] sm:text-xs px-2 py-0.5 rounded font-mono shrink-0 ${EVENT_BADGE_CLASSES[event.type] || "bg-surface-3 text-text-muted"}`}>
                   {event.type}
                 </span>
@@ -84,16 +87,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
                   <div className="flex items-center gap-2 text-xs text-text-muted">
                     <span>{formatTimestamp(event.consensusTimestamp || event.ts)}</span>
                     {event.tx && (
-                      <a
-                        href={`https://hashscan.io/testnet/transaction/${event.tx}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-bond-green hover:text-bond-green/80 font-mono transition-colors inline-flex items-center gap-1"
-                        title={event.tx}
-                      >
-                        {event.tx.slice(0, 10)}...
-                        <ExternalLinkIcon />
-                      </a>
+                      <TxLink hash={event.tx} prefixLen={10} />
                     )}
                   </div>
                   <div className="text-xs text-text-muted mt-0.5">

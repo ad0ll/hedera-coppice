@@ -4,10 +4,7 @@ import { useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
 import type { GuardianProject, VCEvidence } from "@/lib/guardian-types";
-
-function hashScanUrl(_topicId: string, messageId: string): string {
-  return `https://hashscan.io/testnet/transaction/${messageId}`;
-}
+import { hashScanTxUrl } from "@/components/ui/hashscan-link";
 
 function ipfsUrl(hash: string): string {
   return `/api/guardian/ipfs/${hash}`;
@@ -93,7 +90,7 @@ export function GuardianEvents() {
 
   if (isLoading) {
     return (
-      <div className="space-y-3">
+      <div role="status" aria-label="Loading verification events" className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="card-static animate-pulse h-20" />
         ))}
@@ -145,7 +142,7 @@ export function GuardianEvents() {
             <div className="flex flex-col gap-1 shrink-0">
               <a href={ipfsUrl(event.evidence.hash)} target="_blank" rel="noopener noreferrer"
                 className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">IPFS</a>
-              <a href={hashScanUrl(event.evidence.topicId, event.evidence.messageId)} target="_blank" rel="noopener noreferrer"
+              <a href={hashScanTxUrl(event.evidence.messageId)} target="_blank" rel="noopener noreferrer"
                 className="text-[11px] sm:text-xs text-bond-green hover:text-bond-green/80 transition-colors px-1.5 py-1 min-h-[44px] min-w-[44px] inline-flex items-center justify-center">HashScan</a>
             </div>
           </div>

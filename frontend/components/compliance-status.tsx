@@ -376,7 +376,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
 
   return (
     <div className="card-flush">
-      <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between transition-all duration-300 ${
+      <div className={`px-6 py-4 border-b border-border/50 flex items-center justify-between transition-colors duration-300 ${
         allDone && eligible ? "bg-bond-green/8" : allDone ? "bg-bond-red/8" : ""
       }`}>
         <h2 className="text-lg font-semibold text-text">Compliance Status</h2>
@@ -432,7 +432,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
           <div className="flex items-center gap-2 mb-4">
             <StatusBadge label="Demo" variant="amber" className="text-[11px] sm:text-xs uppercase tracking-wider" />
             <span className="text-xs text-text-muted">
-              Register an on-chain identity to experience the full purchase flow.
+              Register an on-chain identity to proceed with investment.
             </span>
           </div>
 
@@ -515,15 +515,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                   </span>
                 </div>
                 {step.txHash && (
-                  <a
-                    href={`https://hashscan.io/testnet/transaction/${step.txHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] sm:text-xs font-mono text-text-muted hover:text-bond-green transition-colors shrink-0"
-                    title={step.txHash}
-                  >
-                    {step.txHash.slice(0, 8)}...
-                  </a>
+                  <TxLink hash={step.txHash} prefixLen={8} className="text-[11px] sm:text-xs font-mono text-text-muted hover:text-bond-green transition-colors shrink-0" />
                 )}
               </div>
             ))}

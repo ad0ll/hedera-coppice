@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 import { StatusMessage } from "@/components/ui/status-message";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
+import { TxLink } from "@/components/ui/hashscan-link";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, formatNumber, getErrorMessage } from "@/lib/format";
 import { BOND_CATEGORIES } from "@/lib/event-types";
@@ -30,6 +31,7 @@ import { useCoupons } from "@/hooks/use-coupons";
 import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { entranceProps } from "@/lib/animation";
 
 export default function IssuerDashboard() {
   const queryClient = useQueryClient();
@@ -318,7 +320,7 @@ export default function IssuerDashboard() {
   return (
     <div className="space-y-6">
       {!isOwner && (
-        <div className="flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20 animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <div {...entranceProps(idx++, "flex items-start gap-2 p-3 rounded-lg bg-bond-amber/8 border border-bond-amber/20")}>
           <StatusBadge label="Demo" variant="amber" className="text-[11px] sm:text-xs uppercase tracking-wider shrink-0 mt-0.5" />
           <p className="text-xs text-text-muted">
             You have the agent role for this demo session. In production, agent roles are managed by the token owner.
@@ -326,10 +328,10 @@ export default function IssuerDashboard() {
         </div>
       )}
 
-      <h1 className="page-title animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Issuer Dashboard</h1>
+      <h1 {...entranceProps(idx++, "page-title")}>Issuer Dashboard</h1>
 
       {/* Stats Banner */}
-      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+      <div {...entranceProps(idx++)}>
         <SectionErrorBoundary section="issuer stats">
           <IssuerStats totalSupply={supply} isPaused={isPaused} holders={holders} totalAllocated={totalAllocated} />
         </SectionErrorBoundary>
@@ -337,7 +339,7 @@ export default function IssuerDashboard() {
 
       {/* SPT Status */}
       {guardianData && (
-        <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+        <div {...entranceProps(idx++)}>
           <SptStatus
             totalVerified={guardianData.totalVerifiedCO2e}
             target={guardianData.sptTarget}
@@ -348,23 +350,23 @@ export default function IssuerDashboard() {
       )}
 
       {/* Holders Table */}
-      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+      <div {...entranceProps(idx++)}>
         <SectionErrorBoundary section="token holders">
           <HoldersTable holders={holders} loading={holdersLoading} />
         </SectionErrorBoundary>
       </div>
 
       {/* Use of Proceeds */}
-      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+      <div {...entranceProps(idx++)}>
         <ProjectAllocation />
       </div>
 
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
-        <p className="stat-label animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>Operations</p>
+        <p {...entranceProps(idx++, "stat-label")}>Operations</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* Mint */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Mint Tokens</h3>
               <div className="space-y-3">
@@ -375,7 +377,7 @@ export default function IssuerDashboard() {
                 <input id="mint-amount" type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
                   placeholder="Amount (CPC)" min="0" className="input" aria-required="true" />
                 <button onClick={handleMint} disabled={loading || !mintTo || !mintAmount}
-                  className="w-full btn-primary">
+                  aria-busy={loading} className="w-full btn-primary">
                   {loading ? "Minting..." : "Mint"}
                 </button>
                 <StatusMessage status={mintOp.status} />
@@ -385,7 +387,7 @@ export default function IssuerDashboard() {
           </div>
 
           {/* Allocate Proceeds — visible to all agents */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Allocate Proceeds</h3>
               {guardianData && (
@@ -418,7 +420,7 @@ export default function IssuerDashboard() {
           </div>
 
           {/* Freeze/Unfreeze */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Freeze / Unfreeze Wallet</h3>
               <div className="space-y-3">
@@ -451,7 +453,7 @@ export default function IssuerDashboard() {
           </div>
 
           {/* Pause Control */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Token Pause Control</h3>
               <div className="flex items-center justify-between mb-4 bg-surface-3/50 rounded-lg px-4 py-3">
@@ -473,7 +475,7 @@ export default function IssuerDashboard() {
           </div>
 
           {/* Distribute Coupon */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Distribute Coupon</h3>
               <div className="space-y-3">
@@ -496,6 +498,7 @@ export default function IssuerDashboard() {
                 <button
                   onClick={handleDistribute}
                   disabled={selectedCouponId === null || selectedCoupon?.status === "upcoming" || distributing}
+                  aria-busy={distributing}
                   className="w-full btn-primary"
                 >
                   {distributing ? "Distributing..." : "Distribute"}
@@ -510,22 +513,14 @@ export default function IssuerDashboard() {
                 )}
                 <StatusMessage status={distributeOp.status} />
                 {lastDistributeTx && distributeOp.status?.type === "success" && (
-                  <a
-                    href={`https://hashscan.io/testnet/transaction/${lastDistributeTx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
-                  >
-                    View on HashScan
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
-                  </a>
+                  <TxLink hash={lastDistributeTx} label="View on HashScan" className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors" />
                 )}
               </div>
             </Card>
           </div>
 
           {/* Create Coupon */}
-          <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+          <div {...entranceProps(idx++)}>
             <Card>
               <h3 className="card-title">Create Coupon</h3>
               <div className="space-y-3">
@@ -600,6 +595,7 @@ export default function IssuerDashboard() {
                 <button
                   onClick={handleCreateCoupon}
                   disabled={!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || creatingCoupon || !!couponDateError}
+                  aria-busy={creatingCoupon}
                   className="w-full btn-primary"
                 >
                   {creatingCoupon ? "Creating..." : "Create Coupon"}
@@ -607,15 +603,7 @@ export default function IssuerDashboard() {
                 <p className="text-xs text-text-muted">Creates a new coupon period on the bond contract. Requires CORPORATE_ACTION role (executed by deployer).</p>
                 <StatusMessage status={createCouponOp.status} />
                 {lastCreateCouponTx && createCouponOp.status?.type === "success" && (
-                  <a
-                    href={`https://hashscan.io/testnet/transaction/${lastCreateCouponTx}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
-                  >
-                    View on HashScan
-                    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" /></svg>
-                  </a>
+                  <TxLink hash={lastCreateCouponTx} label="View on HashScan" className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors" />
                 )}
               </div>
             </Card>
@@ -624,7 +612,7 @@ export default function IssuerDashboard() {
       </div>
 
       {/* Activity Feed */}
-      <div className="animate-entrance" style={{ "--index": idx++ } as React.CSSProperties}>
+      <div {...entranceProps(idx++)}>
         <IssuerActivityFeed events={auditEvents} loading={auditLoading} />
       </div>
     </div>

@@ -44,7 +44,7 @@ export function ImpactSummary({ data }: ImpactSummaryProps) {
         met={data.sptMet}
         variant="compact"
       />
-      <a href="/impact" className="mt-3 inline-flex items-center text-xs text-bond-green hover:underline">
+      <a href="/impact" aria-label="View full environmental impact report" className="mt-3 inline-flex items-center text-xs text-bond-green hover:underline">
         View full impact report →
       </a>
     </div>

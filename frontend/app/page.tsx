@@ -14,6 +14,7 @@ import { FaucetButton } from "@/components/faucet-button";
 import { useGuardian } from "@/hooks/use-guardian";
 import { ImpactSummary } from "@/components/guardian/impact-summary";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
+import { entranceProps } from "@/lib/animation";
 
 export default function InvestorPortal() {
   const { address } = useConnection();
@@ -30,34 +31,34 @@ export default function InvestorPortal() {
 
   return (
     <div className="space-y-8">
-      <div className="animate-entrance" style={{ "--index": 0 }}>
+      <div {...entranceProps(0)}>
         <BondDetails />
       </div>
 
 
       {guardianData && (
-        <div className="animate-entrance" style={{ "--index": 1 }}>
+        <div {...entranceProps(1)}>
           <SectionErrorBoundary section="impact summary">
             <ImpactSummary data={guardianData} />
           </SectionErrorBoundary>
         </div>
       )}
 
-      <div className="animate-entrance" style={{ "--index": 2 }}>
+      <div {...entranceProps(2)}>
         <SectionErrorBoundary section="compliance checks">
           <ComplianceStatus onEligibilityChange={setEligible} />
         </SectionErrorBoundary>
       </div>
 
       {address && (
-        <div className="animate-entrance" style={{ "--index": 3 }}>
+        <div {...entranceProps(3)}>
           <SectionErrorBoundary section="purchase flow">
             <TransferFlow enabled={eligible} />
           </SectionErrorBoundary>
         </div>
       )}
 
-      <div className="animate-entrance" style={{ "--index": 4 }}>
+      <div {...entranceProps(4)}>
         {!address ? (
           <EmptyState
             icon={<WalletIcon className="w-6 h-6 text-text-muted" />}
