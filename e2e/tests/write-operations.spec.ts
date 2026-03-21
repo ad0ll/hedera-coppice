@@ -34,7 +34,7 @@ test.describe("Write Operations (Testnet)", () => {
     // Fill issue form
     await page.getByPlaceholder("Recipient address (0x...)").fill(ALICE_ADDR);
     await page.getByPlaceholder("Amount (CPC)").fill("10");
-    await page.getByRole("button", { name: "Issue" }).click();
+    await page.getByRole("button", { name: "Issue", exact: true }).click();
 
     // Wait for success message (transaction takes ~5-10s on Hedera testnet)
     await expect(page.getByText("Issued 10 CPC")).toBeVisible({ timeout: 30000 });

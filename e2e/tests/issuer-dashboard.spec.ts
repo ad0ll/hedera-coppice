@@ -58,7 +58,7 @@ test.describe("Issuer Dashboard", () => {
     const issueSection = page.getByRole("heading", { name: "Issue Tokens" }).locator("..");
     await expect(issueSection.getByPlaceholder("Recipient address")).toBeVisible({ timeout: 10000 });
     await expect(issueSection.getByPlaceholder("Amount (CPC)")).toBeVisible();
-    await expect(issueSection.getByRole("button", { name: "Issue" })).toBeVisible();
+    await expect(issueSection.getByRole("button", { name: "Issue", exact: true })).toBeVisible();
   });
 
   test("should display freeze/unfreeze controls", async ({ page }) => {
