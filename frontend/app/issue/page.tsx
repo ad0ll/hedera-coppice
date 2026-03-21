@@ -5,7 +5,7 @@ import { ethers } from "ethers";
 import { useConnection } from "@/contexts/ats-context";
 import { useTokenRead, useTokenWrite, useIsAgent, useIsAdmin } from "@/hooks/use-token";
 import { useHolders } from "@/hooks/use-holders";
-import { useHCSAudit } from "@/hooks/use-hcs-audit";
+import { useContractEvents } from "@/hooks/use-contract-events";
 import { IssuerStats } from "@/components/issuer-stats";
 import { HoldersTable } from "@/components/holders-table";
 import { IssuerActivityFeed } from "@/components/issuer-activity-feed";
@@ -46,8 +46,8 @@ export default function IssuerDashboard() {
   const isDeployer = address?.toLowerCase() === DEPLOYER_ADDRESS;
 
   // HCS events — used for holders table and activity feed
-  const { events: auditEvents, loading: auditLoading } = useHCSAudit("audit");
-  const { holders, loading: holdersLoading } = useHolders(auditEvents);
+  const { events: auditEvents, loading: auditLoading } = useContractEvents();
+  const { holders, loading: holdersLoading } = useHolders();
 
   const isPaused = pausedQuery.data ?? null;
   const supply = totalSupply.data;
@@ -124,6 +124,7 @@ export default function IssuerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["token", "totalSupply"] });
       queryClient.invalidateQueries({ queryKey: ["token", "balanceOf"] });
       queryClient.invalidateQueries({ queryKey: ["holders"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-events"] });
     } catch (err: unknown) {
       mintOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Mint failed") });
     }
@@ -144,6 +145,7 @@ export default function IssuerDashboard() {
       });
       queryClient.invalidateQueries({ queryKey: ["holders"] });
       queryClient.invalidateQueries({ queryKey: ["token", "isFrozen"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-events"] });
     } catch (err: unknown) {
       freezeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
@@ -161,6 +163,7 @@ export default function IssuerDashboard() {
       }
       await pausedQuery.refetch();
       queryClient.invalidateQueries({ queryKey: ["token", "paused"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-events"] });
     } catch (err: unknown) {
       pauseOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }

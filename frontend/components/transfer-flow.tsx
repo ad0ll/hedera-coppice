@@ -111,6 +111,7 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       queryClient.invalidateQueries({ queryKey: ["token", "totalSupply"] });
       queryClient.invalidateQueries({ queryKey: ["eusd-balance"] });
       queryClient.invalidateQueries({ queryKey: ["holders"] });
+      queryClient.invalidateQueries({ queryKey: ["contract-events"] });
     } catch (err: unknown) {
       const failIndex = newSteps.findIndex((s) => s.status === "active");
       if (failIndex >= 0) {

@@ -8,8 +8,8 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
 - **scripts/**: One-time Hedera setup scripts (HCS topics, HTS eUSD stablecoin).
-- **services/**: Long-running background services (event logger).
-- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via wagmi v3 + viem v2. API routes handle purchase/allocate.
+- **services/**: Long-running background services (event logger — writes to HCS, but frontend no longer reads from HCS).
+- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via ethers v6. API routes handle purchase/allocate. On-chain events read from Mirror Node contract logs (not HCS). Fund allocations submitted to Guardian API.
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
 ## Critical Constraints
@@ -19,7 +19,6 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - Deployment follows exact sequence from reference/deploy-full-suite.fixture.ts
 - Claims are signed by claimIssuerSigningKey (random wallet), added by wallet owner
 - Token starts paused after deployment — must call unpause()
-- HCS messages must be <1KB per chunk
 - Always verify contracts on HashScan after deploying
 - Only the deployer (token agent) can mint CPC tokens — purchase flow uses backend API
 
@@ -44,8 +43,8 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - IdentityRegistry: 0x03ecdB8673d65b81752AC14dAaCa797D846c1B31
 - ModularCompliance: 0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf
 - ClaimIssuer: 0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A
-- Audit HCS Topic: 0.0.8214934
-- Impact HCS Topic: 0.0.8214935
+- Audit HCS Topic: 0.0.8214934 (services event-logger writes here; frontend reads Mirror Node contract logs instead)
+- Impact HCS Topic: 0.0.8214935 (deprecated — allocations now go through Guardian API)
 - eUSD Token (HTS): 0.0.8214937
 
 ## Demo Wallets

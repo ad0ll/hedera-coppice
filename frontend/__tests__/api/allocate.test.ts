@@ -1,38 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { NextRequest } from "next/server";
 
-// Track setMessage calls for assertion
-const setMessageCalls: string[] = [];
-
-// Mock @hashgraph/sdk — use class pattern for new-able constructors (vitest v4 requirement)
-vi.mock("@hashgraph/sdk", () => {
-  class MockTopicMessageSubmitTransaction {
-    setTopicId() { return this; }
-    setMessage(msg: string) { setMessageCalls.push(msg); return this; }
-    freezeWith() { return this; }
-    sign() { return this; }
-    async execute() {
-      return { getReceipt: async () => ({ status: { toString: () => "SUCCESS" } }) };
-    }
-  }
-  return {
-    TopicMessageSubmitTransaction: MockTopicMessageSubmitTransaction,
-    TopicId: { fromString: vi.fn().mockReturnValue({}) },
-  };
-});
-
-// Mock hedera server utils
-vi.mock("@/lib/hedera", () => ({
-  getClient: vi.fn().mockReturnValue({
-    close: vi.fn(),
-  }),
-  getOperatorKey: vi.fn().mockReturnValue({}),
-}));
-
 // Mock auth — return deployer address by default
 vi.mock("@/lib/auth", () => ({
   recoverAuthAddress: vi.fn().mockReturnValue("0xEB974bA96c4912499C3B3bBD5A40617E1f6EEceE"),
 }));
+
+// Mock global fetch for Guardian API calls
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
 
 const originalEnv = { ...process.env };
 
@@ -44,7 +20,6 @@ function makeRequest(body: Record<string, unknown>): NextRequest {
   });
 }
 
-/** Valid request body with all required fields. */
 function validBody(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return {
     project: "Solar Farm Alpha",
@@ -57,14 +32,31 @@ function validBody(overrides: Record<string, unknown> = {}): Record<string, unkn
   };
 }
 
+/** Set up mock fetch to simulate successful Guardian login + allocation POST */
+function setupGuardianMocks() {
+  mockFetch.mockImplementation(async (url: string) => {
+    const urlStr = typeof url === "string" ? url : "";
+    if (urlStr.includes("/accounts/login")) {
+      return new Response(JSON.stringify({ refreshToken: "mock-refresh" }), { status: 200 });
+    }
+    if (urlStr.includes("/accounts/access-token")) {
+      return new Response(JSON.stringify({ accessToken: "mock-access" }), { status: 200 });
+    }
+    if (urlStr.includes("/tag/req_allocation_14/blocks")) {
+      return new Response(JSON.stringify({}), { status: 200 });
+    }
+    return new Response("Not found", { status: 404 });
+  });
+}
+
 describe("POST /api/issuer/allocate", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.IMPACT_TOPIC_ID = "0.0.8214935";
+    process.env.GUARDIAN_POLICY_ID = "test-policy-id";
   });
 
   afterEach(() => {
-    process.env.IMPACT_TOPIC_ID = originalEnv.IMPACT_TOPIC_ID;
+    process.env.GUARDIAN_POLICY_ID = originalEnv.GUARDIAN_POLICY_ID;
   });
 
   it("rejects missing project field", async () => {
@@ -116,44 +108,52 @@ describe("POST /api/issuer/allocate", () => {
     expect(data.error).toBe("Invalid request");
   });
 
-  it("returns 500 when IMPACT_TOPIC_ID is not configured", async () => {
-    delete process.env.IMPACT_TOPIC_ID;
+  it("returns 500 when GUARDIAN_POLICY_ID is not configured", async () => {
+    delete process.env.GUARDIAN_POLICY_ID;
     vi.resetModules();
     const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest(validBody()));
     expect(res.status).toBe(500);
     const data = await res.json();
-    expect(data.error).toMatch(/IMPACT_TOPIC_ID/);
+    expect(data.error).toMatch(/GUARDIAN_POLICY_ID/);
   });
 
-  it("rejects payload exceeding 1KB", async () => {
-    vi.resetModules();
-    const { POST } = await import("@/app/api/issuer/allocate/route");
-    const res = await POST(makeRequest(validBody({ project: "A".repeat(1500) })));
-    expect(res.status).toBe(400);
-    const data = await res.json();
-    expect(data.error).toMatch(/too large/i);
-  });
-
-  it("succeeds with valid inputs", async () => {
+  it("succeeds with valid inputs and submits to Guardian", async () => {
+    setupGuardianMocks();
     vi.resetModules();
     const { POST } = await import("@/app/api/issuer/allocate/route");
     const res = await POST(makeRequest(validBody()));
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(data.status).toBe("SUCCESS");
+    expect(data.status).toBe("GUARDIAN_SUBMITTED");
+
+    // Verify Guardian API was called with correct tag
+    const allocationCall = mockFetch.mock.calls.find(
+      (call: unknown[]) => typeof call[0] === "string" && call[0].includes("req_allocation_14"),
+    );
+    expect(allocationCall).toBeTruthy();
   });
 
-  it("defaults currency to USD when not provided", async () => {
-    setMessageCalls.length = 0;
+  it("returns 502 when Guardian allocation POST fails", async () => {
+    mockFetch.mockImplementation(async (url: string) => {
+      const urlStr = typeof url === "string" ? url : "";
+      if (urlStr.includes("/accounts/login")) {
+        return new Response(JSON.stringify({ refreshToken: "mock-refresh" }), { status: 200 });
+      }
+      if (urlStr.includes("/accounts/access-token")) {
+        return new Response(JSON.stringify({ accessToken: "mock-access" }), { status: 200 });
+      }
+      if (urlStr.includes("/tag/req_allocation_14/blocks")) {
+        return new Response("Internal server error", { status: 500 });
+      }
+      return new Response("Not found", { status: 404 });
+    });
     vi.resetModules();
     const { POST } = await import("@/app/api/issuer/allocate/route");
-    const body = validBody();
-    delete body.currency;
-    await POST(makeRequest(body));
-    expect(setMessageCalls.length).toBeGreaterThan(0);
-    const payload = JSON.parse(setMessageCalls[0]);
-    expect(payload.data.currency).toBe("USD");
+    const res = await POST(makeRequest(validBody()));
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.error).toMatch(/Guardian allocation failed/);
   });
 });

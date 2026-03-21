@@ -21,10 +21,6 @@ export const MIRROR_NODE_URL =
 export const JSON_RPC_URL =
   process.env.NEXT_PUBLIC_HEDERA_JSON_RPC || "https://testnet.hashio.io/api";
 
-export const TOPIC_IDS = {
-  audit: process.env.NEXT_PUBLIC_AUDIT_TOPIC_ID || "",
-  impact: process.env.NEXT_PUBLIC_IMPACT_TOPIC_ID || "",
-};
 
 export const EUSD_TOKEN_ID = process.env.NEXT_PUBLIC_EUSD_TOKEN_ID || "";
 

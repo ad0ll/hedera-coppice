@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { TopicMessageSubmitTransaction, TopicId } from "@hashgraph/sdk";
 import { z } from "zod";
-import { getClient, getOperatorKey } from "@/lib/hedera";
 import { getErrorMessage } from "@/lib/format";
-import { parseRequestBody, recoverAddressOrError, requireEnv } from "@/lib/api-helpers";
+import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
+import { GUARDIAN_API_URL, GUARDIAN_POLICY_ID } from "@/lib/constants";
+
+const ISSUER_USERNAME = process.env.GUARDIAN_ISSUER_USERNAME || "CpcIssuer";
+const ISSUER_PASSWORD = process.env.GUARDIAN_ISSUER_PASSWORD || "CpcIssuer2026!";
+
+const ALLOCATION_TAG = "req_allocation_14";
 
 const allocateBodySchema = z.object({
   project: z.string().nonempty(),
@@ -20,57 +24,79 @@ export const allocateResponseSchema = z.object({
 });
 export type AllocateResponse = z.infer<typeof allocateResponseSchema>;
 
+async function guardianLogin(): Promise<string> {
+  const loginRes = await fetch(`${GUARDIAN_API_URL}/api/v1/accounts/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: ISSUER_USERNAME, password: ISSUER_PASSWORD }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!loginRes.ok) throw new Error(`Guardian login failed: ${loginRes.status}`);
+  const { refreshToken } = (await loginRes.json()) as { refreshToken: string };
+
+  const tokenRes = await fetch(`${GUARDIAN_API_URL}/api/v1/accounts/access-token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refreshToken }),
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (!tokenRes.ok) throw new Error(`Guardian token exchange failed: ${tokenRes.status}`);
+  const { accessToken } = (await tokenRes.json()) as { accessToken: string };
+  return accessToken;
+}
+
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, allocateBodySchema);
   if ("error" in bodyResult) return bodyResult.error;
-  const { project, category, amount, currency, message: authMessage, signature } = bodyResult.data;
+  const { project, category, amount, message: authMessage, signature } = bodyResult.data;
 
-  // Recover wallet address from signature — any agent can allocate proceeds (frontend gates via useIsAgent)
   const authResult = recoverAddressOrError(authMessage, signature);
   if ("error" in authResult) return authResult.error;
 
-  const topicEnv = requireEnv("IMPACT_TOPIC_ID");
-  if ("error" in topicEnv) return topicEnv.error;
-  const impactTopicId = topicEnv.value;
-
-  // Check HCS message size before submitting
-  const payload = {
-    type: "PROCEEDS_ALLOCATED",
-    ts: Date.now(),
-    data: {
-      project,
-      category,
-      amount: String(amount),
-      currency,
-    },
-  };
-
-  const messageStr = JSON.stringify(payload);
-  if (Buffer.byteLength(messageStr) > 1024) {
+  if (!GUARDIAN_POLICY_ID) {
     return NextResponse.json(
-      { error: "Payload too large for HCS (>1KB). Shorten the project name or category." },
-      { status: 400 },
+      { error: "GUARDIAN_POLICY_ID not configured" },
+      { status: 500 },
     );
   }
 
-  const client = getClient();
   try {
-    const operatorKey = getOperatorKey();
+    const token = await guardianLogin();
 
-    const tx = await new TopicMessageSubmitTransaction()
-      .setTopicId(TopicId.fromString(impactTopicId))
-      .setMessage(messageStr)
-      .freezeWith(client)
-      .sign(operatorKey);
+    // FundAllocationCS document — matches the schema from scripts/guardian/demo-data.ts
+    const document = {
+      ProjectName: project,
+      SignedAmountEUSD: amount,
+      AllocatedAmountEUSD: amount,
+      ShareofFinancingPercent: 0,
+      AllocationDate: new Date().toISOString().split("T")[0],
+      Purpose: category,
+      HederaTransactionID: `manual-${Date.now()}`,
+    };
 
-    const result = await tx.execute(client);
-    const receipt = await result.getReceipt(client);
+    const res = await fetch(
+      `${GUARDIAN_API_URL}/api/v1/policies/${GUARDIAN_POLICY_ID}/tag/${ALLOCATION_TAG}/blocks`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ document, ref: null }),
+      },
+    );
 
-    return NextResponse.json({ success: true, status: receipt.status.toString() });
+    if (!res.ok) {
+      const errText = await res.text();
+      return NextResponse.json(
+        { error: `Guardian allocation failed: ${res.status} ${errText.slice(0, 200)}` },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({ success: true, status: "GUARDIAN_SUBMITTED" });
   } catch (err: unknown) {
     const message = getErrorMessage(err, 200, "Allocation failed");
     return NextResponse.json({ error: message }, { status: 500 });
-  } finally {
-    client.close();
   }
 }

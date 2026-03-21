@@ -1,14 +1,14 @@
 "use client";
 
-import { useHCSAudit } from "@/hooks/use-hcs-audit";
+import { useContractEvents } from "@/hooks/use-contract-events";
 import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
 import { formatTimestamp } from "@/lib/format";
-import { WarningIcon, Spinner } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/icons";
 import { TxLink } from "@/components/ui/hashscan-link";
 import { useState, useMemo } from "react";
 
-export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | "impact" }) {
-  const { events, loading, topicMissing } = useHCSAudit(topicType);
+export function AuditEventFeed() {
+  const { events, loading } = useContractEvents();
   const [filter, setFilter] = useState<string>("ALL");
 
   const { eventTypes, sorted } = useMemo(() => {
@@ -17,26 +17,10 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
     return { eventTypes: types, sorted: [...filtered].reverse() };
   }, [events, filter]);
 
-  if (topicMissing) {
-    return (
-      <div className="card">
-        <h2 className="card-title">
-          {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h2>
-        <div className="flex items-center gap-3 text-bond-amber text-sm" role="alert">
-          <WarningIcon className="w-5 h-5 shrink-0" />
-          Audit topic not configured — event trail unavailable.
-        </div>
-      </div>
-    );
-  }
-
   if (loading) {
     return (
       <div className="card">
-        <h2 className="card-title">
-          {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h2>
+        <h2 className="card-title">Audit Event Feed</h2>
         <div className="flex items-center gap-3 text-text-muted text-sm" role="status">
           <Spinner className="w-4 h-4" aria-hidden />
           Loading events from Hedera...
@@ -48,9 +32,7 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
   return (
     <div className="card-flush">
       <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-text">
-          {topicType === "audit" ? "Audit Event Feed" : "Impact Events"}
-        </h2>
+        <h2 className="text-lg font-semibold text-text">Audit Event Feed</h2>
         <span className="text-xs text-text-muted font-mono">{events.length} events</span>
       </div>
 

@@ -52,21 +52,6 @@ export async function getHtsTokenBalance(
   return entry ? entry.balance : 0;
 }
 
-// Exported for use in use-hcs-audit.ts and faucet-button.tsx
-export const mirrorTopicMessageSchema = z.object({
-  sequence_number: z.number(),
-  message: z.string(),
-  consensus_timestamp: z.string(),
-});
-
-export const mirrorTopicMessagesResponseSchema = z.object({
-  messages: z.array(mirrorTopicMessageSchema).optional(),
-  links: z.object({ next: z.string().nullish() }).optional(),
-});
-export type MirrorTopicMessage = z.infer<typeof mirrorTopicMessageSchema>;
-export type MirrorTopicMessagesResponse = z.infer<
-  typeof mirrorTopicMessagesResponseSchema
->;
 
 const mirrorTokenBalanceEntrySchema = z.object({
   account: z.string(),

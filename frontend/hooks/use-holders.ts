@@ -6,9 +6,6 @@ import { tokenAbi, identityRegistryAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES, CPC_TOKEN_ID } from "@/lib/constants";
 import { getReadProvider } from "@/lib/provider";
 import { getTokenHolders, getEvmAddress } from "@/lib/mirror-node";
-import type { AuditEvent } from "@/hooks/use-hcs-audit";
-
-const ZERO = ethers.ZeroAddress.toLowerCase();
 
 export interface HolderInfo {
   address: string;
@@ -17,25 +14,11 @@ export interface HolderInfo {
   verified: boolean;
 }
 
-/** Extract unique holder addresses from HCS audit MINT/TRANSFER events. */
-export function extractHolderAddresses(events: AuditEvent[]): string[] {
-  const seen = new Set<string>();
-  for (const e of events) {
-    if (e.type !== "MINT" && e.type !== "TRANSFER") continue;
-    const to = e.data.to?.toLowerCase();
-    const from = e.data.from?.toLowerCase();
-    if (to && to !== ZERO) seen.add(to);
-    if (from && from !== ZERO) seen.add(from);
-  }
-  return [...seen];
-}
-
-async function fetchHolderData(events: AuditEvent[]): Promise<HolderInfo[]> {
+async function fetchHolderData(): Promise<HolderInfo[]> {
   const provider = getReadProvider();
   const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
   const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
 
-  // Primary: Mirror Node token balances (discovers ALL holders)
   const allAddresses = new Set<string>();
   try {
     if (CPC_TOKEN_ID) {
@@ -53,13 +36,7 @@ async function fetchHolderData(events: AuditEvent[]): Promise<HolderInfo[]> {
       }
     }
   } catch {
-    // Fall through to HCS-based discovery
-  }
-
-  // Supplementary: HCS audit events
-  const hcsAddresses = extractHolderAddresses(events);
-  for (const addr of hcsAddresses) {
-    allAddresses.add(addr.toLowerCase());
+    // Mirror Node unavailable
   }
 
   const validAddresses = [...allAddresses].filter((a) => ethers.isAddress(a));
@@ -83,14 +60,13 @@ async function fetchHolderData(events: AuditEvent[]): Promise<HolderInfo[]> {
 }
 
 /**
- * Hook that discovers token holders from Mirror Node (primary)
- * and HCS audit events (supplementary), then reads on-chain data.
- * Uses React Query for cache invalidation support.
+ * Hook that discovers token holders from Mirror Node token balances API,
+ * then reads on-chain data (balance, frozen, verified).
  */
-export function useHolders(events: AuditEvent[]) {
+export function useHolders() {
   const { data: holders = [], isLoading } = useQuery({
-    queryKey: ["holders", events.length],
-    queryFn: () => fetchHolderData(events),
+    queryKey: ["holders"],
+    queryFn: () => fetchHolderData(),
     refetchInterval: 30_000,
     refetchOnWindowFocus: true,
     staleTime: 15_000,

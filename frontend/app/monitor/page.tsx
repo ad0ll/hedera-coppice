@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AuditEventFeed } from "@/components/audit-event-feed";
 import { GuardianEvents } from "@/components/guardian/guardian-events";
-import { useHCSAudit } from "@/hooks/use-hcs-audit";
+import { useContractEvents } from "@/hooks/use-contract-events";
 import { APPROVAL_EVENTS, RESTRICTION_EVENTS, COUPON_STATUS_VARIANT, COUPON_STATUS_LABEL } from "@/lib/event-types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
@@ -12,7 +12,7 @@ import { entranceProps } from "@/lib/animation";
 import { useCountUp } from "@/hooks/use-count-up";
 
 export default function ComplianceMonitor() {
-  const { events } = useHCSAudit("audit");
+  const { events } = useContractEvents();
   const { data: coupons } = useCoupons();
   const [tab, setTab] = useState<"onchain" | "guardian">("onchain");
 
@@ -118,7 +118,7 @@ export default function ComplianceMonitor() {
         <div key={tab} className="animate-tab-enter">
           <SectionErrorBoundary section="event feed">
             {tab === "onchain" ? (
-              <AuditEventFeed topicType="audit" />
+              <AuditEventFeed />
             ) : (
               <GuardianEvents />
             )}

@@ -18,9 +18,9 @@ test.describe("Compliance Monitor", () => {
     await expect(page.getByText("Audit Event Feed")).toBeVisible({ timeout: 10000 });
   });
 
-  test("should load events from HCS", async ({ page }) => {
+  test("should load on-chain events", async ({ page }) => {
     await page.goto("/monitor");
-    // Wait for events to load from Mirror Node (may take a few seconds)
+    // Wait for events to load from Mirror Node contract logs (may take a few seconds)
     // Either we see events or "No events recorded yet"
     await page.waitForTimeout(6000);
 

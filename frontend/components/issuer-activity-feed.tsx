@@ -5,7 +5,7 @@ import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
 import { formatTimestamp } from "@/lib/format";
 import { Spinner } from "@/components/ui/icons";
 import { AddressLink, TxLink } from "@/components/ui/hashscan-link";
-import type { AuditEvent } from "@/hooks/use-hcs-audit";
+import type { AuditEvent } from "@/hooks/use-contract-events";
 
 function eventSummary(event: AuditEvent): React.ReactNode {
   const d = event.data;
