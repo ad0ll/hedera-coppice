@@ -1,4 +1,8 @@
 node_modules
+.turbo
+.git
+.next
+.playwright-mcp
 contracts/artifacts
 contracts/cache
 contracts/typechain-types
@@ -7,4 +11,5 @@ scripts
 e2e
 reference
 docs
-.git
+test-results
+*.png
