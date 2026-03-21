@@ -15,10 +15,10 @@ function MetricsSkeleton() {
   return (
     <div role="status" aria-label="Loading impact data" className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8 py-6">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="animate-pulse">
-          <div className="h-3 w-20 bg-surface-3 rounded mb-2" />
-          <div className="h-8 w-24 bg-surface-3 rounded mb-1" />
-          <div className="h-3 w-12 bg-surface-3 rounded" />
+        <div key={i}>
+          <div className="h-3 w-20 skeleton-shimmer rounded mb-2" />
+          <div className="h-8 w-24 skeleton-shimmer rounded mb-1" />
+          <div className="h-3 w-12 skeleton-shimmer rounded" />
         </div>
       ))}
     </div>
@@ -118,15 +118,21 @@ export default function ImpactPage() {
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="card-static animate-pulse h-32" />
+              <div key={i} className="card-static h-32">
+                <div className="h-4 w-32 skeleton-shimmer rounded mb-3" />
+                <div className="h-3 w-24 skeleton-shimmer rounded mb-2" />
+                <div className="h-3 w-40 skeleton-shimmer rounded" />
+              </div>
             ))}
           </div>
         ) : data && data.projects.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[...data.projects]
               .sort((a, b) => a.registration.ProjectName.localeCompare(b.registration.ProjectName))
-              .map((p) => (
-                <ProjectCard key={p.registration.ProjectName} project={p} />
+              .map((p, idx) => (
+                <div key={p.registration.ProjectName} {...entranceProps(idx + 4)}>
+                  <ProjectCard project={p} />
+                </div>
               ))}
           </div>
         ) : (
@@ -200,7 +206,7 @@ export default function ImpactPage() {
                   EU Taxonomy alignment: {data.bondFramework.EUTaxonomyAlignmentPercent}%
                   {" "}
                   <a
-                    href="https://www.icmagroup.org/green-social-and-sustainability-bonds/green-bond-principles-gbp/"
+                    href="https://www.icmagroup.org/sustainable-finance/the-principles-guidelines-and-handbooks/green-bond-principles-gbp/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-bond-green hover:text-bond-green/80 transition-colors"

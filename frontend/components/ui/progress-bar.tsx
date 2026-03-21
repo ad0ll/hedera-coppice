@@ -27,7 +27,7 @@ export function ProgressBar({
       className={`w-full ${height} bg-surface-3 rounded-full overflow-hidden`}
     >
       <div
-        className={`h-full rounded-full transition-[width] duration-700 ${barColor}`}
+        className={`h-full rounded-full transition-[width] duration-700 animate-progress-grow ${barColor}`}
         style={{ width: `${percent}%` }}
       />
     </div>

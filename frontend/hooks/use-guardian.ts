@@ -11,7 +11,8 @@ export function useGuardian() {
       }
       return res.json() as Promise<GuardianData>;
     },
-    staleTime: 60_000,
-    refetchInterval: 120_000,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }

@@ -18,7 +18,7 @@ export function BondDetails() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between pt-2 pb-6">
           <div className="flex items-center gap-4">
-            <div className="w-11 h-11 rounded-lg bg-bond-green/15 flex items-center justify-center">
+            <div className="w-11 h-11 rounded-lg bg-bond-green/15 flex items-center justify-center animate-badge-enter">
               <svg aria-hidden="true" viewBox="0 0 24 24" className="w-5 h-5 text-bond-green" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
@@ -31,7 +31,7 @@ export function BondDetails() {
             </div>
           </div>
           {isPaused !== null && (
-            <StatusBadge label={isPaused ? "Paused" : "Active"} variant={isPaused ? "red" : "green"} />
+            <StatusBadge label={isPaused ? "Trading Paused" : "Trading Active"} variant={isPaused ? "red" : "green"} />
           )}
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">

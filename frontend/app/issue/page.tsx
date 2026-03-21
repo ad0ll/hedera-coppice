@@ -121,6 +121,9 @@ export default function IssuerDashboard() {
       mintOp.setStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${abbreviateAddress(mintTo, 10, 0)}` });
       setMintTo("");
       setMintAmount("");
+      queryClient.invalidateQueries({ queryKey: ["token", "totalSupply"] });
+      queryClient.invalidateQueries({ queryKey: ["token", "balanceOf"] });
+      queryClient.invalidateQueries({ queryKey: ["holders"] });
     } catch (err: unknown) {
       mintOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Mint failed") });
     }
@@ -139,6 +142,8 @@ export default function IssuerDashboard() {
         type: "success",
         msg: `${action === "freeze" ? "Froze" : "Unfroze"} ${abbreviateAddress(freezeAddr, 10, 0)}`,
       });
+      queryClient.invalidateQueries({ queryKey: ["holders"] });
+      queryClient.invalidateQueries({ queryKey: ["token", "isFrozen"] });
     } catch (err: unknown) {
       freezeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
@@ -155,6 +160,7 @@ export default function IssuerDashboard() {
         pauseOp.setStatus({ type: "success", msg: "Token paused" });
       }
       await pausedQuery.refetch();
+      queryClient.invalidateQueries({ queryKey: ["token", "paused"] });
     } catch (err: unknown) {
       pauseOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
@@ -181,6 +187,7 @@ export default function IssuerDashboard() {
       proceedsOp.setStatus({ type: "success", msg: `Allocated $${formatNumber(Number(proceedsAmount))} to ${project}` });
       setProject("");
       setProceedsAmount("");
+      queryClient.invalidateQueries({ queryKey: ["guardian-data"] });
     } catch (err: unknown) {
       proceedsOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Failed") });
     }
@@ -240,6 +247,8 @@ export default function IssuerDashboard() {
       });
       setLastDistributeTx(result.txHash);
       distributeOp.setStatus({ type: "success", msg: `Coupon #${selectedCouponId} distributed successfully.` });
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
+      queryClient.invalidateQueries({ queryKey: ["eusd-balance"] });
     } catch (err: unknown) {
       distributeOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Distribution failed") });
     } finally {

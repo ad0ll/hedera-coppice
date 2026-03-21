@@ -35,30 +35,7 @@ export default function InvestorPortal() {
         <BondDetails />
       </div>
 
-
-      {guardianData && (
-        <div {...entranceProps(1)}>
-          <SectionErrorBoundary section="impact summary">
-            <ImpactSummary data={guardianData} />
-          </SectionErrorBoundary>
-        </div>
-      )}
-
-      <div {...entranceProps(2)}>
-        <SectionErrorBoundary section="compliance checks">
-          <ComplianceStatus onEligibilityChange={setEligible} />
-        </SectionErrorBoundary>
-      </div>
-
-      {address && (
-        <div {...entranceProps(3)}>
-          <SectionErrorBoundary section="purchase flow">
-            <TransferFlow enabled={eligible} />
-          </SectionErrorBoundary>
-        </div>
-      )}
-
-      <div {...entranceProps(4)}>
+      <div {...entranceProps(1)}>
         {!address ? (
           <EmptyState
             icon={<WalletIcon className="w-6 h-6 text-text-muted" />}
@@ -83,6 +60,28 @@ export default function InvestorPortal() {
           </div>
         )}
       </div>
+
+      <div {...entranceProps(2)}>
+        <SectionErrorBoundary section="compliance checks">
+          <ComplianceStatus onEligibilityChange={setEligible} />
+        </SectionErrorBoundary>
+      </div>
+
+      {address && (
+        <div {...entranceProps(3)}>
+          <SectionErrorBoundary section="purchase flow">
+            <TransferFlow enabled={eligible} />
+          </SectionErrorBoundary>
+        </div>
+      )}
+
+      {guardianData && (
+        <div {...entranceProps(4)}>
+          <SectionErrorBoundary section="impact summary">
+            <ImpactSummary data={guardianData} />
+          </SectionErrorBoundary>
+        </div>
+      )}
     </div>
   );
 }

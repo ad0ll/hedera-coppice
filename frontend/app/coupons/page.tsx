@@ -221,7 +221,7 @@ export default function CouponsPage() {
                     <p className="font-mono text-sm text-text flex items-center gap-1.5">
                       {coupon.snapshotId > 0 ? (
                         <>
-                          <span className="w-2 h-2 rounded-full bg-bond-green" aria-hidden="true" />
+                          <span className="w-2 h-2 rounded-full bg-bond-green animate-pulse-dot" aria-hidden="true" />
                           Captured
                         </>
                       ) : (

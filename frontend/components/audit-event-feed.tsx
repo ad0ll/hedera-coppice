@@ -61,10 +61,10 @@ export function AuditEventFeed({ topicType = "audit" }: { topicType?: "audit" | 
               key={type}
               onClick={() => setFilter(type)}
               aria-pressed={filter === type}
-              className={`text-xs px-3 py-2 min-h-[44px] min-w-[44px] rounded-md transition-colors ${
+              className={`text-xs px-3 py-2 min-h-[44px] min-w-[44px] rounded-md transition-all duration-200 ${
                 filter === type
-                  ? "bg-surface-3 text-text border border-border/50"
-                  : "text-text-muted hover:text-text hover:bg-surface-3/50"
+                  ? "bg-surface-3 text-text border border-border/50 shadow-sm"
+                  : "text-text-muted hover:text-text hover:bg-surface-3/50 border border-transparent"
               }`}
             >
               {type}
