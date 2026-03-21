@@ -24,7 +24,7 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
         <div className="py-5 sm:py-6 sm:pr-6">
           <p className="stat-label mb-1">Total Supply</p>
           <p className="font-display text-3xl text-text">{supplyDisplay}</p>
-          <p className="text-xs text-text-muted mt-1">CPC minted</p>
+          <p className="text-xs text-text-muted mt-1">CPC issued</p>
         </div>
         <div className="py-5 sm:py-6 sm:px-6">
           <p className="stat-label mb-1">Holders</p>

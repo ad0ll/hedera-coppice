@@ -34,7 +34,7 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
 
       {holders.length === 0 ? (
         <div className="px-6 py-8 text-center text-sm text-text-muted">
-          No holders yet. Mint tokens to add the first holder.
+          No holders yet. Issue tokens to add the first holder.
         </div>
       ) : (
         <div className="overflow-x-auto">

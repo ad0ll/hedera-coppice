@@ -20,7 +20,7 @@ test.describe("Write Operations (Testnet)", () => {
     await ensureTokenUnpaused(TOKEN, DEPLOYER_KEY);
   });
 
-  test("should mint tokens to Alice via Issuer Dashboard", async ({ page }) => {
+  test("should issue tokens to Alice via Issuer Dashboard", async ({ page }) => {
     // Get Alice's balance before
     const balanceBefore = await getTokenBalance(TOKEN, ALICE_ADDR);
     const balanceBeforeNum = parseFloat(balanceBefore);
@@ -31,13 +31,13 @@ test.describe("Write Operations (Testnet)", () => {
     await page.getByRole("button", { name: "Connect Wallet" }).click();
     await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 10000 });
 
-    // Fill mint form
+    // Fill issue form
     await page.getByPlaceholder("Recipient address (0x...)").fill(ALICE_ADDR);
     await page.getByPlaceholder("Amount (CPC)").fill("10");
-    await page.getByRole("button", { name: "Mint" }).click();
+    await page.getByRole("button", { name: "Issue" }).click();
 
     // Wait for success message (transaction takes ~5-10s on Hedera testnet)
-    await expect(page.getByText("Minted 10 CPC")).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText("Issued 10 CPC")).toBeVisible({ timeout: 30000 });
 
     // Verify on-chain: Alice's balance increased by 10
     // Wait a bit for the testnet to finalize
@@ -106,8 +106,8 @@ test.describe("Write Operations (Testnet)", () => {
     await expect(page.getByText("Bond tokens issued")).toBeVisible({ timeout: 45000 });
   });
 
-  test("should load and filter HCS audit events", async ({ page }) => {
-    // The compliance monitor should display real HCS events and support filtering
+  test("should load and filter on-chain audit events", async ({ page }) => {
+    // The compliance monitor should display on-chain events and support filtering
     await page.goto("/monitor");
 
     // Wait for events to load from mirror node — must be non-zero.
@@ -122,12 +122,12 @@ test.describe("Write Operations (Testnet)", () => {
 
     // Verify filter buttons appear for event types
     await expect(page.getByRole("button", { name: "ALL", exact: true })).toBeVisible();
-    await expect(page.getByRole("button", { name: "MINT", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "ISSUANCE", exact: true })).toBeVisible();
 
     // Click a filter and verify the list updates
-    await page.getByRole("button", { name: "MINT", exact: true }).click();
-    // All visible event badges should be MINT
-    const badges = page.locator('span:has-text("MINT")');
+    await page.getByRole("button", { name: "ISSUANCE", exact: true }).click();
+    // All visible event badges should be ISSUANCE
+    const badges = page.locator('span:has-text("ISSUANCE")');
     await expect(badges.first()).toBeVisible();
 
     // Click ALL to reset

@@ -10,8 +10,8 @@ import type { AuditEvent } from "@/hooks/use-contract-events";
 function eventSummary(event: AuditEvent): React.ReactNode {
   const d = event.data;
   switch (event.type) {
-    case "MINT":
-      return <>Minted {d.amount ?? "?"} CPC to <AddressLink address={d.to ?? ""} /></>;
+    case "ISSUANCE":
+      return <>Issued {d.amount ?? "?"} CPC to <AddressLink address={d.to ?? ""} /></>;
     case "TRANSFER":
       return <><AddressLink address={d.from ?? ""} /> sent {d.amount ?? "?"} CPC to <AddressLink address={d.to ?? ""} /></>;
     case "TOKEN_PAUSED":

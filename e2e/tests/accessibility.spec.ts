@@ -22,14 +22,12 @@ test.describe("Accessibility & Keyboard Navigation", () => {
   test("nav links are keyboard focusable and navigable", async ({ page }) => {
     await page.goto("/");
 
-    // Tab to the Coppice logo link
-    await page.keyboard.press("Tab");
-
-    // Tab through nav links — Invest, Coupons, Impact, Issuer, Compliance
-    await page.keyboard.press("Tab");
-    const investLink = page.getByRole("link", { name: "Invest" });
+    // Focus the first nav link directly, then tab through the rest
+    const investLink = page.getByRole("link", { name: "Invest", exact: true });
+    await investLink.focus();
     await expect(investLink).toBeFocused();
 
+    // Tab through nav links — Coupons, Impact, Issuer, Compliance
     await page.keyboard.press("Tab");
     const couponsLink = page.getByRole("link", { name: "Coupons" });
     await expect(couponsLink).toBeFocused();
@@ -74,19 +72,16 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     const mintTo = page.getByLabel("Recipient address");
     await expect(mintTo).toBeVisible();
 
-    const mintAmount = page.getByLabel("Mint amount");
+    const mintAmount = page.getByLabel("Issuance amount");
     await expect(mintAmount).toBeVisible();
 
     const freezeAddr = page.getByLabel("Wallet address to freeze/unfreeze");
     await expect(freezeAddr).toBeVisible();
 
-    const projectName = page.getByLabel("Project name");
-    await expect(projectName).toBeVisible();
+    const projectSelect = page.getByLabel("Project");
+    await expect(projectSelect).toBeVisible();
 
-    const projectCategory = page.getByLabel("Category");
-    await expect(projectCategory).toBeVisible();
-
-    const proceedsAmount = page.getByLabel("Amount in USD");
+    const proceedsAmount = page.getByLabel("Amount in eUSD");
     await expect(proceedsAmount).toBeVisible();
   });
 

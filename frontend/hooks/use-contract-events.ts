@@ -61,10 +61,10 @@ export function parseContractLog(log: MirrorContractLog): AuditEvent | null {
       const from = topicToAddress(log.topics[1] ?? "");
       const to = topicToAddress(log.topics[2] ?? "");
       const value = log.data !== "0x" ? BigInt(log.data) : BigInt(0);
-      const isMint = from.toLowerCase() === ZERO_ADDR;
+      const isIssuance = from.toLowerCase() === ZERO_ADDR;
       return {
         ...base,
-        type: isMint ? "MINT" : "TRANSFER",
+        type: isIssuance ? "ISSUANCE" : "TRANSFER",
         ts: Math.floor(parseFloat(log.timestamp) * 1000),
         data: { from, to, amount: formatEther(value) },
       };

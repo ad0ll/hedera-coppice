@@ -19,7 +19,6 @@ import { ShieldCheckIcon, WarningIcon } from "@/components/ui/icons";
 import { TxLink } from "@/components/ui/hashscan-link";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, formatNumber, getErrorMessage } from "@/lib/format";
-import { BOND_CATEGORIES } from "@/lib/event-types";
 import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
@@ -63,7 +62,6 @@ export default function IssuerDashboard() {
   const pauseOp = useOperationStatus();
 
   const [project, setProject] = useState("");
-  const [category, setCategory] = useState("Renewable Energy");
   const [proceedsAmount, setProceedsAmount] = useState("");
   const proceedsOp = useOperationStatus();
 
@@ -118,7 +116,7 @@ export default function IssuerDashboard() {
     mintOp.clear();
     try {
       await mint(mintTo, ethers.parseEther(mintAmount));
-      mintOp.setStatus({ type: "success", msg: `Minted ${mintAmount} CPC to ${abbreviateAddress(mintTo, 10, 0)}` });
+      mintOp.setStatus({ type: "success", msg: `Issued ${mintAmount} CPC to ${abbreviateAddress(mintTo, 10, 0)}` });
       setMintTo("");
       setMintAmount("");
       queryClient.invalidateQueries({ queryKey: ["token", "totalSupply"] });
@@ -126,7 +124,7 @@ export default function IssuerDashboard() {
       queryClient.invalidateQueries({ queryKey: ["holders"] });
       queryClient.invalidateQueries({ queryKey: ["contract-events"] });
     } catch (err: unknown) {
-      mintOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Mint failed") });
+      mintOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Issuance failed") });
     }
   }
 
@@ -171,6 +169,8 @@ export default function IssuerDashboard() {
 
   async function handleAllocateProceeds() {
     if (!project || !proceedsAmount || !address) return;
+    const selectedProject = guardianData?.projects.find((p) => p.registration.ProjectName === project);
+    const category = selectedProject?.registration.ICMACategory ?? "Renewable Energy";
     proceedsOp.clear();
     try {
       const { message: authMessage, signature } = await signAuthMessage(address, "Allocate Proceeds");
@@ -380,20 +380,20 @@ export default function IssuerDashboard() {
           {/* Mint */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Mint Tokens</h3>
+              <h3 className="card-title">Issue Tokens</h3>
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="mint-to">Recipient address</label>
                 <input id="mint-to" type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
                   placeholder="Recipient address (0x...)" className="input" aria-required="true" />
-                <label className="sr-only" htmlFor="mint-amount">Mint amount</label>
+                <label className="sr-only" htmlFor="mint-amount">Issuance amount</label>
                 <input id="mint-amount" type="number" value={mintAmount} onChange={(e) => setMintAmount(e.target.value)}
                   placeholder="Amount (CPC)" min="0" className="input" aria-required="true" />
                 <button onClick={handleMint} disabled={loading || !mintTo || !mintAmount}
                   aria-busy={loading} className="w-full btn-primary">
-                  {loading ? "Minting..." : "Mint"}
+                  {loading ? "Issuing..." : "Issue"}
                 </button>
                 <StatusMessage status={mintOp.status} />
-                <p className="text-xs text-text-muted">Creates new CPC tokens (issuer operation). Investors purchase CPC with eUSD on the Invest page.</p>
+                <p className="text-xs text-text-muted">Issues new CPC bond tokens to a recipient (issuer operation). Investors purchase CPC with eUSD on the Invest page.</p>
               </div>
             </Card>
           </div>
@@ -409,23 +409,35 @@ export default function IssuerDashboard() {
                 </p>
               )}
               <div className="space-y-3">
-                <label className="sr-only" htmlFor="project-name">Project name</label>
-                <input id="project-name" type="text" value={project} onChange={(e) => setProject(e.target.value)}
-                  placeholder="Project name" className="input" aria-required="true" />
-                <label className="sr-only" htmlFor="project-category">Category</label>
-                <select id="project-category" value={category} onChange={(e) => setCategory(e.target.value)} className="input">
-                  {BOND_CATEGORIES.map((cat) => <option key={cat}>{cat}</option>)}
+                <label className="sr-only" htmlFor="project-name">Project</label>
+                <select
+                  id="project-name"
+                  value={project}
+                  onChange={(e) => setProject(e.target.value)}
+                  className="input"
+                  aria-required="true"
+                >
+                  <option value="">Select a project...</option>
+                  {(guardianData?.projects ?? []).map((p) => {
+                    const existing = p.allocation?.AllocatedAmountEUSD ?? 0;
+                    return (
+                      <option key={p.registration.ProjectName} value={p.registration.ProjectName}>
+                        {p.registration.ProjectName} — {p.registration.ICMACategory}
+                        {existing > 0 ? ` (${formatNumber(existing)} eUSD allocated)` : ""}
+                      </option>
+                    );
+                  })}
                 </select>
-                <label className="sr-only" htmlFor="proceeds-amount">Amount in USD</label>
+                <label className="sr-only" htmlFor="proceeds-amount">Amount in eUSD</label>
                 <input id="proceeds-amount" type="number" value={proceedsAmount} onChange={(e) => setProceedsAmount(e.target.value)}
-                  placeholder="Amount (USD)" min="0" className="input" aria-required="true" />
+                  placeholder="Amount (eUSD)" min="0" className="input" aria-required="true" />
                 <button onClick={handleAllocateProceeds} disabled={!project || !proceedsAmount}
                   className="w-full btn-outline-amber">
                   Record Allocation
                 </button>
-                {!isDeployer && (
-                  <p className="text-xs text-text-muted">Available to all agents — records fund allocation to HCS audit trail.</p>
-                )}
+                <p className="text-xs text-text-muted">
+                  Submits allocation to Guardian as a Verifiable Credential. Projects must be registered in Guardian before allocating.
+                </p>
                 <StatusMessage status={proceedsOp.status} />
               </div>
             </Card>

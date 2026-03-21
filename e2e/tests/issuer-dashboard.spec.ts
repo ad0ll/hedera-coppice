@@ -18,7 +18,7 @@ test.describe("Issuer Dashboard", () => {
     await expect(page.getByRole("button", { name: "Grant Agent Role" })).toBeVisible();
     await expect(page.getByText("Demo only")).toBeVisible();
     // Should NOT show issuer controls
-    await expect(page.getByText("Mint Tokens")).not.toBeVisible();
+    await expect(page.getByRole("heading", { name: "Issue Tokens" })).not.toBeVisible();
   });
 
   test("should show full dashboard with stats and holders when connected as deployer", async ({ page }) => {
@@ -39,8 +39,8 @@ test.describe("Issuer Dashboard", () => {
     await expect(page.getByText("Token Holders")).toBeVisible();
 
     // Operation cards
-    await expect(page.getByText("Mint Tokens")).toBeVisible();
-    await expect(page.getByText("Allocate Proceeds")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Issue Tokens" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Allocate Proceeds" })).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
     await expect(page.getByText("Token Pause Control")).toBeVisible();
     await expect(page.getByText("Distribute Coupon")).toBeVisible();
@@ -49,16 +49,16 @@ test.describe("Issuer Dashboard", () => {
     await expect(page.getByText("Recent Activity")).toBeVisible();
   });
 
-  test("should display mint form with inputs", async ({ page }) => {
+  test("should display issue form with inputs", async ({ page }) => {
     await injectWalletMock(page, DEPLOYER_KEY);
     await page.goto("/issue");
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    const mintSection = page.getByText("Mint Tokens").locator("..");
-    await expect(mintSection.getByPlaceholder("Recipient address")).toBeVisible({ timeout: 10000 });
-    await expect(mintSection.getByPlaceholder("Amount (CPC)")).toBeVisible();
-    await expect(mintSection.getByRole("button", { name: "Mint" })).toBeVisible();
+    const issueSection = page.getByRole("heading", { name: "Issue Tokens" }).locator("..");
+    await expect(issueSection.getByPlaceholder("Recipient address")).toBeVisible({ timeout: 10000 });
+    await expect(issueSection.getByPlaceholder("Amount (CPC)")).toBeVisible();
+    await expect(issueSection.getByRole("button", { name: "Issue" })).toBeVisible();
   });
 
   test("should display freeze/unfreeze controls", async ({ page }) => {
@@ -88,7 +88,7 @@ test.describe("Issuer Dashboard", () => {
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    await expect(page.getByPlaceholder("Project name")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Project")).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Record Allocation" })).toBeVisible();
   });
 
@@ -108,25 +108,25 @@ test.describe("Issuer Dashboard", () => {
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    // Wait for the role check to complete — either "Become an Issuer" or "Mint Tokens" appears.
-    // "Mint Tokens" is a stable indicator that the full dashboard loaded (never appears transiently).
+    // Wait for the role check to complete — either "Become an Issuer" or "Issue Tokens" appears.
+    // "Issue Tokens" is a stable indicator that the full dashboard loaded (never appears transiently).
     const promoteButton = page.getByRole("button", { name: "Grant Agent Role" });
-    const mintHeading = page.getByText("Mint Tokens");
+    const issueHeading = page.getByRole("heading", { name: "Issue Tokens" });
 
-    await expect(promoteButton.or(mintHeading)).toBeVisible({ timeout: 30000 });
+    await expect(promoteButton.or(issueHeading)).toBeVisible({ timeout: 30000 });
 
     if (await promoteButton.isVisible()) {
       // Bob is not yet an agent — trigger the self-promotion flow
       await promoteButton.click();
 
       // Wait for the full dashboard to appear after promotion
-      await expect(mintHeading).toBeVisible({ timeout: 60000 });
+      await expect(issueHeading).toBeVisible({ timeout: 60000 });
     }
 
     // Bob should see the demo banner (not the owner)
     await expect(page.getByText("You have the agent role for this demo session")).toBeVisible({ timeout: 10000 });
     // Bob should now see ALL operation cards
-    await expect(page.getByText("Mint Tokens")).toBeVisible();
+    await expect(issueHeading).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
     await expect(page.getByText("Allocate Proceeds")).toBeVisible();
   });

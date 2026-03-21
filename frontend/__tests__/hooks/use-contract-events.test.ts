@@ -15,7 +15,7 @@ const FROZEN_TOPIC =
 const ZERO_ADDR_TOPIC = "0x" + "0".repeat(64);
 
 describe("parseContractLog", () => {
-  it("parses a Transfer (mint) log", () => {
+  it("parses a Transfer from zero address as ISSUANCE", () => {
     const log = {
       address: "0xcfbb4b74edbeb4fe33cd050d7a1203d1486047d9",
       data: "0x00000000000000000000000000000000000000000000152d02c7e14af6800000",
@@ -31,13 +31,13 @@ describe("parseContractLog", () => {
     };
     const event = parseContractLog(log);
     expect(event).not.toBeNull();
-    expect(event!.type).toBe("MINT");
+    expect(event!.type).toBe("ISSUANCE");
     expect(event!.data.to).toMatch(/0xeb974ba/i);
     expect(event!.data.amount).toBe("100000.0");
     expect(event!.consensusTimestamp).toBe("1773714572.217023287");
   });
 
-  it("parses a Transfer (non-mint) log", () => {
+  it("parses a Transfer (non-issuance) log", () => {
     const log = {
       address: "0xcfbb4b74edbeb4fe33cd050d7a1203d1486047d9",
       data: "0x00000000000000000000000000000000000000000000003635c9adc5dea00000",

@@ -1,7 +1,7 @@
-/** Canonical HCS audit/impact event type identifiers. */
+/** Canonical audit event type identifiers. */
 export const EVENT_TYPES = {
   TRANSFER: "TRANSFER",
-  MINT: "MINT",
+  ISSUANCE: "ISSUANCE",
   TOKEN_PAUSED: "TOKEN_PAUSED",
   TOKEN_UNPAUSED: "TOKEN_UNPAUSED",
   WALLET_FROZEN: "WALLET_FROZEN",
@@ -16,7 +16,7 @@ export type EventType = (typeof EVENT_TYPES)[keyof typeof EVENT_TYPES];
 /** Event types that represent approvals / positive actions. */
 export const APPROVAL_EVENTS: ReadonlySet<string> = new Set([
   EVENT_TYPES.TRANSFER,
-  EVENT_TYPES.MINT,
+  EVENT_TYPES.ISSUANCE,
   EVENT_TYPES.TOKEN_UNPAUSED,
   EVENT_TYPES.WALLET_UNFROZEN,
   EVENT_TYPES.COUPON_CREATED,
@@ -32,7 +32,7 @@ export const RESTRICTION_EVENTS: ReadonlySet<string> = new Set([
 /** Badge color classes keyed by event type. */
 export const EVENT_BADGE_CLASSES: Record<string, string> = {
   [EVENT_TYPES.TRANSFER]: "bg-bond-green/15 text-bond-green",
-  [EVENT_TYPES.MINT]: "bg-bond-green/15 text-bond-green",
+  [EVENT_TYPES.ISSUANCE]: "bg-bond-green/15 text-bond-green",
   [EVENT_TYPES.TOKEN_PAUSED]: "bg-bond-red/15 text-bond-red",
   [EVENT_TYPES.TOKEN_UNPAUSED]: "bg-bond-green/15 text-bond-green",
   [EVENT_TYPES.WALLET_FROZEN]: "bg-bond-red/15 text-bond-red",
@@ -41,17 +41,6 @@ export const EVENT_BADGE_CLASSES: Record<string, string> = {
   [EVENT_TYPES.COUPON_CREATED]: "bg-bond-teal/15 text-bond-teal",
   [EVENT_TYPES.COUPON_DISTRIBUTED]: "bg-bond-green/15 text-bond-green",
 };
-
-/** Bond proceeds allocation categories with their display colors. */
-export const BOND_CATEGORIES = [
-  "Renewable Energy",
-  "Energy Efficiency",
-  "Clean Transportation",
-  "Sustainable Water",
-  "Green Buildings",
-] as const;
-
-export type BondCategory = (typeof BOND_CATEGORIES)[number];
 
 /** Coupon status → badge variant mapping. */
 export const COUPON_STATUS_VARIANT: Record<string, "green" | "amber"> = {
