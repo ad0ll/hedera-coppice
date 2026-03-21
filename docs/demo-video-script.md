@@ -1,6 +1,7 @@
 # Coppice Demo Video Script
 
-Coppice is a Green Bond system th
+Coppice is a platform for investors to buy Green Bond RWAs on Hedera.
+
 Green bonds are a 3 trillion dollar industry, but all currently implementations focus purely on the financials.
 Green Bonds served through Coppice are a compliant financial instrument, but the key 
 If you want to make sure that the green bonds you are buying are genuinely being invested into positive environment impacts, Coppice is your platform.
@@ -11,9 +12,47 @@ Coppice integrates with two core Hedera services"
 2. Guardian -> A system for tracking MRV (oversimplified explanation)
 3. HCS (what does this stand for) -> Enablees creating a full audit trail for the whole lifecycle of a bond + tracking projects the fund has invested in
 
-Coppice's sits in front of an ATS + Guardian based backend with its own green bond specific frontend, and has it's own contract and HCS chain for tracking where funds have been allocated
+Coppice sits in front of an ATS + Guardian based backend with its own green bond specific frontend, and has it's own contract and HCS chain for tracking where funds have been allocated
 
 The problem with trad-fi Green Bonds:
+- Younger generations are the most impassioned about climate change, but are also lukewarm on bonds
+- Poor vetting of projects, poor verification of environmental impacts
+- Limited to no transparency on backend operations
+- Greenwashing concerns
+- Different regulations per country + seen as political in certain jurisdictions (US)
+
+How Coppice solves this:
+- Attracts investments at a Greenium by targetting investor base 25-40 range:
+   - RWAs are more exciting than trad-fi bonds
+   - Transparency alleviates greenwashing concerns
+- Able to get fast initial traction by leveraging
+- Aspects of administration can be delegated to Hedera's frameworks:
+   - Leverages existing regulator compliance framework on ATS to free up decision makers to focus on identifying high impact projects
+   - Transparency provided by custom HCS audit trail that tracks projects, VCs in in Guardian, and the public state of the Blockchain
+
+
+Why Hedera makes sense for Coppice:
+ATS handles the regulatory complexities with predefined rules
+Guardian provides VC audit trails for transparency on where the bond has invested + the impact of products
+HCS enables custom audit trails for the coupon lifecycle, investment decisions, and other processes not in Guardian
+
+Demo:
+Coppice is fully functioning and live: https://coppice.cc
+
+Faucet + Admin Controls are exposed to hackathon judges so you can see both the investor and the issuer experiences
+
+The next 3 slides are annotated screenshots from the live app
+
+
+Team:
+ad0ll
+Github: 
+
+Note: Guardian has not been customized as a part of Coppice, but judges can interface w/ the Guardian instance at api.coppice.cc if necessary for the hackathon.
+
+Application is live at coppice.cc right now
+Technical audiences can interface w/ the Guardian deployment at api.copice.cc
+
 
 
 Why do green bonds:

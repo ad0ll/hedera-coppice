@@ -1,4 +1,4 @@
-# Coppice — ERC-3643 Green Bond Tokenization on Hedera
+# Coppice — Green Bonds built on Hedera's ATS and Gaurdian
 
 Coppice is a **compliant green bond tokenization platform** built on the [ERC-3643](https://erc3643.info/) (T-REX) standard, deployed on the **Hedera network**. It brings institutional-grade security token compliance to decentralized green finance — with on-chain identity verification, modular compliance enforcement, and an immutable audit trail powered by Hedera Consensus Service.
 
