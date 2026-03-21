@@ -77,6 +77,11 @@ body {
 }
 .card-static {
   @apply bg-surface-2 border border-border rounded-xl p-4 sm:p-6;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-static:hover {
+  border-color: color-mix(in srgb, var(--color-bond-green) 8%, transparent);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-bond-green) 3%, transparent);
 }
 
 /* Typography */
@@ -107,8 +112,11 @@ body {
   @apply w-full bg-surface-3 border border-border rounded-lg px-4 py-2.5 text-text text-sm
     placeholder:text-text-muted/60
     focus:outline-none focus:border-bond-green/40 focus:ring-1 focus:ring-bond-green/20
-    disabled:opacity-40
-    transition-colors;
+    disabled:opacity-40;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+.input:focus {
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.08), 0 0 12px rgba(16, 185, 129, 0.04);
 }
 
 /* Buttons — @apply cannot chain custom classes, so base styles are inlined in each variant */
@@ -301,12 +309,83 @@ body {
 
 /* Tab panel crossfade */
 @keyframes tab-fade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-tab-enter {
-  animation: tab-fade 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: tab-fade 250ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Skeleton shimmer — replaces basic pulse with a sweep effect */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface-3) 25%,
+    color-mix(in srgb, var(--color-surface-3) 80%, var(--color-text-muted)) 37%,
+    var(--color-surface-3) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Progress bar grow — used by ProgressBar component */
+@keyframes progress-grow {
+  from { width: 0%; }
+}
+
+.animate-progress-grow {
+  animation: progress-grow 800ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Checkmark draw animation — SVG stroke-dashoffset */
+@keyframes checkmark-draw {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.animate-checkmark-draw {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: checkmark-draw 400ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Subtle glow pulse — used for SPT met celebration */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(16, 185, 129, 0.12); }
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s ease-in-out 1;
+}
+
+/* Nav active link underline */
+.nav-link-active::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  right: 50%;
+  height: 2px;
+  background-color: var(--color-bond-green);
+  border-radius: 1px;
+  transition: left 0.25s cubic-bezier(0.16, 1, 0.3, 1), right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link-active::after {
+  left: 25%;
+  right: 25%;
+}
+
+/* Evidence chevron rotation */
+.chevron-rotate {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Respect reduced motion preference */

@@ -1,4 +1,4 @@
-import { CheckIcon, XIcon, Spinner } from "@/components/ui/icons";
+import { AnimatedCheckIcon, XIcon, Spinner } from "@/components/ui/icons";
 
 export type StepStatus = "pending" | "active" | "success" | "error";
 
@@ -23,7 +23,7 @@ export function StepProgress({ steps }: { steps: Step[] }) {
               <Spinner variant="amber" aria-label="Processing" />
             )}
             {step.status === "success" && (
-              <CheckIcon className="w-5 h-5 text-bond-green animate-icon-enter" />
+              <AnimatedCheckIcon className="w-5 h-5 text-bond-green animate-icon-enter" />
             )}
             {step.status === "error" && (
               <XIcon className="w-5 h-5 text-bond-red animate-icon-enter" />

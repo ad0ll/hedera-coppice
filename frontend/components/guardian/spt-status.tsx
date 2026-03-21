@@ -34,7 +34,7 @@ export function SptStatus({
   }
 
   return (
-    <div className="card-static">
+    <div className={`card-static ${met ? "animate-glow-pulse" : ""}`}>
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-semibold text-text">
           Sustainability Performance Target

@@ -1,6 +1,7 @@
 "use client";
 
 import { formatBalance, formatNumber } from "@/lib/format";
+import { useCountUp } from "@/hooks/use-count-up";
 import type { HolderInfo } from "@/hooks/use-holders";
 
 interface IssuerStatsProps {
@@ -15,6 +16,8 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
   const frozenCount = holders.filter((h) => h.frozen).length;
   const supplyDisplay = totalSupply != null ? formatBalance(totalSupply) : "--";
 
+  const displayHolders = useCountUp(holderCount);
+
   return (
     <div className="bg-surface-2 border-y border-border full-bleed">
       <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border">
@@ -25,7 +28,7 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
         </div>
         <div className="py-5 sm:py-6 sm:px-6">
           <p className="stat-label mb-1">Holders</p>
-          <p className="font-display text-3xl text-text">{holderCount}</p>
+          <p className="font-display text-3xl text-text">{displayHolders}</p>
           {frozenCount > 0 ? (
             <p className="text-xs text-bond-red mt-1">{frozenCount} frozen</p>
           ) : (

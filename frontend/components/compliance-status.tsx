@@ -11,7 +11,7 @@ import { CONTRACT_ADDRESSES, COUNTRY_RESTRICT_MODULE_ADDRESS } from "@/lib/const
 import { getReadProvider } from "@/lib/provider";
 import { COUNTRY_NAMES } from "@/lib/event-types";
 import { getErrorMessage } from "@/lib/format";
-import { CheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
+import { CheckIcon, AnimatedCheckIcon, XIcon, Spinner, WarningIcon } from "@/components/ui/icons";
 import { TxLink, AddressLink } from "@/components/ui/hashscan-link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { z } from "zod";
@@ -399,7 +399,7 @@ export function ComplianceStatus({ onEligibilityChange }: { onEligibilityChange?
                 {check.status === "loading" ? (
                   <Spinner aria-label="Checking" />
                 ) : check.status === "pass" ? (
-                  <span className="animate-icon-enter"><CheckIcon className="w-5 h-5 text-bond-green" /></span>
+                  <span className="animate-icon-enter"><AnimatedCheckIcon className="w-5 h-5 text-bond-green" /></span>
                 ) : (
                   <span className="animate-icon-enter"><XIcon className="w-5 h-5 text-bond-red" /></span>
                 )}

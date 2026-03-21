@@ -19,9 +19,9 @@ export function Nav() {
 
   function navLinkClass(href: string) {
     const isActive = href === "/" ? pathname === "/" : pathname.startsWith(href);
-    return `px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green ${
+    return `relative px-3 py-1.5 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green ${
       isActive
-        ? "bg-bond-green/10 text-bond-green"
+        ? "bg-bond-green/10 text-bond-green nav-link-active"
         : "text-text-muted hover:text-text"
     }`;
   }

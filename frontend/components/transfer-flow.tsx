@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ethers } from "ethers";
+import { useQueryClient } from "@tanstack/react-query";
 import { useConnection, useAts } from "@/contexts/ats-context";
 import { useIdentity } from "@/hooks/use-identity";
 import { useCompliance } from "@/hooks/use-compliance";
@@ -16,6 +17,7 @@ import { StepProgress } from "@/components/ui/step-progress";
 import type { Step } from "@/components/ui/step-progress";
 
 export function TransferFlow({ enabled }: { enabled: boolean }) {
+  const queryClient = useQueryClient();
   const { address } = useConnection();
   const { signer } = useAts();
   const { isVerified } = useIdentity();
@@ -105,6 +107,10 @@ export function TransferFlow({ enabled }: { enabled: boolean }) {
       newSteps[3] = { label: "Bond tokens issued", status: "success" };
       setSteps([...newSteps]);
       setAmount("");
+      queryClient.invalidateQueries({ queryKey: ["token", "balanceOf"] });
+      queryClient.invalidateQueries({ queryKey: ["token", "totalSupply"] });
+      queryClient.invalidateQueries({ queryKey: ["eusd-balance"] });
+      queryClient.invalidateQueries({ queryKey: ["holders"] });
     } catch (err: unknown) {
       const failIndex = newSteps.findIndex((s) => s.status === "active");
       if (failIndex >= 0) {

@@ -65,7 +65,7 @@ describe("Impact Page", () => {
   it("shows loading skeletons while data loads", () => {
     mockUseGuardian.mockReturnValue({ data: undefined, isLoading: true, error: null });
     const { container } = render(<ImpactPage />, { wrapper });
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(0);
   });
 
   it("displays metrics when data is loaded", () => {

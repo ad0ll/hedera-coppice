@@ -13,7 +13,7 @@ export function WalletButton() {
 
   if (address) {
     return (
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 animate-badge-enter">
         <div className="flex items-center gap-2 bg-surface-3/80 border border-border rounded-lg px-2.5 py-1.5 sm:px-3">
           <span className="w-2 h-2 rounded-full bg-bond-green animate-pulse-dot" />
           <span className="text-sm font-medium text-text">{walletLabel}</span>
@@ -35,7 +35,7 @@ export function WalletButton() {
     <button
       onClick={() => connect()}
       disabled={isConnecting}
-      className="bg-bond-green text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-bond-green/90 transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green whitespace-nowrap"
+      className="bg-bond-green text-black px-5 py-2 rounded-full text-sm font-semibold hover:bg-bond-green/90 hover:shadow-[0_0_16px_rgba(16,185,129,0.2)] active:scale-[0.97] transition-all disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-bond-green whitespace-nowrap"
     >
       {isConnecting ? "Connecting..." : "Connect Wallet"}
     </button>

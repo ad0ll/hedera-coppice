@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { ethers } from "ethers";
+import { useQuery } from "@tanstack/react-query";
 import { tokenAbi, identityRegistryAbi } from "@coppice/common";
 import { CONTRACT_ADDRESSES, CPC_TOKEN_ID } from "@/lib/constants";
 import { getReadProvider } from "@/lib/provider";
@@ -30,88 +30,71 @@ export function extractHolderAddresses(events: AuditEvent[]): string[] {
   return [...seen];
 }
 
+async function fetchHolderData(events: AuditEvent[]): Promise<HolderInfo[]> {
+  const provider = getReadProvider();
+  const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
+  const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
+
+  // Primary: Mirror Node token balances (discovers ALL holders)
+  const allAddresses = new Set<string>();
+  try {
+    if (CPC_TOKEN_ID) {
+      const holderAccountIds = await getTokenHolders(CPC_TOKEN_ID);
+      const evmPromises = holderAccountIds.map(async (accountId) => {
+        try {
+          return await getEvmAddress(accountId);
+        } catch {
+          return null;
+        }
+      });
+      const evmAddresses = await Promise.all(evmPromises);
+      for (const addr of evmAddresses) {
+        if (addr) allAddresses.add(addr.toLowerCase());
+      }
+    }
+  } catch {
+    // Fall through to HCS-based discovery
+  }
+
+  // Supplementary: HCS audit events
+  const hcsAddresses = extractHolderAddresses(events);
+  for (const addr of hcsAddresses) {
+    allAddresses.add(addr.toLowerCase());
+  }
+
+  const validAddresses = [...allAddresses].filter((a) => ethers.isAddress(a));
+
+  const promises = validAddresses.map(async (address) => {
+    try {
+      const [balance, frozen, verified] = await Promise.all([
+        tokenContract.balanceOf(address),
+        tokenContract.isFrozen(address).catch(() => false),
+        registryContract.isVerified(address).catch(() => false),
+      ]);
+      return { address, balance, frozen, verified };
+    } catch {
+      return { address, balance: BigInt(0), frozen: false, verified: false };
+    }
+  });
+
+  const results = await Promise.all(promises);
+  results.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0));
+  return results;
+}
+
 /**
  * Hook that discovers token holders from Mirror Node (primary)
  * and HCS audit events (supplementary), then reads on-chain data.
+ * Uses React Query for cache invalidation support.
  */
 export function useHolders(events: AuditEvent[]) {
-  const [holders, setHolders] = useState<HolderInfo[]>([]);
-  const [fetched, setFetched] = useState(false);
-  const prevKeyRef = useRef<string>("");
+  const { data: holders = [], isLoading } = useQuery({
+    queryKey: ["holders", events.length],
+    queryFn: () => fetchHolderData(events),
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+    staleTime: 15_000,
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchHolderData() {
-      const provider = getReadProvider();
-      const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
-      const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
-
-      // Primary: Mirror Node token balances (discovers ALL holders)
-      const allAddresses = new Set<string>();
-      try {
-        if (CPC_TOKEN_ID) {
-          const holderAccountIds = await getTokenHolders(CPC_TOKEN_ID);
-          const evmPromises = holderAccountIds.map(async (accountId) => {
-            try {
-              return await getEvmAddress(accountId);
-            } catch {
-              return null;
-            }
-          });
-          const evmAddresses = await Promise.all(evmPromises);
-          for (const addr of evmAddresses) {
-            if (addr) allAddresses.add(addr.toLowerCase());
-          }
-        }
-      } catch {
-        // Fall through to HCS-based discovery
-      }
-
-      // Supplementary: HCS audit events
-      const hcsAddresses = extractHolderAddresses(events);
-      for (const addr of hcsAddresses) {
-        allAddresses.add(addr.toLowerCase());
-      }
-
-      const validAddresses = [...allAddresses].filter((a) => ethers.isAddress(a));
-      const addressKey = [...validAddresses].sort().join(",");
-
-      // Skip if nothing changed and we already have data
-      if (addressKey === prevKeyRef.current && fetched) return;
-      prevKeyRef.current = addressKey;
-
-      const promises = validAddresses.map(async (address) => {
-        try {
-          const [balance, frozen, verified] = await Promise.all([
-            tokenContract.balanceOf(address),
-            tokenContract.isFrozen(address).catch(() => false),
-            registryContract.isVerified(address).catch(() => false),
-          ]);
-          return { address, balance, frozen, verified };
-        } catch {
-          return { address, balance: BigInt(0), frozen: false, verified: false };
-        }
-      });
-
-      const results = await Promise.all(promises);
-
-      if (!cancelled) {
-        results.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0));
-        setHolders(results);
-        setFetched(true);
-      }
-    }
-
-    fetchHolderData();
-    const interval = setInterval(fetchHolderData, 30_000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(interval);
-    };
-  }, [events, fetched]);
-
-  const loading = !fetched;
-  return { holders, loading };
+  return { holders, loading: isLoading };
 }
