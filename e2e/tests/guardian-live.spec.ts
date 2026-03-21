@@ -110,7 +110,11 @@ test.describe("Guardian Live Integration", () => {
 
   test("Guardian API returns valid data", async ({ request }) => {
     test.skip(!guardianAvailable, "Guardian API unavailable");
-    const response = await request.get("/api/guardian/data");
+    // Retry once — Vercel serverless cold starts can return 503
+    let response = await request.get("/api/guardian/data", { timeout: 15000 });
+    if (response.status() === 503) {
+      response = await request.get("/api/guardian/data", { timeout: 15000 });
+    }
     expect(response.status()).toBe(200);
 
     const data = await response.json();
