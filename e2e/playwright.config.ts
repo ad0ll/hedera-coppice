@@ -1,6 +1,6 @@
 import { defineConfig } from "@playwright/test";
 
-const PORT = parseInt(process.env.E2E_PORT || "3100", 10);
+const PORT = parseInt(process.env.E2E_PORT || "3200", 10);
 const BASE_URL = process.env.E2E_BASE_URL || `http://localhost:${PORT}`;
 const isRemote = !!process.env.E2E_BASE_URL;
 

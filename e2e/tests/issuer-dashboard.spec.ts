@@ -88,7 +88,7 @@ test.describe("Issuer Dashboard", () => {
 
     await page.getByRole("button", { name: "Connect Wallet" }).click();
 
-    await expect(page.getByLabel("Project")).toBeVisible({ timeout: 10000 });
+    await expect(page.getByLabel("Project", { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(page.getByRole("button", { name: "Record Allocation" })).toBeVisible();
   });
 
@@ -128,6 +128,6 @@ test.describe("Issuer Dashboard", () => {
     // Bob should now see ALL operation cards
     await expect(issueHeading).toBeVisible();
     await expect(page.getByText("Freeze / Unfreeze")).toBeVisible();
-    await expect(page.getByText("Allocate Proceeds")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Allocate Proceeds" })).toBeVisible();
   });
 });

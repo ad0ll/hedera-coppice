@@ -78,7 +78,7 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     const freezeAddr = page.getByLabel("Wallet address to freeze/unfreeze");
     await expect(freezeAddr).toBeVisible();
 
-    const projectSelect = page.getByLabel("Project");
+    const projectSelect = page.getByLabel("Project", { exact: true });
     await expect(projectSelect).toBeVisible();
 
     const proceedsAmount = page.getByLabel("Amount in eUSD");

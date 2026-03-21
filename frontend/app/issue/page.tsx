@@ -24,6 +24,7 @@ import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/ro
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
 import { createCouponResponseSchema } from "@/app/api/issuer/create-coupon/route";
+import { registerProjectResponseSchema } from "@/app/api/issuer/register-project/route";
 import { useQueryClient } from "@tanstack/react-query";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { useCoupons } from "@/hooks/use-coupons";
@@ -81,8 +82,26 @@ export default function IssuerDashboard() {
   const createCouponOp = useOperationStatus();
   const [lastCreateCouponTx, setLastCreateCouponTx] = useState<string | null>(null);
 
+  const [regProjectName, setRegProjectName] = useState("");
+  const [regCategory, setRegCategory] = useState("");
+  const [regSubCategory, setRegSubCategory] = useState("");
+  const [regCountry, setRegCountry] = useState("");
+  const [regLocation, setRegLocation] = useState("");
+  const [regCapacity, setRegCapacity] = useState("");
+  const [regCapacityUnit, setRegCapacityUnit] = useState("MW");
+  const [regLifetime, setRegLifetime] = useState("");
+  const [regTargetCO2e, setRegTargetCO2e] = useState("");
+  const [registeringProject, setRegisteringProject] = useState(false);
+  const registerProjectOp = useOperationStatus();
+
   const { data: guardianData } = useGuardian();
   const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
+
+  // Derive eligible categories from bond framework
+  const eligibleCategories = (guardianData?.bondFramework?.EligibleICMACategories ?? "")
+    .split(",")
+    .map((c) => c.trim())
+    .filter(Boolean);
 
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
@@ -229,6 +248,46 @@ export default function IssuerDashboard() {
       createCouponOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Create coupon failed") });
     } finally {
       setCreatingCoupon(false);
+    }
+  }
+
+  async function handleRegisterProject() {
+    if (!regProjectName || !regCategory || !regSubCategory || !regCountry || !regLocation || !regCapacity || !regLifetime || !regTargetCO2e || !address || registeringProject) return;
+    registerProjectOp.clear();
+    setRegisteringProject(true);
+    try {
+      const { message: authMessage, signature } = await signAuthMessage(address, "Register Project");
+      await fetchAPI("/api/issuer/register-project", registerProjectResponseSchema, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectName: regProjectName,
+          icmaCategory: regCategory,
+          subCategory: regSubCategory,
+          country: regCountry,
+          location: regLocation,
+          capacity: Number(regCapacity),
+          capacityUnit: regCapacityUnit,
+          projectLifetimeYears: Number(regLifetime),
+          annualTargetCO2e: Number(regTargetCO2e),
+          message: authMessage,
+          signature,
+        }),
+      });
+      registerProjectOp.setStatus({ type: "success", msg: `"${regProjectName}" registered in Guardian` });
+      queryClient.invalidateQueries({ queryKey: ["guardian"] });
+      setRegProjectName("");
+      setRegCategory("");
+      setRegSubCategory("");
+      setRegCountry("");
+      setRegLocation("");
+      setRegCapacity("");
+      setRegLifetime("");
+      setRegTargetCO2e("");
+    } catch (err: unknown) {
+      registerProjectOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Registration failed") });
+    } finally {
+      setRegisteringProject(false);
     }
   }
 
@@ -629,6 +688,91 @@ export default function IssuerDashboard() {
                 {lastCreateCouponTx && createCouponOp.status?.type === "success" && (
                   <TxLink hash={lastCreateCouponTx} label="View on HashScan" className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors" />
                 )}
+              </div>
+            </Card>
+          </div>
+
+          {/* Register Project */}
+          <div {...entranceProps(idx++)}>
+            <Card>
+              <h3 className="card-title">Register Project</h3>
+              <div className="space-y-3">
+                <div>
+                  <label htmlFor="reg-project-name" className="text-xs text-text-muted mb-1 block">Project Name</label>
+                  <input id="reg-project-name" type="text" value={regProjectName}
+                    onChange={(e) => setRegProjectName(e.target.value)}
+                    placeholder="e.g. Sunridge Solar Farm" className="input" aria-required="true" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="reg-category" className="text-xs text-text-muted mb-1 block">ICMA Category</label>
+                    <select id="reg-category" value={regCategory}
+                      onChange={(e) => setRegCategory(e.target.value)} className="input" aria-required="true">
+                      <option value="">Select...</option>
+                      {eligibleCategories.map((cat) => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="reg-subcategory" className="text-xs text-text-muted mb-1 block">Sub-Category</label>
+                    <input id="reg-subcategory" type="text" value={regSubCategory}
+                      onChange={(e) => setRegSubCategory(e.target.value)}
+                      placeholder="e.g. Solar PV" className="input" aria-required="true" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="reg-country" className="text-xs text-text-muted mb-1 block">Country (ISO)</label>
+                    <input id="reg-country" type="text" value={regCountry}
+                      onChange={(e) => setRegCountry(e.target.value.toUpperCase().slice(0, 2))}
+                      placeholder="KE" maxLength={2} className="input" aria-required="true" />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-location" className="text-xs text-text-muted mb-1 block">Location</label>
+                    <input id="reg-location" type="text" value={regLocation}
+                      onChange={(e) => setRegLocation(e.target.value)}
+                      placeholder="Nairobi, Kenya" className="input" aria-required="true" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div>
+                    <label htmlFor="reg-capacity" className="text-xs text-text-muted mb-1 block">Capacity</label>
+                    <input id="reg-capacity" type="number" value={regCapacity}
+                      onChange={(e) => setRegCapacity(e.target.value)}
+                      placeholder="50" min="0" className="input" aria-required="true" />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-capacity-unit" className="text-xs text-text-muted mb-1 block">Unit</label>
+                    <input id="reg-capacity-unit" type="text" value={regCapacityUnit}
+                      onChange={(e) => setRegCapacityUnit(e.target.value)}
+                      placeholder="MW" className="input" />
+                  </div>
+                  <div>
+                    <label htmlFor="reg-lifetime" className="text-xs text-text-muted mb-1 block">Lifetime (yr)</label>
+                    <input id="reg-lifetime" type="number" value={regLifetime}
+                      onChange={(e) => setRegLifetime(e.target.value)}
+                      placeholder="25" min="1" className="input" aria-required="true" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="reg-target-co2e" className="text-xs text-text-muted mb-1 block">Annual Target CO₂e (tonnes)</label>
+                  <input id="reg-target-co2e" type="number" value={regTargetCO2e}
+                    onChange={(e) => setRegTargetCO2e(e.target.value)}
+                    placeholder="6000" min="0" className="input" aria-required="true" />
+                </div>
+                <button
+                  onClick={handleRegisterProject}
+                  disabled={!regProjectName || !regCategory || !regSubCategory || !regCountry || !regLocation || !regCapacity || !regLifetime || !regTargetCO2e || registeringProject}
+                  aria-busy={registeringProject}
+                  className="w-full btn-primary"
+                >
+                  {registeringProject ? "Registering..." : "Register Project"}
+                </button>
+                <p className="text-xs text-text-muted">
+                  Registers a new project in Guardian as a Verifiable Credential. Once registered, it appears in the allocation dropdown.
+                </p>
+                <StatusMessage status={registerProjectOp.status} />
               </div>
             </Card>
           </div>
