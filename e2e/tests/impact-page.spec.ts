@@ -5,7 +5,7 @@ const MOCK_GUARDIAN_DATA = {
     BondName: "Coppice Green Bond",
     TotalIssuanceAmount: 100000,
     SustainabilityPerformanceTarget: "Avoid 10,000 tCO2e per period",
-    EligibleICMACategories: "Renewable Energy, Sustainable Water Management",
+    EligibleICMACategories: "Renewable Energy, Sustainable Water and Wastewater Management",
     ReportingStandard: "ICMA Green Bond Principles (June 2025)",
     RegulatoryFrameworks: "EU Taxonomy Regulation 2020/852",
     EUTaxonomyAlignmentPercent: 85,

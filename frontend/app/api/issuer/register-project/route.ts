@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getErrorMessage } from "@/lib/format";
 import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
 import { GUARDIAN_API_URL, GUARDIAN_POLICY_ID } from "@/lib/constants";
+import { ICMA_CATEGORIES } from "@/lib/icma-categories";
 
 const ISSUER_USERNAME = process.env.GUARDIAN_ISSUER_USERNAME || "CpcIssuer";
 const ISSUER_PASSWORD = process.env.GUARDIAN_ISSUER_PASSWORD || "CpcIssuer2026!";
@@ -11,7 +12,7 @@ const PROJECT_TAG = "req_project_9";
 
 const registerProjectSchema = z.object({
   projectName: z.string().min(1).max(100),
-  icmaCategory: z.string().min(1),
+  icmaCategory: z.enum(ICMA_CATEGORIES),
   subCategory: z.string().min(1).max(100),
   country: z.string().length(2),
   location: z.string().min(1).max(200),

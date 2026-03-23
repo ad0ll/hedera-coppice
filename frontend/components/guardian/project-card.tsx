@@ -17,10 +17,18 @@ function downloadJson(data: Record<string, unknown>, filename: string) {
   URL.revokeObjectURL(url);
 }
 
+// Badge colors for all ICMA GBP categories (June 2025)
 const CATEGORY_BADGE_COLORS: Record<string, string> = {
   "Renewable Energy": "bg-bond-green/15 text-bond-green",
-  "Sustainable Water Management": "bg-bond-teal/15 text-bond-teal",
   "Energy Efficiency": "bg-bond-amber/15 text-bond-amber",
+  "Pollution Prevention and Control": "bg-bond-red/15 text-bond-red",
+  "Environmentally Sustainable Management of Living Natural Resources and Land Use": "bg-emerald-500/15 text-emerald-400",
+  "Terrestrial and Aquatic Biodiversity Conservation": "bg-lime-500/15 text-lime-400",
+  "Clean Transportation": "bg-sky-500/15 text-sky-400",
+  "Sustainable Water and Wastewater Management": "bg-bond-teal/15 text-bond-teal",
+  "Climate Change Adaptation": "bg-orange-500/15 text-orange-400",
+  "Circular Economy Adapted Products, Production Technologies and Processes": "bg-violet-500/15 text-violet-400",
+  "Green Buildings": "bg-cyan-500/15 text-cyan-400",
 };
 
 function getVerificationStatus(project: GuardianProject) {

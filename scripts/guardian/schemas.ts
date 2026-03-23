@@ -3,11 +3,27 @@
 
 import { randomUUID } from "crypto";
 
+// ICMA Green Bond Principles (June 2025) — eligible project categories
+// Canonical list also in frontend/lib/icma-categories.ts — keep in sync
+const ICMA_GBP_CATEGORIES = [
+  "Renewable Energy",
+  "Energy Efficiency",
+  "Pollution Prevention and Control",
+  "Environmentally Sustainable Management of Living Natural Resources and Land Use",
+  "Terrestrial and Aquatic Biodiversity Conservation",
+  "Clean Transportation",
+  "Sustainable Water and Wastewater Management",
+  "Climate Change Adaptation",
+  "Circular Economy Adapted Products, Production Technologies and Processes",
+  "Green Buildings",
+] as const;
+
 interface SchemaField {
   title: string;
   description: string;
   type: string;
   required: boolean;
+  enumValues?: readonly string[];
 }
 
 interface SchemaDefinition {
@@ -39,7 +55,7 @@ function buildSchemaDTO(schema: SchemaDefinition) {
 
   for (const field of schema.fields) {
     const fieldKey = field.title.replace(/[^a-zA-Z0-9]/g, "");
-    properties[fieldKey] = {
+    const prop: Record<string, unknown> = {
       title: field.title,
       description: field.description,
       type: field.type === "number" ? "number" : "string",
@@ -49,6 +65,10 @@ function buildSchemaDTO(schema: SchemaDefinition) {
         "@id": `https://www.schema.org/${field.type === "number" ? "Number" : "text"}`,
       }),
     };
+    if (field.enumValues) {
+      prop.enum = [...field.enumValues];
+    }
+    properties[fieldKey] = prop;
     if (field.required) {
       required.push(fieldKey);
     }
@@ -110,7 +130,7 @@ const PROJECT_REGISTRATION_DEF: SchemaDefinition = {
   entity: "VC",
   fields: [
     { title: "Project Name", description: "ICMA col C", type: "string", required: true },
-    { title: "ICMA Category", description: "ICMA col A: Renewable Energy, Sustainable Water Management, etc.", type: "string", required: true },
+    { title: "ICMA Category", description: "ICMA GBP eligible project category (June 2025)", type: "string", required: true, enumValues: ICMA_GBP_CATEGORIES },
     { title: "Sub Category", description: "ICMA col B: Solar PV, Onshore Wind, Water Treatment, etc.", type: "string", required: true },
     { title: "Country", description: "ISO 3166-1 alpha-2 country code", type: "string", required: true },
     { title: "Location", description: "City or region", type: "string", required: true },
@@ -148,7 +168,7 @@ const MRV_REPORT_DEF: SchemaDefinition = {
   entity: "VC",
   fields: [
     { title: "Project Name", description: "Project being measured", type: "string", required: true },
-    { title: "ICMA Category", description: "Renewable Energy, Sustainable Water Management, etc.", type: "string", required: true },
+    { title: "ICMA Category", description: "ICMA GBP eligible project category (June 2025)", type: "string", required: true, enumValues: ICMA_GBP_CATEGORIES },
     { title: "Reporting Period Start", description: "ISO 8601 date", type: "string", required: true },
     { title: "Reporting Period End", description: "ISO 8601 date", type: "string", required: true },
     { title: "Annual GHG Reduced", description: "ICMA Core #1 — tonnes CO2e, universal", type: "number", required: true },

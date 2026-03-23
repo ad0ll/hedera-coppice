@@ -23,7 +23,7 @@ const MOCK_DATA = {
   bondFramework: {
     BondName: "Coppice Green Bond",
     TotalIssuanceAmount: 100000,
-    EligibleICMACategories: "Renewable Energy, Sustainable Water Management",
+    EligibleICMACategories: "Renewable Energy, Sustainable Water and Wastewater Management",
     ReportingStandard: "ICMA Green Bond Principles (June 2025)",
     RegulatoryFrameworks: "EU Taxonomy Regulation 2020/852",
     EUTaxonomyAlignmentPercent: 85,

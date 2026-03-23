@@ -12,7 +12,7 @@ export const BOND_FRAMEWORK = {
   CouponStepUpBps: 25,
   SustainabilityPerformanceTarget:
     "Avoid 10,000 tCO2e per coupon period across all funded projects",
-  EligibleICMACategories: "Renewable Energy, Sustainable Water Management",
+  EligibleICMACategories: "Renewable Energy, Sustainable Water and Wastewater Management",
   ReportingStandard: "ICMA Green Bond Principles (June 2025)",
   RegulatoryFrameworks: "ICMA GBP June 2025, EU Taxonomy Regulation 2020/852",
   EUTaxonomyAlignmentPercent: 85,
@@ -54,7 +54,7 @@ export const PROJECTS = [
   },
   {
     ProjectName: "AquaPure Reclamation",
-    ICMACategory: "Sustainable Water Management",
+    ICMACategory: "Sustainable Water and Wastewater Management",
     SubCategory: "Water Treatment",
     Country: "SG",
     Location: "Singapore",
@@ -136,7 +136,7 @@ export const MRV_REPORTS = [
   },
   {
     ProjectName: "AquaPure Reclamation",
-    ICMACategory: "Sustainable Water Management",
+    ICMACategory: "Sustainable Water and Wastewater Management",
     ReportingPeriodStart: "2026-01-01",
     ReportingPeriodEnd: "2026-06-30",
     AnnualGHGReduced: 450,
