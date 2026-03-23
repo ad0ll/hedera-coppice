@@ -1,6 +1,7 @@
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { SptStatus } from "@/components/guardian/spt-status";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 import type { GuardianData } from "@/lib/guardian-types";
 
 interface ImpactSummaryProps {
@@ -11,7 +12,7 @@ export function ImpactSummary({ data }: ImpactSummaryProps) {
   return (
     <div className="card-static">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-text">Green Bond Impact</h2>
+        <h2 className="text-lg font-semibold text-text flex items-center">Green Bond Impact<InfoTooltip text="Live environmental metrics from Guardian-verified MRV reports. SPT compliance determines coupon step-up penalty." /></h2>
         <StatusBadge
           label={data.sptMet ? "SPT Met" : "SPT Below Target"}
           variant={data.sptMet ? "green" : "amber"}
