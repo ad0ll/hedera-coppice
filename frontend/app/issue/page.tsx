@@ -32,6 +32,7 @@ import { useGuardian } from "@/hooks/use-guardian";
 import { SptStatus } from "@/components/guardian/spt-status";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { entranceProps } from "@/lib/animation";
+import { getMinimumCouponRate } from "@/lib/spt-enforcement";
 
 export default function IssuerDashboard() {
   const queryClient = useQueryClient();
@@ -96,6 +97,15 @@ export default function IssuerDashboard() {
 
   const { data: guardianData } = useGuardian();
   const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
+
+  // Compute SPT-enforced minimum coupon rate from bond framework
+  const sptRateInfo = guardianData?.bondFramework
+    ? getMinimumCouponRate({
+        couponRate: guardianData.bondFramework.CouponRate,
+        stepUpBps: guardianData.bondFramework.CouponStepUpBps,
+        sptMet: guardianData.sptMet,
+      })
+    : null;
 
   // Derive eligible categories from bond framework
   const eligibleCategories = (guardianData?.bondFramework?.EligibleICMACategories ?? "")
@@ -416,6 +426,8 @@ export default function IssuerDashboard() {
             target={guardianData.sptTarget}
             met={guardianData.sptMet}
             projectCount={guardianData.projects.length}
+            baseRate={sptRateInfo ? `${sptRateInfo.baseRate}%` : undefined}
+            penaltyRate={sptRateInfo ? `${sptRateInfo.penaltyRate}%` : undefined}
           />
         </div>
       )}
@@ -607,6 +619,23 @@ export default function IssuerDashboard() {
             <Card>
               <h3 className="card-title">Create Coupon</h3>
               <div className="space-y-3">
+                {sptRateInfo && (
+                  <div className={`flex items-start gap-2 p-2.5 rounded-lg border text-left ${
+                    sptRateInfo.sptMet
+                      ? "bg-bond-green/8 border-bond-green/20"
+                      : "bg-bond-amber/8 border-bond-amber/20"
+                  }`}>
+                    <WarningIcon className={`w-4 h-4 shrink-0 mt-0.5 ${
+                      sptRateInfo.sptMet ? "text-bond-green" : "text-bond-amber"
+                    }`} />
+                    <p className={`text-xs ${sptRateInfo.sptMet ? "text-bond-green/90" : "text-bond-amber/90"}`}>
+                      {sptRateInfo.sptMet
+                        ? `SPT met — base rate ${sptRateInfo.baseRate}% applies.`
+                        : `SPT not met — minimum rate is ${sptRateInfo.minimumRate}% (${sptRateInfo.baseRate}% + ${Math.round((sptRateInfo.penaltyRate - sptRateInfo.baseRate) * 100)}bps penalty). Enforced by backend.`
+                      }
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label htmlFor="coupon-rate" className="text-xs text-text-muted mb-1 block">Annual Rate (%)</label>
                   <input
@@ -614,8 +643,8 @@ export default function IssuerDashboard() {
                     type="number"
                     value={couponRate}
                     onChange={(e) => setCouponRate(e.target.value)}
-                    placeholder="4.25"
-                    min="0"
+                    placeholder={sptRateInfo ? String(sptRateInfo.minimumRate) : "4.25"}
+                    min={sptRateInfo ? sptRateInfo.minimumRate : 0}
                     step="0.01"
                     className="input"
                   />

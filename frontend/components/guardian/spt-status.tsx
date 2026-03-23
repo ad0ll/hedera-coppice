@@ -7,6 +7,8 @@ interface SptStatusProps {
   target: number;
   met: boolean;
   projectCount?: number;
+  baseRate?: string;
+  penaltyRate?: string;
   variant?: "full" | "compact";
 }
 
@@ -15,6 +17,8 @@ export function SptStatus({
   target,
   met,
   projectCount,
+  baseRate = "4.25%",
+  penaltyRate = "4.50%",
   variant = "full",
 }: SptStatusProps) {
   const progress = Math.min((totalVerified / target) * 100, 100);
@@ -61,14 +65,20 @@ export function SptStatus({
         </p>
       </div>
       {projectCount !== undefined && (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
           <div>
-            <span className="text-text-muted">Current Rate</span>
-            <p className="font-mono text-text mt-0.5">4.25%</p>
+            <span className="text-text-muted">Base Rate</span>
+            <p className="font-mono text-text mt-0.5">{baseRate}</p>
           </div>
           <div>
             <span className="text-text-muted">Penalty Rate</span>
-            <p className="font-mono text-bond-amber mt-0.5">4.50%</p>
+            <p className="font-mono text-bond-amber mt-0.5">{penaltyRate}</p>
+          </div>
+          <div>
+            <span className="text-text-muted">Required Rate</span>
+            <p className={`font-mono mt-0.5 ${met ? "text-bond-green" : "text-bond-amber"}`}>
+              {met ? baseRate : penaltyRate}
+            </p>
           </div>
           <div>
             <span className="text-text-muted">Projects</span>

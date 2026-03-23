@@ -6,6 +6,7 @@ import { getDeployerWallet } from "@/lib/deployer";
 import { getErrorMessage } from "@/lib/format";
 import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
 import { BOND_ABI } from "@/lib/abis";
+import { fetchSptStatus } from "@/lib/spt-enforcement";
 
 const createCouponBodySchema = z.object({
   rate: z.number().positive(),
@@ -81,6 +82,21 @@ export async function POST(request: NextRequest) {
     const dateError = validateDates(body, nowSeconds);
     if (dateError) {
       return NextResponse.json({ error: dateError }, { status: 400 });
+    }
+
+    // Enforce SPT penalty rate — Guardian must be reachable
+    const sptStatus = await fetchSptStatus();
+    if (!sptStatus) {
+      return NextResponse.json(
+        { error: "Cannot verify SPT status — Guardian unavailable. Coupon creation blocked." },
+        { status: 503 },
+      );
+    }
+    if (body.rate < sptStatus.minimumRate) {
+      return NextResponse.json(
+        { error: `SPT not met — minimum coupon rate is ${sptStatus.minimumRate}% (base ${sptStatus.baseRate}% + ${Math.round((sptStatus.penaltyRate - sptStatus.baseRate) * 100)}bps step-up penalty)` },
+        { status: 400 },
+      );
     }
 
     const { rate, rateDecimals } = convertRate(body.rate);
