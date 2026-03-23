@@ -451,7 +451,7 @@ export default function IssuerDashboard() {
           {/* Mint */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Issue Tokens</h3>
+              <h3 className="card-title flex items-center">Issue Tokens<InfoTooltip text="Issues new CPC tokens via ATS ERC-1594 issue(). Recipients must pass KYC and whitelist checks on-chain." /></h3>
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="mint-to">Recipient address</label>
                 <input id="mint-to" type="text" value={mintTo} onChange={(e) => setMintTo(e.target.value)}
@@ -472,7 +472,7 @@ export default function IssuerDashboard() {
           {/* Allocate Proceeds — visible to all agents */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Allocate Proceeds</h3>
+              <h3 className="card-title flex items-center">Allocate Proceeds<InfoTooltip text="Records fund allocation as a Guardian Verifiable Credential for verified use-of-proceeds tracking." /></h3>
               {guardianData && (
                 <p className="text-xs text-text-muted -mt-1 mb-2">
                   {formatNumber(totalAllocated)} / {formatNumber(guardianData.totalIssuanceEUSD)} eUSD allocated
@@ -517,7 +517,7 @@ export default function IssuerDashboard() {
           {/* Freeze/Unfreeze */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Freeze / Unfreeze Wallet</h3>
+              <h3 className="card-title flex items-center">Freeze / Unfreeze Wallet<InfoTooltip text="Restricts a wallet from sending or receiving CPC tokens. An ERC-3643 compliance mechanism." /></h3>
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="freeze-addr">Wallet address to freeze/unfreeze</label>
                 <input id="freeze-addr" type="text" value={freezeAddr} onChange={(e) => setFreezeAddr(e.target.value)}
@@ -540,7 +540,10 @@ export default function IssuerDashboard() {
                   </button>
                 </div>
                 {!isDeployer && (
-                  <p className="text-xs text-text-muted">Only the bond issuer can freeze wallets. Unfreeze is available to all agents.</p>
+                  <div className="flex items-start gap-2 p-2.5 rounded-lg bg-bond-amber/8 border border-bond-amber/20">
+                    <WarningIcon className="w-4 h-4 text-bond-amber shrink-0 mt-0.5" />
+                    <p className="text-xs text-bond-amber/90">Freeze requires the bond issuer role (DEFAULT_ADMIN). Unfreeze is available to all agents.</p>
+                  </div>
                 )}
                 <StatusMessage status={freezeOp.status} />
               </div>
@@ -550,7 +553,7 @@ export default function IssuerDashboard() {
           {/* Pause Control */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Token Pause Control</h3>
+              <h3 className="card-title flex items-center">Token Pause Control<InfoTooltip text="Halts all CPC transfers globally. An ERC-3643 compliance mechanism for regulatory holds." /></h3>
               <div className="flex items-center justify-between mb-4 bg-surface-3/50 rounded-lg px-4 py-3">
                 <span className="text-sm text-text-muted">Current Status</span>
                 <span className={`text-sm font-medium flex items-center gap-2 ${isPaused ? "text-bond-red" : "text-bond-green"}`}>
@@ -563,7 +566,10 @@ export default function IssuerDashboard() {
                 {isPaused ? "Unpause Token" : "Pause Token"}
               </button>
               {!isDeployer && (
-                <p className="text-xs text-text-muted mt-2">Only the bond issuer can pause/unpause trading.</p>
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-bond-amber/8 border border-bond-amber/20 mt-2">
+                  <WarningIcon className="w-4 h-4 text-bond-amber shrink-0 mt-0.5" />
+                  <p className="text-xs text-bond-amber/90">Pause/unpause requires the bond issuer role (DEFAULT_ADMIN).</p>
+                </div>
               )}
               <StatusMessage status={pauseOp.status} className="mt-2" />
             </Card>
@@ -572,7 +578,7 @@ export default function IssuerDashboard() {
           {/* Distribute Coupon */}
           <div {...entranceProps(idx++)}>
             <Card>
-              <h3 className="card-title">Distribute Coupon</h3>
+              <h3 className="card-title flex items-center">Distribute Coupon<InfoTooltip text="Pays coupon to all holders via ATS LifeCycleCashFlow contract. Snapshots balances at record date, distributes in eUSD." /></h3>
               <div className="space-y-3">
                 <label className="sr-only" htmlFor="coupon-select">Select coupon</label>
                 <select
@@ -637,7 +643,7 @@ export default function IssuerDashboard() {
                   </div>
                 )}
                 <div>
-                  <label htmlFor="coupon-rate" className="text-xs text-text-muted mb-1 block">Annual Rate (%)</label>
+                  <label htmlFor="coupon-rate" className="text-xs text-text-muted mb-1 flex items-center">Annual Rate (%)<InfoTooltip text="Coupon rate as annual %. Base: 4.25%. Penalty: 4.50% (25bps step-up if SPT missed)." /></label>
                   <input
                     id="coupon-rate"
                     type="number"
@@ -734,7 +740,7 @@ export default function IssuerDashboard() {
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor="reg-category" className="text-xs text-text-muted mb-1 block">ICMA Category</label>
+                    <label htmlFor="reg-category" className="text-xs text-text-muted mb-1 flex items-center">ICMA Category<InfoTooltip text="Category per ICMA Green Bond Principles (June 2025). Only bond framework-eligible categories are shown." /></label>
                     <select id="reg-category" value={regCategory}
                       onChange={(e) => setRegCategory(e.target.value)} className="input" aria-required="true">
                       <option value="">Select...</option>
@@ -785,7 +791,7 @@ export default function IssuerDashboard() {
                   </div>
                 </div>
                 <div>
-                  <label htmlFor="reg-target-co2e" className="text-xs text-text-muted mb-1 block">Annual Target CO₂e (tonnes)</label>
+                  <label htmlFor="reg-target-co2e" className="text-xs text-text-muted mb-1 flex items-center">Annual Target CO₂e (tonnes)<InfoTooltip text="Expected annual greenhouse gas reductions in tonnes CO₂ equivalent. Used to calculate SPT progress." /></label>
                   <input id="reg-target-co2e" type="number" value={regTargetCO2e}
                     onChange={(e) => setRegTargetCO2e(e.target.value)}
                     placeholder="6000" min="0" className="input" aria-required="true" />

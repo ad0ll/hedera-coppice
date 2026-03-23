@@ -1,6 +1,7 @@
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 interface SptStatusProps {
   totalVerified: number;
@@ -40,8 +41,9 @@ export function SptStatus({
   return (
     <div className={`card-static ${met ? "animate-glow-pulse" : ""}`}>
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-text">
+        <h2 className="text-lg font-semibold text-text flex items-center">
           Sustainability Performance Target
+          <InfoTooltip text="Coupon rate steps up when verified CO₂e reductions miss the target — a financial penalty for unmet environmental goals." />
         </h2>
         <StatusBadge
           label={met ? "Target Met" : "Below Target"}
@@ -67,15 +69,15 @@ export function SptStatus({
       {projectCount !== undefined && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-2 sm:gap-4 text-xs border-t border-surface-3 pt-3 mt-4">
           <div>
-            <span className="text-text-muted">Base Rate</span>
+            <span className="text-text-muted flex items-center">Base Rate<InfoTooltip text="Standard coupon rate when sustainability targets are met." /></span>
             <p className="font-mono text-text mt-0.5">{baseRate}</p>
           </div>
           <div>
-            <span className="text-text-muted">Penalty Rate</span>
+            <span className="text-text-muted flex items-center">Penalty Rate<InfoTooltip text="Step-up rate applied when SPT is missed. Defined in the bond framework VC." /></span>
             <p className="font-mono text-bond-amber mt-0.5">{penaltyRate}</p>
           </div>
           <div>
-            <span className="text-text-muted">Required Rate</span>
+            <span className="text-text-muted flex items-center">Required Rate<InfoTooltip text="Minimum rate for the next coupon based on SPT compliance. Enforced by backend." /></span>
             <p className={`font-mono mt-0.5 ${met ? "text-bond-green" : "text-bond-amber"}`}>
               {met ? baseRate : penaltyRate}
             </p>
