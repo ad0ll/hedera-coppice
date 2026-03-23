@@ -12,6 +12,26 @@ function getReadContract() {
 }
 
 export function useTokenRead() {
+  const name = useQuery({
+    queryKey: ["token", "name"],
+    queryFn: async () => {
+      const contract = getReadContract();
+      const result: string = await contract.name();
+      return result;
+    },
+    staleTime: Infinity,
+  });
+
+  const symbol = useQuery({
+    queryKey: ["token", "symbol"],
+    queryFn: async () => {
+      const contract = getReadContract();
+      const result: string = await contract.symbol();
+      return result;
+    },
+    staleTime: Infinity,
+  });
+
   const totalSupply = useQuery({
     queryKey: ["token", "totalSupply"],
     queryFn: async () => {
@@ -34,7 +54,7 @@ export function useTokenRead() {
     refetchOnWindowFocus: true,
   });
 
-  return { totalSupply, paused };
+  return { name, symbol, totalSupply, paused };
 }
 
 export function useTokenBalance(address: string | undefined) {

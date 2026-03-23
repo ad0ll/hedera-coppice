@@ -265,10 +265,42 @@ async function main() {
   // Narrow tokenAddress to `0x${string}` once for viem's strict hex typing
   const tokenAddr = tokenAddress as `0x${string}`; // viem requires branded hex type for addresses
 
+  // Retry buffer for events that failed HCS submission
+  const retryBuffer: AuditEvent[] = [];
+  const MAX_RETRY_BUFFER = 50;
+
+  // Exponential backoff state for poll errors
+  let consecutiveErrors = 0;
+  const MAX_BACKOFF_MS = 60_000;
+
+  async function drainRetryBuffer() {
+    const pending = retryBuffer.splice(0, retryBuffer.length);
+    for (const event of pending) {
+      try {
+        await submitToHCS(client, auditTopicId, operatorKey, event);
+        console.log(`    -> Retry succeeded: ${event.type} (tx: ${event.tx.slice(0, 10)}...)`);
+      } catch {
+        if (retryBuffer.length < MAX_RETRY_BUFFER) {
+          retryBuffer.push(event);
+        } else {
+          console.error(`    -> Retry buffer full, dropping: ${event.type} (tx: ${event.tx.slice(0, 10)}...)`);
+        }
+      }
+    }
+  }
+
   async function poll() {
     try {
+      // Drain retry buffer before polling for new events
+      if (retryBuffer.length > 0) {
+        await drainRetryBuffer();
+      }
+
       const currentBlock = await publicClient.getBlockNumber();
-      if (currentBlock <= lastBlock) return;
+      if (currentBlock <= lastBlock) {
+        consecutiveErrors = 0;
+        return;
+      }
 
       const logs = await publicClient.getLogs({
         address: tokenAddr,
@@ -371,14 +403,22 @@ async function main() {
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : "unknown";
             console.error(`    -> HCS error: ${message.slice(0, 100)}`);
+            if (retryBuffer.length < MAX_RETRY_BUFFER) {
+              retryBuffer.push(payload);
+              console.log(`    -> Queued for retry (buffer: ${retryBuffer.length}/${MAX_RETRY_BUFFER})`);
+            }
           }
         }
       }
 
       lastBlock = currentBlock;
+      consecutiveErrors = 0;
     } catch (err: unknown) {
+      consecutiveErrors++;
       const message = err instanceof Error ? err.message : "unknown";
-      console.error(`  Poll error: ${message.slice(0, 100)}`);
+      const backoff = Math.min(POLL_INTERVAL_MS * 2 ** consecutiveErrors, MAX_BACKOFF_MS);
+      console.error(`  Poll error (${consecutiveErrors}x): ${message.slice(0, 100)} — next poll in ${backoff}ms`);
+      await new Promise((r) => setTimeout(r, backoff - POLL_INTERVAL_MS));
     }
   }
 

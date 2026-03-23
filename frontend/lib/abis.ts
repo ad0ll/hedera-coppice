@@ -1,6 +1,8 @@
 /** Consolidated ABI fragments used by multiple hooks and API routes. */
 
 export const TOKEN_ABI = [
+  "function name() view returns (string)",
+  "function symbol() view returns (string)",
   "function totalSupply() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
   "function isPaused() view returns (bool)",

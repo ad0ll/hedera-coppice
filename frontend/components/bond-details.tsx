@@ -6,8 +6,10 @@ import { formatBalance } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 export function BondDetails() {
-  const { totalSupply, paused } = useTokenRead();
+  const { name, symbol, totalSupply, paused } = useTokenRead();
 
+  const bondName = name.data || BOND_DETAILS.name;
+  const bondSymbol = symbol.data || BOND_DETAILS.symbol;
   const supply = totalSupply.data != null
     ? formatBalance(totalSupply.data)
     : "--";
@@ -26,7 +28,7 @@ export function BondDetails() {
               </svg>
             </div>
             <div>
-              <h2 className="font-display text-3xl text-text">{BOND_DETAILS.name}</h2>
+              <h2 className="font-display text-3xl text-text">{bondName}</h2>
               <p className="text-sm text-text-muted mt-0.5">{BOND_DETAILS.issuer}</p>
             </div>
           </div>
@@ -37,7 +39,7 @@ export function BondDetails() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 sm:gap-8">
           <div>
             <p className="stat-label mb-1.5">Symbol</p>
-            <p className="font-display text-2xl text-text">{BOND_DETAILS.symbol}</p>
+            <p className="font-display text-2xl text-text">{bondSymbol}</p>
           </div>
           <div>
             <p className="stat-label mb-1.5">Coupon Rate</p>
@@ -49,7 +51,7 @@ export function BondDetails() {
           </div>
           <div>
             <p className="stat-label mb-1.5">Total Supply</p>
-            <p className="font-display text-2xl text-text">{supply} <span className="text-xs text-text-muted font-normal font-sans">CPC</span></p>
+            <p className="font-display text-2xl text-text">{supply} <span className="text-xs text-text-muted font-normal font-sans">{bondSymbol}</span></p>
           </div>
         </div>
       </div>
