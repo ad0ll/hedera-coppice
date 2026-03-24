@@ -27,13 +27,12 @@ vi.mock("@/contexts/ats-context", () => ({
 import { Nav } from "@/components/nav";
 
 describe("Nav", () => {
-  it("renders all 5 navigation links", () => {
+  it("renders all 4 navigation links", () => {
     render(<Nav />);
     expect(screen.getByRole("link", { name: "Invest" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Coupons" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Impact" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Issuer" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Compliance" })).toBeInTheDocument();
   });
 
   it("links to correct paths", () => {
@@ -42,6 +41,5 @@ describe("Nav", () => {
     expect(screen.getByRole("link", { name: "Coupons" })).toHaveAttribute("href", "/coupons");
     expect(screen.getByRole("link", { name: "Impact" })).toHaveAttribute("href", "/impact");
     expect(screen.getByRole("link", { name: "Issuer" })).toHaveAttribute("href", "/issue");
-    expect(screen.getByRole("link", { name: "Compliance" })).toHaveAttribute("href", "/monitor");
   });
 });

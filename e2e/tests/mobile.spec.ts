@@ -30,7 +30,6 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page.locator(".sm\\:hidden >> text=Coupons")).toBeVisible();
     await expect(page.locator(".sm\\:hidden >> text=Impact")).toBeVisible();
     await expect(page.locator(".sm\\:hidden >> text=Issuer")).toBeVisible();
-    await expect(page.locator(".sm\\:hidden >> text=Compliance")).toBeVisible();
 
     // Close menu
     await hamburger.click();
@@ -47,11 +46,6 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page).toHaveURL("/issue");
     // Menu should close after navigation
     await expect(hamburger).toHaveAttribute("aria-expanded", "false");
-
-    // Navigate to Compliance page
-    await hamburger.click();
-    await page.locator(".sm\\:hidden >> text=Compliance").click();
-    await expect(page).toHaveURL("/monitor");
 
     // Navigate back to Invest
     await hamburger.click();
@@ -93,28 +87,27 @@ test.describe("Mobile Responsive Design", () => {
     await expect(page.getByText("Distribute Coupon")).toBeVisible();
   });
 
-  test("should display compliance monitor responsively", async ({ page }) => {
-    await page.goto("/monitor");
-
-    // Stats cards should be visible
-    await expect(page.getByText("Total Events")).toBeVisible();
-    await expect(page.getByText("Approvals")).toBeVisible();
-    await expect(page.getByText("Restrictions")).toBeVisible();
+  test("should display event feed on issuer page responsively", async ({ page }) => {
+    await injectWalletMock(page, DEPLOYER_KEY);
+    await page.goto("/issue");
+    await page.getByRole("button", { name: "Connect Wallet" }).click();
+    await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 10000 });
 
     // Audit feed should load
-    await expect(page.getByText(/\d+ events/)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText("Audit Event Feed")).toBeVisible({ timeout: 15000 });
   });
 
   test("should have adequate touch targets on filter buttons", async ({ page }) => {
-    await page.goto("/monitor");
-    // Wait for non-zero events — mirror node can lag 5-15s, hook polls every 5s
+    await injectWalletMock(page, DEPLOYER_KEY);
+    await page.goto("/issue");
+    await page.getByRole("button", { name: "Connect Wallet" }).click();
+    await expect(page.getByText("Issuer Dashboard")).toBeVisible({ timeout: 10000 });
+    // Wait for non-zero events
     await expect(page.getByText(/[1-9]\d* events/)).toBeVisible({ timeout: 30000 });
 
-    // Filter buttons should exist and be tappable
     const allButton = page.getByRole("button", { name: "ALL", exact: true });
     await expect(allButton).toBeVisible();
 
-    // Check the button has minimum touch target size
     const box = await allButton.boundingBox();
     expect(box).toBeTruthy();
     expect(box!.height).toBeGreaterThanOrEqual(44);

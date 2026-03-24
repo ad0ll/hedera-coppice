@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ethers } from "ethers";
 import { useConnection } from "@/contexts/ats-context";
 import { useTokenRead, useTokenWrite, useIsAgent, useIsAdmin } from "@/hooks/use-token";
@@ -9,7 +9,6 @@ import { IssuerStats } from "@/components/issuer-stats";
 import { HoldersTable } from "@/components/holders-table";
 import { AuditEventFeed } from "@/components/audit-event-feed";
 import { GuardianEvents } from "@/components/guardian/guardian-events";
-import { COUPON_STATUS_VARIANT, COUPON_STATUS_LABEL } from "@/lib/event-types";
 import { ProjectAllocation } from "@/components/project-allocation";
 import { CreateCouponCard } from "@/components/issuer/create-coupon-card";
 import { RegisterProjectCard } from "@/components/issuer/register-project-card";
@@ -23,9 +22,7 @@ import { TxLink } from "@/components/ui/hashscan-link";
 import { useOperationStatus } from "@/hooks/use-operation-status";
 import { abbreviateAddress, formatNumber, getErrorMessage } from "@/lib/format";
 import { fetchAPI } from "@/lib/api-client";
-import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
-import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
-import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
+import { grantAgentRoleResponseSchema, allocateResponseSchema, distributeResponseSchema } from "@/lib/api-schemas";
 import { useQueryClient } from "@tanstack/react-query";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { useCoupons } from "@/hooks/use-coupons";
@@ -77,20 +74,28 @@ export default function IssuerDashboard() {
   const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
   const [eventTab, setEventTab] = useState<"onchain" | "guardian">("onchain");
 
-  // Compute SPT-enforced minimum coupon rate from bond framework
-  const sptRateInfo = guardianData?.bondFramework
-    ? getMinimumCouponRate({
-        couponRate: guardianData.bondFramework.CouponRate,
-        stepUpBps: guardianData.bondFramework.CouponStepUpBps,
-        sptMet: guardianData.sptMet,
-      })
-    : null;
+  // Compute SPT-enforced minimum coupon rate from bond framework (memoized for stable reference)
+  const sptRateInfo = useMemo(
+    () =>
+      guardianData?.bondFramework
+        ? getMinimumCouponRate({
+            couponRate: guardianData.bondFramework.CouponRate,
+            stepUpBps: guardianData.bondFramework.CouponStepUpBps,
+            sptMet: guardianData.sptMet,
+          })
+        : null,
+    [guardianData?.bondFramework, guardianData?.sptMet],
+  );
 
-  // Derive eligible categories from bond framework
-  const eligibleCategories = (guardianData?.bondFramework?.EligibleICMACategories ?? "")
-    .split(",")
-    .map((c) => c.trim())
-    .filter(Boolean);
+  // Derive eligible categories from bond framework (memoized for stable reference)
+  const eligibleCategories = useMemo(
+    () =>
+      (guardianData?.bondFramework?.EligibleICMACategories ?? "")
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean),
+    [guardianData?.bondFramework?.EligibleICMACategories],
+  );
 
   const [promoting, setPromoting] = useState(false);
   const promoteOp = useOperationStatus();
@@ -514,48 +519,6 @@ export default function IssuerDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Coupon Activity */}
-      {coupons.length > 0 && (
-        <section {...entranceProps(idx++)}>
-          <h2 className="card-title">Coupon Activity</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {coupons.map((c) => (
-              <div key={c.id} className="card-static text-xs">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-text text-sm">Coupon #{c.id}</span>
-                  <StatusBadge
-                    label={COUPON_STATUS_LABEL[c.status] ?? c.status}
-                    variant={COUPON_STATUS_VARIANT[c.status] ?? "amber"}
-                  />
-                </div>
-                <div className="space-y-1 text-text-muted">
-                  <div className="flex justify-between">
-                    <span>Rate</span>
-                    <span className="font-mono text-text">{c.rateDisplay}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Period</span>
-                    <span className="font-mono text-text">{c.periodDays}d</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Record</span>
-                    <span className="font-mono text-text">
-                      {new Date(c.recordDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Record Status</span>
-                    <span className={`font-mono ${c.snapshotId > 0 ? "text-bond-green" : "text-text-muted"}`}>
-                      {c.snapshotId > 0 ? "Captured" : "Pending"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Event Feed — On-Chain + Guardian tabs */}
       <div {...entranceProps(idx++)}>

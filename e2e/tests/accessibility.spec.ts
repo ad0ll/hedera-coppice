@@ -27,7 +27,7 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     await investLink.focus();
     await expect(investLink).toBeFocused();
 
-    // Tab through nav links — Coupons, Impact, Issuer, Compliance
+    // Tab through nav links — Coupons, Impact, Issuer
     await page.keyboard.press("Tab");
     const couponsLink = page.getByRole("link", { name: "Coupons" });
     await expect(couponsLink).toBeFocused();
@@ -40,13 +40,9 @@ test.describe("Accessibility & Keyboard Navigation", () => {
     const issuerLink = page.getByRole("link", { name: "Issuer" });
     await expect(issuerLink).toBeFocused();
 
-    await page.keyboard.press("Tab");
-    const complianceLink = page.getByRole("link", { name: "Compliance" });
-    await expect(complianceLink).toBeFocused();
-
     // Press Enter to navigate
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL("/monitor");
+    await expect(page).toHaveURL("/issue");
   });
 
   test("connect wallet button is keyboard accessible", async ({ page }) => {

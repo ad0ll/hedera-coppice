@@ -10,7 +10,6 @@ const NAV_LINKS = [
   { href: "/coupons", label: "Coupons" },
   { href: "/impact", label: "Impact" },
   { href: "/issue", label: "Issuer" },
-  { href: "/monitor", label: "Compliance" },
 ] as const;
 
 export function Nav() {
@@ -45,7 +44,6 @@ export function Nav() {
               <Link href="/coupons" className={navLinkClass("/coupons")}>Coupons</Link>
               <Link href="/impact" className={navLinkClass("/impact")}>Impact</Link>
               <Link href="/issue" className={navLinkClass("/issue")}>Issuer</Link>
-              <Link href="/monitor" className={navLinkClass("/monitor")}>Compliance</Link>
             </div>
           </div>
           <div className="flex items-center gap-2">
