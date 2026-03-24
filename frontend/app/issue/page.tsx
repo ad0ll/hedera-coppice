@@ -5,11 +5,14 @@ import { ethers } from "ethers";
 import { useConnection } from "@/contexts/ats-context";
 import { useTokenRead, useTokenWrite, useIsAgent, useIsAdmin } from "@/hooks/use-token";
 import { useHolders } from "@/hooks/use-holders";
-import { useContractEvents } from "@/hooks/use-contract-events";
 import { IssuerStats } from "@/components/issuer-stats";
 import { HoldersTable } from "@/components/holders-table";
-import { IssuerActivityFeed } from "@/components/issuer-activity-feed";
+import { AuditEventFeed } from "@/components/audit-event-feed";
+import { GuardianEvents } from "@/components/guardian/guardian-events";
+import { COUPON_STATUS_VARIANT, COUPON_STATUS_LABEL } from "@/lib/event-types";
 import { ProjectAllocation } from "@/components/project-allocation";
+import { CreateCouponCard } from "@/components/issuer/create-coupon-card";
+import { RegisterProjectCard } from "@/components/issuer/register-project-card";
 import { signAuthMessage } from "@/lib/auth";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card } from "@/components/ui/card";
@@ -23,8 +26,6 @@ import { fetchAPI } from "@/lib/api-client";
 import { grantAgentRoleResponseSchema } from "@/app/api/demo/grant-agent-role/route";
 import { allocateResponseSchema } from "@/app/api/issuer/allocate/route";
 import { distributeResponseSchema } from "@/app/api/issuer/distribute-coupon/route";
-import { createCouponResponseSchema } from "@/app/api/issuer/create-coupon/route";
-import { registerProjectResponseSchema } from "@/app/api/issuer/register-project/route";
 import { useQueryClient } from "@tanstack/react-query";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
 import { useCoupons } from "@/hooks/use-coupons";
@@ -46,14 +47,12 @@ export default function IssuerDashboard() {
   const DEPLOYER_ADDRESS = "0xeb974ba96c4912499c3b3bbd5a40617e1f6eecee";
   const isDeployer = address?.toLowerCase() === DEPLOYER_ADDRESS;
 
-  // HCS events — used for holders table and activity feed
-  const { events: auditEvents, loading: auditLoading } = useContractEvents();
   const { holders, loading: holdersLoading } = useHolders();
 
   const isPaused = pausedQuery.data ?? null;
   const supply = totalSupply.data;
 
-  // Form state
+  // Form state — only for cards that remain inline
   const [mintTo, setMintTo] = useState("");
   const [mintAmount, setMintAmount] = useState("");
   const mintOp = useOperationStatus();
@@ -74,29 +73,9 @@ export default function IssuerDashboard() {
   const { data: coupons = [] } = useCoupons();
   const selectedCoupon = coupons.find((c) => c.id === selectedCouponId) ?? null;
 
-  const [couponRate, setCouponRate] = useState("");
-  const [couponStartDate, setCouponStartDate] = useState("");
-  const [couponRecordDate, setCouponRecordDate] = useState("");
-  const [couponExecutionDate, setCouponExecutionDate] = useState("");
-  const [couponEndDate, setCouponEndDate] = useState("");
-  const [creatingCoupon, setCreatingCoupon] = useState(false);
-  const createCouponOp = useOperationStatus();
-  const [lastCreateCouponTx, setLastCreateCouponTx] = useState<string | null>(null);
-
-  const [regProjectName, setRegProjectName] = useState("");
-  const [regCategory, setRegCategory] = useState("");
-  const [regSubCategory, setRegSubCategory] = useState("");
-  const [regCountry, setRegCountry] = useState("");
-  const [regLocation, setRegLocation] = useState("");
-  const [regCapacity, setRegCapacity] = useState("");
-  const [regCapacityUnit, setRegCapacityUnit] = useState("MW");
-  const [regLifetime, setRegLifetime] = useState("");
-  const [regTargetCO2e, setRegTargetCO2e] = useState("");
-  const [registeringProject, setRegisteringProject] = useState(false);
-  const registerProjectOp = useOperationStatus();
-
   const { data: guardianData } = useGuardian();
   const totalAllocated = guardianData?.totalAllocatedEUSD ?? 0;
+  const [eventTab, setEventTab] = useState<"onchain" | "guardian">("onchain");
 
   // Compute SPT-enforced minimum coupon rate from bond framework
   const sptRateInfo = guardianData?.bondFramework
@@ -225,82 +204,6 @@ export default function IssuerDashboard() {
     }
   }
 
-  async function handleCreateCoupon() {
-    if (!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || !address || creatingCoupon) return;
-    createCouponOp.clear();
-    setLastCreateCouponTx(null);
-    setCreatingCoupon(true);
-    try {
-      const { message: authMessage, signature } = await signAuthMessage(address, "Create Coupon");
-      const result = await fetchAPI("/api/issuer/create-coupon", createCouponResponseSchema, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rate: Number(couponRate),
-          startDate: new Date(couponStartDate).toISOString(),
-          recordDate: new Date(couponRecordDate).toISOString(),
-          executionDate: new Date(couponExecutionDate).toISOString(),
-          endDate: new Date(couponEndDate).toISOString(),
-          address,
-          message: authMessage,
-          signature,
-        }),
-      });
-      setLastCreateCouponTx(result.txHash);
-      createCouponOp.setStatus({ type: "success", msg: `Coupon #${result.couponId} created at ${couponRate}%` });
-      queryClient.invalidateQueries({ queryKey: ["coupons"] });
-      setCouponRate("");
-      setCouponStartDate("");
-      setCouponRecordDate("");
-      setCouponExecutionDate("");
-      setCouponEndDate("");
-    } catch (err: unknown) {
-      createCouponOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Create coupon failed") });
-    } finally {
-      setCreatingCoupon(false);
-    }
-  }
-
-  async function handleRegisterProject() {
-    if (!regProjectName || !regCategory || !regSubCategory || !regCountry || !regLocation || !regCapacity || !regLifetime || !regTargetCO2e || !address || registeringProject) return;
-    registerProjectOp.clear();
-    setRegisteringProject(true);
-    try {
-      const { message: authMessage, signature } = await signAuthMessage(address, "Register Project");
-      await fetchAPI("/api/issuer/register-project", registerProjectResponseSchema, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectName: regProjectName,
-          icmaCategory: regCategory,
-          subCategory: regSubCategory,
-          country: regCountry,
-          location: regLocation,
-          capacity: Number(regCapacity),
-          capacityUnit: regCapacityUnit,
-          projectLifetimeYears: Number(regLifetime),
-          annualTargetCO2e: Number(regTargetCO2e),
-          message: authMessage,
-          signature,
-        }),
-      });
-      registerProjectOp.setStatus({ type: "success", msg: `"${regProjectName}" registered in Guardian` });
-      queryClient.invalidateQueries({ queryKey: ["guardian"] });
-      setRegProjectName("");
-      setRegCategory("");
-      setRegSubCategory("");
-      setRegCountry("");
-      setRegLocation("");
-      setRegCapacity("");
-      setRegLifetime("");
-      setRegTargetCO2e("");
-    } catch (err: unknown) {
-      registerProjectOp.setStatus({ type: "error", msg: getErrorMessage(err, 80, "Registration failed") });
-    } finally {
-      setRegisteringProject(false);
-    }
-  }
-
   async function handleDistribute() {
     if (selectedCouponId === null || !address || distributing) return;
     distributeOp.clear();
@@ -374,26 +277,6 @@ export default function IssuerDashboard() {
     );
   }
 
-  // --- Coupon date validation ---
-
-  function validateCouponDates(): string | null {
-    const now = Date.now();
-    if (couponStartDate && new Date(couponStartDate).getTime() <= now) {
-      return "Start date must be in the future";
-    }
-    if (couponStartDate && couponRecordDate && new Date(couponRecordDate) <= new Date(couponStartDate)) {
-      return "Record date must be after start date";
-    }
-    if (couponRecordDate && couponExecutionDate && new Date(couponExecutionDate) <= new Date(couponRecordDate)) {
-      return "Execution date must be after record date";
-    }
-    if (couponStartDate && couponEndDate && new Date(couponEndDate) <= new Date(couponStartDate)) {
-      return "End date must be after start date";
-    }
-    return null;
-  }
-  const couponDateError = validateCouponDates();
-
   // --- Main dashboard ---
 
   let idx = 0;
@@ -447,7 +330,7 @@ export default function IssuerDashboard() {
       {/* Operation Cards — 2x2 grid */}
       <div className="space-y-4">
         <p {...entranceProps(idx++, "stat-label")}>Operations</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="columns-1 sm:columns-2 gap-6 space-y-6 [&>div]:break-inside-avoid">
           {/* Mint */}
           <div {...entranceProps(idx++)}>
             <Card>
@@ -620,203 +503,99 @@ export default function IssuerDashboard() {
             </Card>
           </div>
 
-          {/* Create Coupon */}
+          {/* Create Coupon — extracted to own component for render isolation */}
           <div {...entranceProps(idx++)}>
-            <Card>
-              <h3 className="card-title">Create Coupon</h3>
-              <div className="space-y-3">
-                {sptRateInfo && (
-                  <div className={`flex items-start gap-2 p-2.5 rounded-lg border text-left ${
-                    sptRateInfo.sptMet
-                      ? "bg-bond-green/8 border-bond-green/20"
-                      : "bg-bond-amber/8 border-bond-amber/20"
-                  }`}>
-                    <WarningIcon className={`w-4 h-4 shrink-0 mt-0.5 ${
-                      sptRateInfo.sptMet ? "text-bond-green" : "text-bond-amber"
-                    }`} />
-                    <p className={`text-xs ${sptRateInfo.sptMet ? "text-bond-green/90" : "text-bond-amber/90"}`}>
-                      {sptRateInfo.sptMet
-                        ? `SPT met — base rate ${sptRateInfo.baseRate}% applies.`
-                        : `SPT not met — minimum rate is ${sptRateInfo.minimumRate}% (${sptRateInfo.baseRate}% + ${Math.round((sptRateInfo.penaltyRate - sptRateInfo.baseRate) * 100)}bps penalty). Enforced by backend.`
-                      }
-                    </p>
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="coupon-rate" className="text-xs text-text-muted mb-1 flex items-center">Annual Rate (%)<InfoTooltip text="Coupon rate as annual %. Base: 4.25%. Penalty: 4.50% (25bps step-up if SPT missed)." /></label>
-                  <input
-                    id="coupon-rate"
-                    type="number"
-                    value={couponRate}
-                    onChange={(e) => setCouponRate(e.target.value)}
-                    placeholder={sptRateInfo ? String(sptRateInfo.minimumRate) : "4.25"}
-                    min={sptRateInfo ? sptRateInfo.minimumRate : 0}
-                    step="0.01"
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="coupon-start" className="text-xs text-text-muted mb-1 flex items-center">
-                    Start Date
-                    <InfoTooltip text="When the coupon period begins. Must be in the future." />
-                  </label>
-                  <input
-                    id="coupon-start"
-                    type="datetime-local"
-                    value={couponStartDate}
-                    onChange={(e) => setCouponStartDate(e.target.value)}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="coupon-record" className="text-xs text-text-muted mb-1 flex items-center">
-                    Record Date
-                    <InfoTooltip text="Cutoff for determining holders. Must be after start date." />
-                  </label>
-                  <input
-                    id="coupon-record"
-                    type="datetime-local"
-                    value={couponRecordDate}
-                    onChange={(e) => setCouponRecordDate(e.target.value)}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="coupon-execution" className="text-xs text-text-muted mb-1 flex items-center">
-                    Execution Date
-                    <InfoTooltip text="When distribution can be executed. Must be after record date." />
-                  </label>
-                  <input
-                    id="coupon-execution"
-                    type="datetime-local"
-                    value={couponExecutionDate}
-                    onChange={(e) => setCouponExecutionDate(e.target.value)}
-                    className="input"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="coupon-end" className="text-xs text-text-muted mb-1 flex items-center">
-                    End Date
-                    <InfoTooltip text="End of the coupon period. Must be after start date." />
-                  </label>
-                  <input
-                    id="coupon-end"
-                    type="datetime-local"
-                    value={couponEndDate}
-                    onChange={(e) => setCouponEndDate(e.target.value)}
-                    className="input"
-                  />
-                </div>
-                {couponDateError && (
-                  <p className="text-xs text-bond-red">{couponDateError}</p>
-                )}
-                <button
-                  onClick={handleCreateCoupon}
-                  disabled={!couponRate || !couponStartDate || !couponRecordDate || !couponExecutionDate || !couponEndDate || creatingCoupon || !!couponDateError}
-                  aria-busy={creatingCoupon}
-                  className="w-full btn-primary"
-                >
-                  {creatingCoupon ? "Creating..." : "Create Coupon"}
-                </button>
-                <p className="text-xs text-text-muted">Creates a new coupon period on the bond contract. Requires CORPORATE_ACTION role (executed by deployer).</p>
-                <StatusMessage status={createCouponOp.status} />
-                {lastCreateCouponTx && createCouponOp.status?.type === "success" && (
-                  <TxLink hash={lastCreateCouponTx} label="View on HashScan" className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors" />
-                )}
-              </div>
-            </Card>
+            <CreateCouponCard address={address} sptRateInfo={sptRateInfo} />
           </div>
 
-          {/* Register Project */}
+          {/* Register Project — extracted to own component for render isolation */}
           <div {...entranceProps(idx++)}>
-            <Card>
-              <h3 className="card-title">Register Project</h3>
-              <div className="space-y-3">
-                <div>
-                  <label htmlFor="reg-project-name" className="text-xs text-text-muted mb-1 block">Project Name</label>
-                  <input id="reg-project-name" type="text" value={regProjectName}
-                    onChange={(e) => setRegProjectName(e.target.value)}
-                    placeholder="e.g. Sunridge Solar Farm" className="input" aria-required="true" />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="reg-category" className="text-xs text-text-muted mb-1 flex items-center">ICMA Category<InfoTooltip text="Category per ICMA Green Bond Principles (June 2025). Only bond framework-eligible categories are shown." /></label>
-                    <select id="reg-category" value={regCategory}
-                      onChange={(e) => setRegCategory(e.target.value)} className="input" aria-required="true">
-                      <option value="">Select...</option>
-                      {eligibleCategories.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="reg-subcategory" className="text-xs text-text-muted mb-1 block">Sub-Category</label>
-                    <input id="reg-subcategory" type="text" value={regSubCategory}
-                      onChange={(e) => setRegSubCategory(e.target.value)}
-                      placeholder="e.g. Solar PV" className="input" aria-required="true" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label htmlFor="reg-country" className="text-xs text-text-muted mb-1 block">Country (ISO)</label>
-                    <input id="reg-country" type="text" value={regCountry}
-                      onChange={(e) => setRegCountry(e.target.value.toUpperCase().slice(0, 2))}
-                      placeholder="KE" maxLength={2} className="input" aria-required="true" />
-                  </div>
-                  <div>
-                    <label htmlFor="reg-location" className="text-xs text-text-muted mb-1 block">Location</label>
-                    <input id="reg-location" type="text" value={regLocation}
-                      onChange={(e) => setRegLocation(e.target.value)}
-                      placeholder="Nairobi, Kenya" className="input" aria-required="true" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label htmlFor="reg-capacity" className="text-xs text-text-muted mb-1 block">Capacity</label>
-                    <input id="reg-capacity" type="number" value={regCapacity}
-                      onChange={(e) => setRegCapacity(e.target.value)}
-                      placeholder="50" min="0" className="input" aria-required="true" />
-                  </div>
-                  <div>
-                    <label htmlFor="reg-capacity-unit" className="text-xs text-text-muted mb-1 block">Unit</label>
-                    <input id="reg-capacity-unit" type="text" value={regCapacityUnit}
-                      onChange={(e) => setRegCapacityUnit(e.target.value)}
-                      placeholder="MW" className="input" />
-                  </div>
-                  <div>
-                    <label htmlFor="reg-lifetime" className="text-xs text-text-muted mb-1 block">Lifetime (yr)</label>
-                    <input id="reg-lifetime" type="number" value={regLifetime}
-                      onChange={(e) => setRegLifetime(e.target.value)}
-                      placeholder="25" min="1" className="input" aria-required="true" />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="reg-target-co2e" className="text-xs text-text-muted mb-1 flex items-center">Annual Target CO₂e (tonnes)<InfoTooltip text="Expected annual greenhouse gas reductions in tonnes CO₂ equivalent. Used to calculate SPT progress." /></label>
-                  <input id="reg-target-co2e" type="number" value={regTargetCO2e}
-                    onChange={(e) => setRegTargetCO2e(e.target.value)}
-                    placeholder="6000" min="0" className="input" aria-required="true" />
-                </div>
-                <button
-                  onClick={handleRegisterProject}
-                  disabled={!regProjectName || !regCategory || !regSubCategory || !regCountry || !regLocation || !regCapacity || !regLifetime || !regTargetCO2e || registeringProject}
-                  aria-busy={registeringProject}
-                  className="w-full btn-primary"
-                >
-                  {registeringProject ? "Registering..." : "Register Project"}
-                </button>
-                <p className="text-xs text-text-muted">
-                  Registers a new project in Guardian as a Verifiable Credential. Once registered, it appears in the allocation dropdown.
-                </p>
-                <StatusMessage status={registerProjectOp.status} />
-              </div>
-            </Card>
+            <RegisterProjectCard address={address} eligibleCategories={eligibleCategories} />
           </div>
         </div>
       </div>
 
-      {/* Activity Feed */}
+      {/* Coupon Activity */}
+      {coupons.length > 0 && (
+        <section {...entranceProps(idx++)}>
+          <h2 className="card-title">Coupon Activity</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {coupons.map((c) => (
+              <div key={c.id} className="card-static text-xs">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-text text-sm">Coupon #{c.id}</span>
+                  <StatusBadge
+                    label={COUPON_STATUS_LABEL[c.status] ?? c.status}
+                    variant={COUPON_STATUS_VARIANT[c.status] ?? "amber"}
+                  />
+                </div>
+                <div className="space-y-1 text-text-muted">
+                  <div className="flex justify-between">
+                    <span>Rate</span>
+                    <span className="font-mono text-text">{c.rateDisplay}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Period</span>
+                    <span className="font-mono text-text">{c.periodDays}d</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Record</span>
+                    <span className="font-mono text-text">
+                      {new Date(c.recordDate * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Record Status</span>
+                    <span className={`font-mono ${c.snapshotId > 0 ? "text-bond-green" : "text-text-muted"}`}>
+                      {c.snapshotId > 0 ? "Captured" : "Pending"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Event Feed — On-Chain + Guardian tabs */}
       <div {...entranceProps(idx++)}>
-        <IssuerActivityFeed events={auditEvents} loading={auditLoading} />
+        <div role="tablist" aria-label="Event source" className="flex gap-1 bg-surface-2 rounded-lg p-1 w-fit mb-4">
+          <button
+            id="tab-onchain"
+            role="tab"
+            aria-selected={eventTab === "onchain"}
+            aria-controls="panel-onchain"
+            onClick={() => setEventTab("onchain")}
+            className={`px-4 py-2 text-sm rounded-md transition-all duration-200 ${
+              eventTab === "onchain" ? "bg-surface-3 text-text font-medium shadow-sm" : "text-text-muted hover:text-text"
+            }`}
+          >
+            On-Chain Events
+          </button>
+          <button
+            id="tab-guardian"
+            role="tab"
+            aria-selected={eventTab === "guardian"}
+            aria-controls="panel-guardian"
+            onClick={() => setEventTab("guardian")}
+            className={`px-4 py-2 text-sm rounded-md transition-all duration-200 ${
+              eventTab === "guardian" ? "bg-surface-3 text-text font-medium shadow-sm" : "text-text-muted hover:text-text"
+            }`}
+          >
+            Guardian Verification
+          </button>
+        </div>
+        <div id={`panel-${eventTab}`} role="tabpanel" aria-labelledby={`tab-${eventTab}`}>
+          <div key={eventTab} className="animate-tab-enter">
+            <SectionErrorBoundary section="event feed">
+              {eventTab === "onchain" ? (
+                <AuditEventFeed />
+              ) : (
+                <GuardianEvents />
+              )}
+            </SectionErrorBoundary>
+          </div>
+        </div>
       </div>
     </div>
   );
