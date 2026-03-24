@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Compliant green bond tokenization using ERC-3643 (via Hedera ATS) on Hedera for the Hello Future Apex Hackathon 2026. Guardian integration for anti-greenwashing MRV verification.
+Compliant green bond tokenization using ERC-3643 (via Hedera ATS) on Hedera for the Hello Future Apex Hackathon 2026 (Sustainability track). Guardian integration for anti-greenwashing MRV verification.
 
 ## Architecture
 

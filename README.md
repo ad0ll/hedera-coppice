@@ -1,24 +1,37 @@
-# Coppice — Green Bonds built on Hedera's ATS and Gaurdian
+# Coppice — Green Bonds with Teeth on Hedera
 
-Coppice is a **compliant green bond tokenization platform** built on the [ERC-3643](https://erc3643.info/) (T-REX) standard, deployed on the **Hedera network**. It brings institutional-grade security token compliance to decentralized green finance — with on-chain identity verification, modular compliance enforcement, and an immutable audit trail powered by Hedera Consensus Service.
+**[Live App](https://www.coppice.cc)** | **[Demo Video](https://youtu.be/261J4n4K3t8)** | **[Pitch Deck](docs/pitch-deck.html)** | **[Guardian API](https://guardian.coppice.cc)**
+
+The world needs **$7.5 trillion/year** in green investment by 2030 for net-zero. We're at $600 billion — 8% of the target. The gap isn't capital. It's trust.
+
+Coppice is a **hybrid green bond and sustainability-linked bond** on Hedera — the first on-chain instrument combining use-of-proceeds tracking with coupon penalties for missing climate targets. It's designed to ensure that the financial incentives of the bond issuer align with the environmental outcomes investors expect.
+
+Built on [Asset Tokenization Studio](https://github.com/hashgraph/asset-tokenization-studio) for compliant bond issuance, and [Guardian](https://github.com/hashgraph/guardian) for tracking environmental impact as Verifiable Credentials.
 
 Named after the ancient woodland management technique where trees are sustainably harvested and regrow — a metaphor for sustainable finance.
 
-Built for the **Hedera Hello Future: Apex Hackathon 2026** (DeFi & Tokenization track).
+Built for the [**Hedera Hello Future: Apex Hackathon 2026**](https://hellofuturehackathon.dev/) — Sustainability Track.
 
-## Why Coppice?
+## The Problem
 
-Green bonds are a [**$527B annual market**](https://www.coherentmarketinsights.com/market-insight/green-bonds-market-5765) growing 10% year-over-year, but greenwashing and opaque fund tracking erode investor trust. Issuers self-certify with minimal accountability. Impact reports appear 12+ months late.
+Green bonds have crossed [$3 trillion outstanding](https://www.lseg.com/en/insights/green-debt-market-passes-3-trillion-milestone), but four structural failures undermine investor trust:
 
-Coppice solves this by:
+1. **Self-certified "green"** — Issuers self-report with minimal external verification. 94% of investors believe sustainability reporting contains unsupported claims ([PwC 2023](https://www.pwc.com/gx/en/news-room/press-releases/2023/pwc-2023-global-investor-survey.html)).
+2. **Opaque fund tracking** — Investors can't verify where funds went until annual reports arrive — self-authored, unverified, often 12+ months late.
+3. **Off-chain compliance** — KYC/AML and jurisdiction checks live in spreadsheets. Transfer restrictions are voluntary, not protocol-level.
+4. **No consequences for missing targets** — Green bonds have zero financial penalty for greenwashing. Sustainability-linked bonds (SLBs) penalize with coupon step-ups, but don't track where funds go. No instrument combines both accountability and incentives.
 
-- **Enforcing compliance at the protocol level** — [ERC-3643](https://eips.ethereum.org/EIPS/eip-3643) makes it impossible to transfer tokens to non-compliant addresses. Identity verification, KYC/AML claims, and jurisdiction checks are baked into every transfer.
-- **Tracking use-of-proceeds on-chain** — Every fund allocation is recorded to HCS as an immutable, timestamped, publicly verifiable record. No more waiting for annual PDF reports.
-- **Using 4 Hedera services** — Smart Contracts, Consensus Service, Token Service, and Mirror Node — demonstrating deep Hedera integration.
+## The Solution
 
-**Prior art:** [ABN AMRO tokenized a €5M green bond](https://www.abnamro.com/en/news/abn-amro-registers-first-digital-green-bond-on-the-public-blockchain) using ERC-3643 on Polygon (September 2023), [raising funds from DekaBank with fully on-chain compliance](https://tokeny.com/tokeny-fuels-abn-amro-bank-in-tokenizing-green-bonds-on-polygon/). Coppice replicates this model on Hedera and adds what their implementation lacks: on-chain use-of-proceeds tracking via HCS.
+Coppice combines two financial structures that have never been combined on-chain:
 
-**Strategic alignment:** The [Hedera Foundation joined the ERC-3643 Association](https://hedera.foundation/blog/scaling-institutional-rw-as-the-hbar-foundation-joins-the-erc-3643-association) alongside DTCC, ABN AMRO, Fireblocks, and Deloitte — signaling institutional commitment to compliant tokenization on Hedera.
+**Green Bond (use-of-proceeds & MRV)** — Every fund allocation is a Guardian Verifiable Credential — recorded in real-time, anchored to HCS, stored on IPFS. Investors verify the full trust chain (project registration → allocation → MRV report → independent verification) without waiting for annual PDFs.
+
+**Sustainability-Linked Bond (coupon penalty)** — The bond defines a Sustainability Performance Target: *"Avoid 10,000 tCO2e per coupon period."* If verified MRV data falls short, the coupon rate steps up +25bps (4.25% → 4.50%). Coupons are distributed on-chain via ATS at the verified rate — the issuer cannot override the penalty.
+
+**Protocol-level compliance** — ATS enforces identity, KYC, AML, accredited investor status, jurisdiction, and transfer eligibility in the token contract. Non-compliant wallets cannot receive tokens — this is enforced at the protocol level, not by policy.
+
+**Prior art:** [Verbund issued the first hybrid green+SLB](https://gsh.cib.natixis.com/our-center-of-expertise/articles/verbund-issues-world-s-first-bond-combining-use-of-proceeds-earmarking-and-kpi-linking-mechanism) in traditional finance (EUR 500M, 2021). Coppice is the first on-chain implementation.
 
 ## Architecture
 
@@ -26,83 +39,90 @@ Coppice solves this by:
 graph TD
     subgraph Frontend["Next.js 16 Frontend"]
         IP["Investor Portal"]
+        CP["Coupons Page"]
+        IMP["Impact Page"]
         ID["Issuer Dashboard"]
-        CM["Compliance Monitor"]
-        WV["ethers v6 + MetaMask"]
-        API["API Routes\npurchase | allocate | health"]
+        ATS["AtsContext<br/><small>ethers v6 + MetaMask</small>"]
+        API["API Routes<br/><small>purchase | allocate | distribute-coupon<br/>onboard | faucet | register-project<br/>guardian/data | guardian/ipfs</small>"]
     end
 
     subgraph SC["Smart Contracts — Hedera EVM"]
-        Token["ERC-3643 Token\nCPC"]
-        IR["IdentityRegistry"]
-        MC["ModularCompliance"]
-        CI["ClaimIssuer"]
-        Modules["CountryRestrict\nMaxBalance\nSupplyLimit"]
+        Bond["ATS Bond (Diamond Proxy)<br/><small>CPC — 0xcFbB4b74...</small>"]
+        LCCF["LifeCycleCashFlow<br/><small>Coupon Distribution — 0xC36cd7a8...</small>"]
+        Facets["ATS Facets<br/><small>ERC20 | ERC1594 | KYC | Bond<br/>AccessControl | ControlList</small>"]
+    end
+
+    subgraph Guardian["Hedera Guardian"]
+        Policy["CPC Green Bond MRV Policy"]
+        VCs["Verifiable Credentials<br/><small>Bond Framework | Project Registration<br/>Fund Allocation | MRV Report<br/>Verification Statement</small>"]
     end
 
     subgraph HCS["Hedera Consensus Service"]
-        Audit["Audit Topic\n0.0.8214934"]
-        Impact["Impact Topic\n0.0.8214935"]
+        Audit["Audit Topic<br/><small>0.0.8214934</small>"]
+        GuardianHCS["Guardian Topics<br/><small>VC anchoring</small>"]
     end
 
     subgraph HTS["Hedera Token Service"]
-        eUSD["eUSD Stablecoin\n0.0.8214937"]
+        eUSD["eUSD Stablecoin<br/><small>0.0.8214937</small>"]
     end
 
-    MN["Mirror Node REST API"]
+    MN["Mirror Node REST API<br/><small>Contract logs | HTS balances<br/>Account lookup | Tx verify</small>"]
 
-    IP & ID --> WV
-    WV -->|"JSON-RPC\nChain 296"| SC
-    API -->|"transferFrom + mint"| SC
-    API -->|"TopicMessageSubmit"| Impact
-    CM --> MN
-    IP --> MN
+    IP & CP & IMP & ID --> ATS
+    ATS -->|"JSON-RPC<br/>Chain 296"| SC
+    API -->|"issue() + transferFrom()"| SC
+    API -->|"executeDistribution()"| LCCF
+    API -->|"REST API (VCs)"| Guardian
+    IMP -->|"/api/guardian/data"| API
 
-    MN -.->|"read"| HCS
-    MN -.->|"read"| HTS
+    Guardian -->|"VC anchoring"| GuardianHCS
+    Guardian -->|"IPFS storage"| VCs
 
-    MC --> Modules
+    MN -.->|"read contract logs"| SC
+    MN -.->|"read balances"| HTS
+    MN -.->|"read messages"| HCS
+
+    Bond --> Facets
 ```
 
-### 4 Hedera Services Integrated
+### 5 Hedera Services
 
-1. **Smart Contracts (Hedera EVM)** — Full ERC-3643 T-REX suite: Token, IdentityRegistry, ModularCompliance, ClaimIssuer, TrustedIssuersRegistry, ClaimTopicsRegistry, IdentityRegistryStorage, and 3 compliance modules. Deployed via TREXFactory with OnchainID identity proxies.
-2. **Hedera Consensus Service (HCS)** — Guardian anchors all Verifiable Credentials to HCS topics, creating an immutable, timestamped, publicly verifiable provenance chain for MRV data.
-3. **Hedera Token Service (HTS)** — eUSD stablecoin (FungibleCommon) for bond purchases, with token association and distribution to demo wallets.
-4. **Mirror Node API** — Real-time HCS event feed, HTS balance queries, and transaction verification.
+| Service | Role in Coppice | Example Code |
+|---------|----------------|-------------|
+| **Smart Contracts (ATS)** | Bond deployed as a single EVM diamond proxy with compliance, KYC, coupon management built in. LifeCycleCashFlow for automated coupon distribution via on-chain snapshots. | [ATS deployment](scripts/ats-setup.ts), [purchase API](frontend/app/api/purchase/route.ts), [distribute API](frontend/app/api/issuer/distribute-coupon/route.ts) |
+| **Guardian** | 5 ICMA-aligned VC schemas: bond framework, project registration, fund allocation, MRV report, verification statement. | [Guardian setup](scripts/guardian/guardian-setup.ts), [VC schemas](scripts/guardian/schemas.ts), [data proxy](frontend/app/api/guardian/data/route.ts) |
+| **Hedera Consensus Service** | Immutable audit trail — Guardian anchors all VCs to HCS topics. On-chain events timestamped and publicly queryable via [Mirror Node](https://hashscan.io/testnet/topic/0.0.8214934). | [HCS setup](scripts/hcs-setup.ts), [event feed](frontend/components/audit-event-feed.tsx) |
+| **Mirror Node** | Primary frontend data source — contract event logs, HTS balance queries, account ID mapping, transaction verification. | [mirror-node lib](frontend/lib/mirror-node.ts), [contract events hook](frontend/hooks/use-contract-events.ts), [holders hook](frontend/hooks/use-holders.ts) |
+| **Hedera Token Service** | eUSD stablecoin settlement — testnet stand-in for USDC. ERC-20 facade via HIP-218. | [HTS setup](scripts/hts-setup.ts), [faucet API](frontend/app/api/faucet/route.ts), [balance hook](frontend/hooks/use-eusd-balance.ts) |
 
-## On-Chain Identity & The Agent Role
+### Guardian VC Trust Chain (ICMA Green Bond Principles)
 
-ERC-3643 is designed for **regulated securities** where the bond issuer controls investor onboarding. This is intentional — securities law requires issuers to verify investor identity (KYC/AML) before allowing participation.
+| VC Type | GBP Component | What It Records |
+|---------|---------------|----------------|
+| **Bond Framework** | Project Evaluation & Selection | Eligible ICMA categories, SPT target, coupon terms |
+| **Project Registration** | Project Evaluation & Selection | Name, ICMA category, location, EU Taxonomy alignment |
+| **Fund Allocation** | Use of Proceeds + Management | Amount, purpose, Hedera tx ID — on-chain cross-ref |
+| **MRV Report** | Reporting (ICMA Harmonised Framework) | tCO2e avoided, MWh generated, methodology |
+| **Verification Statement** | External Review | Independent verifier (separate DID) confirms impact |
 
-### How an Investor Becomes "Verified"
+## Live Demo
 
-1. **Deploy ONCHAINID** — A personal identity proxy contract is deployed for the investor
-2. **Register in IdentityRegistry** — The issuer (agent) links the investor's wallet to their ONCHAINID and country code
-3. **Issue Claims** — A trusted ClaimIssuer signs KYC (1), AML (2), and Accredited Investor (7) claims; the investor adds them to their ONCHAINID
-4. **Compliance Check** — At transfer time, the token contract verifies all claims and compliance modules pass
+**Live App:** [coppice.cc](https://www.coppice.cc) | **Demo Video:** [YouTube](https://youtu.be/261J4n4K3t8) | **CPC Bond:** [`0.0.8254921`](https://hashscan.io/testnet/contract/0.0.8254921) (importable in Hedera's testnet Tokenization Studio)
 
-### Why an Agent (Issuer) is Required
+| Page | Purpose |
+|------|---------|
+| **[Invest](https://www.coppice.cc)** | Where investors verify compliance and purchase bonds. ATS checks identity, KYC, jurisdiction, and accreditation before allowing token issuance. Alice passes all checks and can purchase CPC with eUSD. Bob can self-promote via the UI (for judge onboarding). Charlie is blocked — restricted jurisdiction enforced at the protocol level. |
+| **[Coupons](https://www.coppice.cc/coupons)** | Shows the bond's coupon schedule with on-chain data. Investors see annual rate (4.25% base / 4.50% penalty), face value, record and execution dates, and whether the on-chain snapshot has been taken for each coupon period. |
+| **[Impact](https://www.coppice.cc/impact)** | Where investors verify that funds are being used as promised and making real environmental impact. Shows Guardian-verified projects with full evidence chains (IPFS + HCS links), SPT progress toward the 10,000 tCO2e target, and ICMA Green Bond Principles alignment. |
+| **[Issuer](https://www.coppice.cc/issue)** | Administrative dashboard for the bond issuer. Issue tokens, freeze/unfreeze wallets, pause/unpause trading, allocate proceeds to green projects via Guardian, create coupons (with SPT enforcement), distribute coupon payments, and register new projects. |
 
-The `onlyAgent` modifier on `IdentityRegistry.registerIdentity()` means investors cannot self-register — this is **by design in the ERC-3643 standard**. In a production deployment, the agent role would belong to the bond issuer or their KYC provider (like [Tokeny's T-REX platform](https://tokeny.com/)). The agent could also be a multisig wallet or governance DAO for additional decentralization, but someone must gate KYC/AML verification to comply with securities regulations.
-
-In this demo, the deployer wallet serves as the issuer/agent. The frontend reads verification status but does not include a self-service onboarding flow — that would be handled by an external KYC provider in production.
-
-## Demo Wallets
-
-| Role | Hedera Account | EVM Address | Country | Status |
-|------|---------------|-------------|---------|--------|
-| Deployer/Issuer | 0.0.8213176 | `0xEB974bA9...` | DE | Issuer agent — manages minting, freeze, pause |
-| Alice | 0.0.8213185 | `0x4f9ad4Fd...` | DE (276) | Verified investor — full compliance |
-| Bob | 0.0.8214040 | `0xad33bd43...` | US (840) | No ONCHAINID — blocked at identity check |
-| Charlie | 0.0.8214051 | `0xFf3a3D1f...` | CN (156) | Verified but country restricted |
-| Diana | 0.0.8214895 | `0x35bccFFf...` | FR (250) | Verified — freeze/unfreeze demo |
+Every action is a real Hedera testnet transaction. Every HashScan and IPFS link is clickable and verifiable.
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js 20 or 22 LTS (Hardhat does not support odd-numbered releases)
-- MetaMask (configured for [Hedera Testnet, Chain 296](https://chainlist.org/chain/296))
+- Node.js 20 or 22 LTS
+- MetaMask configured for [Hedera Testnet (Chain 296)](https://chainlist.org/chain/296)
 
 ### Setup
 
@@ -115,6 +135,9 @@ npm install
 # Run smart contract tests (local Hardhat network)
 cd contracts && npx hardhat test
 
+# Run frontend unit tests
+cd ../frontend && npx vitest run
+
 # Start frontend dev server
 cd ../frontend && npm run dev
 
@@ -125,148 +148,177 @@ cd ../e2e && npx playwright test
 ### Deploy to Hedera Testnet
 
 ```bash
-# 1. Configure environment
-cp .env.example .env  # Add your Hedera operator keys
+# 1. Configure environment (each workspace has its own .env)
+cp contracts/.env.example contracts/.env    # Add deployer key
+cp scripts/.env.example scripts/.env        # Add Hedera operator
+cp scripts/guardian/.env.example scripts/guardian/.env  # Guardian credentials
 
-# 2. Deploy ERC-3643 contracts
-cd contracts
-npx hardhat run scripts/deploy.ts --network hederaTestnet
-npx hardhat run scripts/setup-demo.ts --network hederaTestnet
+# 2. Deploy ATS bond + LifeCycleCashFlow
+cd scripts && npx tsx ats-setup.ts
 
 # 3. Create HCS topics and HTS eUSD stablecoin
-cd ../scripts
-npx tsx hcs-setup.ts
-npx tsx hts-setup.ts
+cd scripts && npx tsx hcs-setup.ts
+cd scripts && npx tsx hts-setup.ts
 
-# 4. Start frontend
-cd ../frontend && npm run dev
+# 4. Set up Guardian policy and populate demo data
+cd scripts/guardian && npx tsx guardian-setup.ts
+cd scripts/guardian && npx tsx guardian-populate.ts
+
+# 5. Start frontend
+cd frontend && npm run dev
 ```
+
+## On-Chain Identity & Compliance
+
+Bonds are regulated securities — securities law requires issuers to verify investor identity (KYC/AML) before allowing participation. ATS enforces this at the protocol level: identity, KYC, AML, accredited investor status, jurisdiction, and transfer eligibility are all checked in the token contract before any transfer executes.
+
+### How an Investor Becomes "Verified"
+
+1. **Register identity** — ATS registers the investor's wallet with KYC status and country code ([onboard API](frontend/app/api/onboard/route.ts))
+2. **Whitelist** — Investor is added to the bond's control list ([ats-setup.ts](scripts/ats-setup.ts))
+3. **Compliance check** — At transfer time, the ATS diamond proxy verifies identity, KYC claims, jurisdiction, and balance limits ([compliance hook](frontend/hooks/use-compliance.ts))
+4. **Transfer or revert** — Non-compliant transfers revert at the protocol level — the token cannot be sent to unverified wallets
+
+### Demo Wallets
+
+| Role | Hedera Account | Country | Status |
+|------|---------------|---------|--------|
+| Deployer/Issuer | [`0.0.8213176`](https://hashscan.io/testnet/account/0.0.8213176) | — | Token agent — manages issuance, freeze, pause |
+| Alice (Verified) | [`0.0.8213185`](https://hashscan.io/testnet/account/0.0.8213185) | DE (276) | Verified investor — full compliance |
+| Bob (Self-promote) | [`0.0.8214040`](https://hashscan.io/testnet/account/0.0.8214040) | US (840) | Can self-promote via UI for judge onboarding |
+| Charlie (Restricted) | [`0.0.8214051`](https://hashscan.io/testnet/account/0.0.8214051) | CN (156) | Registered but country restricted |
+| Diana (Freeze demo) | [`0.0.8214895`](https://hashscan.io/testnet/account/0.0.8214895) | FR (250) | Verified — freeze/unfreeze demo |
+
+## SPT Enforcement — The "Teeth"
+
+Green bonds are just bonds with guidelines on how the issuer should invest. Sustainability-linked bonds provide a financial penalty should the issuer fail to meet sustainability targets. Coppice combines both so the financial incentives of the bond align with the environmental outcomes investors expect.
+
+The Sustainability Performance Target ties the coupon rate to **verified MRV data** from Guardian:
+
+- **Target:** Avoid 10,000 tCO2e per coupon period across all funded projects
+- **Target met:** Coupon stays at 4.25%
+- **Target missed:** Coupon steps up to 4.50% (+25bps)
+
+The [create-coupon API](frontend/app/api/issuer/create-coupon/route.ts) is hard-gated by the [SPT enforcement module](frontend/lib/spt-enforcement.ts): if the SPT is missed, coupons cannot be created below the penalty rate. Coupons are distributed on-chain via the [LifeCycleCashFlow contract](contracts/contracts/mass-payout/LifeCycleCashFlow.sol) using ATS snapshots — the issuer cannot override the penalty.
 
 ## Project Structure
 
 ```
 hedera-green-bonds/
-├── contracts/                 # Hardhat project — ERC-3643 on Hedera EVM
-│   ├── contracts/Imports.sol      # Pulls T-REX + OnchainID from node_modules
-│   ├── scripts/
-│   │   ├── deploy.ts              # 7-phase TREXFactory deployment
-│   │   ├── setup-demo.ts          # Identity registration, claims, mint, unpause
-│   │   ├── helpers.ts             # Address save/load utilities
-│   │   └── verify-testnet.ts      # On-chain state verification
-│   └── test/
-│       ├── deployment.test.ts     # Token metadata, agent roles, initial supply
-│       ├── compliance.test.ts     # Identity verification, country restrictions
-│       └── transfers.test.ts      # Transfers, freeze/unfreeze, pause/unpause, mint
-├── scripts/                  # One-time Hedera setup scripts
-│   ├── config.ts                  # Hedera SDK client setup (for scripts)
-│   ├── hcs-setup.ts               # Create HCS audit + impact topics
-│   └── hts-setup.ts               # Create eUSD, associate wallets, distribute
-├── frontend/                  # Next.js 16 App Router + Tailwind CSS v4
+├── contracts/                   # Hardhat project — Solidity 0.8.17 + 0.8.22
+│   ├── contracts/
+│   │   ├── Imports.sol              # ERC-3643 contracts (for local test suite)
+│   │   └── mass-payout/            # LifeCycleCashFlow (coupon distribution)
+│   └── test/                       # 32 Hardhat tests (deployment, compliance, transfers)
+├── scripts/                     # Hedera setup scripts
+│   ├── ats-setup.ts                 # Deploy ATS bond, configure roles, mint, set coupons
+│   ├── hcs-setup.ts                 # Create HCS audit + impact topics
+│   ├── hts-setup.ts                 # Create eUSD, associate wallets, distribute
+│   └── guardian/                    # Guardian policy setup, populate, verify SPT
+├── frontend/                    # Next.js 16 App Router + Tailwind CSS v4
 │   ├── app/
-│   │   ├── layout.tsx             # Server component layout with wagmi providers
-│   │   ├── page.tsx               # Investor Portal (client)
-│   │   ├── issue/page.tsx         # Issuer Dashboard (client)
-│   │   ├── monitor/page.tsx       # Compliance Monitor (client)
-│   │   └── api/                   # API routes (purchase, allocate, health)
-│   ├── components/            # BondDetails, ComplianceStatus, TransferFlow, AuditEventFeed
-│   ├── hooks/                 # useToken, useIdentity, useCompliance, useHCSAudit, useHTS
-│   └── lib/                   # Hedera utils, constants, Guardian types
-├── e2e/                       # Playwright E2E tests
-│   ├── fixtures/wallet-mock.ts    # EIP-1193 MetaMask mock with real tx signing
-│   └── tests/                     # 6 spec files (desktop + mobile)
-└── docs/                      # Plans and documentation
+│   │   ├── page.tsx                 # Investor Portal — compliance checks, purchase flow
+│   │   ├── coupons/page.tsx         # Coupon schedule — rates, dates, snapshot status
+│   │   ├── impact/page.tsx          # Guardian impact — projects, MRV, SPT progress
+│   │   ├── issue/page.tsx           # Issuer Dashboard — issue, freeze, allocate, distribute
+│   │   └── api/                     # 11 API routes (purchase, allocate, distribute, etc.)
+│   ├── components/              # 30 components (bond, compliance, guardian, issuer, UI)
+│   ├── hooks/                   # 11 hooks (token, identity, compliance, coupons, guardian)
+│   ├── contexts/ats-context.tsx # ATS diamond proxy integration (ethers v6 + MetaMask)
+│   └── lib/                     # Hedera utils, ABIs, constants, Guardian types, SPT enforcement
+├── e2e/                         # Playwright E2E tests — MetaMask mock with real tx signing
+│   └── tests/                       # 10 spec files (64 tests)
+├── packages/common/             # Shared ABIs (generated via wagmi CLI)
+└── docs/                        # Pitch deck, architecture diagrams, research
 ```
 
 ## Testing
 
-### Smart Contract Tests
+**227 tests total** — 32 contract + 131 unit + 64 E2E
+
+### Smart Contract Tests (32)
 ```bash
 cd contracts && npx hardhat test
 ```
+Deployment verification, identity/compliance checks (verified vs. unverified vs. restricted country), compliant and rejected transfers, freeze/unfreeze, pause/unpause, minting access control, supply limits.
 
-Covers deployment verification, identity/compliance checks (verified vs. unverified vs. restricted country), compliant and rejected transfers, freeze/unfreeze, pause/unpause, minting access control, and supply limits.
+### Frontend Unit Tests (131)
+```bash
+cd frontend && npx vitest run
+```
+21 test files covering API routes (purchase, allocate, distribute-coupon, create-coupon, faucet, onboard, guardian-data, grant-agent-role, health), hooks (guardian, coupons, identity, contract-events, count-up), lib modules (constants, retry, api-client, auth, spt-enforcement), components (nav), and pages (impact).
 
-### E2E Browser Tests
+### E2E Browser Tests (64)
 ```bash
 cd e2e && npx playwright test
 ```
+10 spec files with a custom MetaMask mock that signs real transactions on Hedera testnet:
 
-Covers all three frontend pages with a custom MetaMask mock that signs real transactions on Hedera testnet:
+- **Investor Portal** — Bond details, Alice compliance (green checks), Bob self-promotion, Charlie rejection (restricted country), portfolio display, purchase flow
+- **Issuer Dashboard** — Issue tokens, freeze/unfreeze, pause/unpause, allocate proceeds, distribute coupons, register projects
+- **Coupons Page** — Coupon schedule display, rate formatting, on-chain data
+- **Impact Page** — Guardian data display, SPT progress, project cards
+- **Guardian Live** — Real Guardian API integration tests
+- **Write Operations** — Real testnet transactions (issue, freeze, pause)
+- **Full Demo Flow** — Multi-page navigation, wallet state management
+- **Accessibility** — WCAG compliance, focus management, ARIA labels
+- **Mobile** — Responsive design at 390x844, hamburger menu, touch targets
+- **Faucet** — eUSD faucet for demo wallets
 
-- **Investor Portal:** Bond details, Alice compliance (4 green checks), Bob rejection (no identity), Charlie rejection (restricted country), portfolio display, purchase flow gating
-- **Issuer Dashboard:** Wallet connection, mint/freeze/pause form rendering, admin controls
-- **Compliance Monitor:** Event feed display, stats cards, HCS event loading and filtering
-- **Full Demo Flow:** Multi-page navigation, wallet state management
-- **Write Operations:** Real testnet transactions — mint tokens, freeze/unfreeze wallet, pause/unpause token, compliance verification
-- **Mobile Responsive (390x844):** Hamburger menu open/close/navigate, all 3 pages render at mobile viewport, touch target sizing
+### Remote E2E (against Vercel deployment)
+```bash
+E2E_BASE_URL=https://www.coppice.cc npx playwright test guardian-live impact-page coupons-page
+```
 
 ## Tech Stack
 
-| Component | Technology | Notes |
-|-----------|-----------|-------|
-| Smart Contracts | Solidity 0.8.17, [T-REX v4.1.6](https://github.com/ERC-3643/ERC-3643), [OnchainID v2.0.0](https://github.com/onchain-id/solidity), OpenZeppelin v4.9.6 | All latest stable compatible versions. T-REX pins Solidity 0.8.17 and requires OZ v4.x. |
-| Development | Hardhat, TypeScript, Turborepo | |
-| Frontend | Next.js 16 App Router, React 19, ethers v6, Tailwind CSS v4 | API routes handle purchase/allocate. |
-| Hedera SDK | @hashgraph/sdk for HCS/HTS | |
-| Testing | Hardhat/viem (contracts), vitest (frontend unit), Playwright (E2E) | 115 tests total: 32 contract + 40 unit + 43 E2E |
-| Deployment | Hedera Testnet (Chain ID 296), Vercel (frontend) | |
+| Layer | Technology |
+|-------|-----------|
+| Smart Contracts | Solidity 0.8.17 + 0.8.22, [ATS](https://github.com/hashgraph/asset-tokenization-studio) (ERC-3643 diamond proxy), [LifeCycleCashFlow](contracts/contracts/mass-payout/LifeCycleCashFlow.sol), OpenZeppelin v4.9.6 |
+| Frontend | Next.js 16.1.6, React 19, ethers v6, Tailwind CSS v4, TanStack Query v5 |
+| Guardian | Hedera Guardian, 5 ICMA-aligned VC schemas, HAProxy TLS |
+| Testing | Hardhat (contracts), vitest 4.1 (unit), Playwright 1.49 (E2E) |
+| Build | Turborepo monorepo, TypeScript, npm workspaces |
+| Deployment | Hedera Testnet (Chain 296), Vercel (frontend) |
 
-## Contract Address Configuration
+## Deployed Contracts & Resources (Hedera Testnet)
 
-The `@coppice/common` package (generated by wagmi CLI) contains the canonical testnet addresses. These are the source of truth. The `NEXT_PUBLIC_*` env vars in the frontend are overrides for non-standard deployments — if unset, the app falls back to the addresses baked into `@coppice/common`.
+### Smart Contracts
 
-## Deployed Contracts (Hedera Testnet)
+| Contract | Account ID | EVM Address | HashScan |
+|----------|-----------|-------------|----------|
+| CPC Bond (ATS) | `0.0.8254921` | `0xcFbB4b74EdbEB4FE33cD050d7a1203d1486047d9` | [View](https://hashscan.io/testnet/contract/0.0.8254921) |
+| LifeCycleCashFlow | `0.0.8254941` | `0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350` | [View](https://hashscan.io/testnet/contract/0.0.8254941) |
 
-| Contract | Address | HashScan |
-|----------|---------|----------|
-| Token (CPC) | `0x17e19B53981370a904d0003Ba2D336837a43cbf0` | [View](https://hashscan.io/testnet/contract/0x17e19B53981370a904d0003Ba2D336837a43cbf0) |
-| IdentityRegistry | `0x03ecdB8673d65b81752AC14dAaCa797D846c1B31` | [View](https://hashscan.io/testnet/contract/0x03ecdB8673d65b81752AC14dAaCa797D846c1B31) |
-| ModularCompliance | `0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf` | [View](https://hashscan.io/testnet/contract/0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf) |
-| ClaimIssuer | `0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A` | [View](https://hashscan.io/testnet/contract/0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A) |
-| TREXFactory | `0x78A20A45aA6Bb35f516fFf5dcE26f25C86e03d7f` | [View](https://hashscan.io/testnet/contract/0x78A20A45aA6Bb35f516fFf5dcE26f25C86e03d7f) |
+### HCS Topics
 
-## HCS Topics & HTS Tokens
+| Topic | ID | Memo | HashScan |
+|-------|------|------|----------|
+| Compliance Audit Trail | `0.0.8214934` | Coppice Compliance Audit Trail | [View](https://hashscan.io/testnet/topic/0.0.8214934) |
+| Impact Tracking | `0.0.8214935` | Coppice Green Bond Impact Tracking | [View](https://hashscan.io/testnet/topic/0.0.8214935) |
 
-| Resource | ID | HashScan |
-|----------|------|----------|
-| Audit Trail (HCS) | `0.0.8214934` | [View](https://hashscan.io/testnet/topic/0.0.8214934) |
-| Impact Tracking (HCS) | `0.0.8214935` | [View](https://hashscan.io/testnet/topic/0.0.8214935) |
-| eUSD Stablecoin (HTS) | `0.0.8214937` | [View](https://hashscan.io/testnet/token/0.0.8214937) |
+### HTS Tokens
 
-## Compliance Modules
+| Token | ID | Symbol | Supply | HashScan |
+|-------|------|--------|--------|----------|
+| Coppice USD | `0.0.8214937` | eUSD | INFINITE (2 decimals) | [View](https://hashscan.io/testnet/token/0.0.8214937) |
 
-Three modular compliance modules enforce transfer restrictions at the protocol level:
+## Ecosystem Alignment
 
-| Module | Address | Purpose |
-|--------|---------|---------|
-| [CountryRestrictModule](https://hashscan.io/testnet/contract/0xfeafC271237D5fbe90dC285df5AeD0bF901F3755) | `0xfeafC271...` | Blocks transfers to/from restricted jurisdictions (China, code 156) |
-| [MaxBalanceModule](https://hashscan.io/testnet/contract/0x9DabC674AD030566BbCb7FC08F110649f7A4C604) | `0x9DabC674...` | Limits individual holder balance to 1,000,000 CPC |
-| [SupplyLimitModule](https://hashscan.io/testnet/contract/0x4f88C806ca0844BD3B09b3B700D11C54eD794D1F) | `0x4f88C806...` | Caps total token supply at 1,000,000 CPC |
+- **[ERC-3643 Association](https://www.erc3643.org/)** — DTCC, ABN AMRO, Deloitte, Fireblocks, Hedera Foundation. $32B+ tokenized using this standard.
+- **[ABN AMRO precedent](https://tokeny.com/success-story-abn-amros-bond-tokenization-on-polygon/)** — EUR 5M digital green bond on Polygon using ERC-3643 (Sept 2023). Coppice adds Guardian-verified impact + SPT penalties on a carbon-negative chain.
+- **[EU DLT Pilot Regime](https://eur-lex.europa.eu/eli/reg/2022/858/oj/eng)** — Bonds under EUR 1B can be issued on DLT within a regulatory sandbox. Concrete legal pathway to mainnet issuance.
+- **[Verra partnership](https://verra.org/verra-and-hedera-to-accelerate-digital-transformation-of-carbon-markets/)** — 5-year partnership with Guardian to digitalize 20+ carbon methodologies.
 
-## ERC-3643 Compliance Flow
+## Roadmap
 
-```
-Investor connects wallet
-    │
-    ├── 1. Identity check: Is ONCHAINID registered in IdentityRegistry?
-    │      └── Contract: IdentityRegistry (0x03ec...)
-    │
-    ├── 2. Claims check: Are KYC (1), AML (2), Accredited (7) claims verified?
-    │      └── Contract: ClaimIssuer (0x6746...)
-    │
-    ├── 3. Jurisdiction check: Is investor country in approved list?
-    │      └── Module: CountryRestrictModule (0xfeaf...)
-    │
-    └── 4. Compliance check: Does ModularCompliance.canTransfer() pass?
-            │
-            ├── CountryRestrictModule: Country not blocked?
-            ├── MaxBalanceModule: Balance after transfer ≤ limit?
-            └── SupplyLimitModule: Total supply after mint ≤ cap?
-                    │
-                    ├── ALL PASS → Transfer/mint executes
-                    └── ANY FAIL → Transaction reverts (enforced in token contract)
-```
+| Phase | Milestone |
+|-------|-----------|
+| **Institutional Pilot** | Partner with a green bond issuer for testnet/mainnet pilot |
+| **EU DLT Pilot Regime** | Apply under Reg. 2022/858 — bonds under EUR 1B qualify for DLT sandbox |
+| **Automated dMRV** | Integrate IoT/satellite data via Guardian — HYPHEN and B4E show this is production-ready on Hedera |
+| **Multi-bond Platform** | Multiple issuers, independent compliance rules, secondary market trading |
 
 ## License
 
-**Proprietary** — All rights reserved, except `contracts/`, which is GPL-3.0 as required by the [T-REX dependency](https://github.com/ERC-3643/ERC-3643). The frontend communicates with deployed contracts via JSON-RPC (not linking) and is an independent work under GPL Section 0.
+**Proprietary** — All rights reserved, except `contracts/`, which is GPL-3.0 as required by the [ERC-3643 dependency](https://github.com/ERC-3643/ERC-3643). See [LICENSE](LICENSE) for details.
