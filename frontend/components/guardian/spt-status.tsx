@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { formatNumber } from "@/lib/format";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ProgressBar } from "@/components/ui/progress-bar";
@@ -13,7 +14,7 @@ interface SptStatusProps {
   variant?: "full" | "compact";
 }
 
-export function SptStatus({
+export const SptStatus = memo(function SptStatus({
   totalVerified,
   target,
   met,
@@ -90,4 +91,4 @@ export function SptStatus({
       )}
     </div>
   );
-}
+});

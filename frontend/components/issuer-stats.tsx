@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { formatBalance, formatNumber } from "@/lib/format";
 import { useCountUp } from "@/hooks/use-count-up";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
@@ -12,7 +13,7 @@ interface IssuerStatsProps {
   totalAllocated: number;
 }
 
-export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: IssuerStatsProps) {
+export const IssuerStats = memo(function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: IssuerStatsProps) {
   const holderCount = holders.filter((h) => h.balance > BigInt(0)).length;
   const frozenCount = holders.filter((h) => h.frozen).length;
   const supplyDisplay = totalSupply != null ? formatBalance(totalSupply) : "--";
@@ -55,4 +56,4 @@ export function IssuerStats({ totalSupply, isPaused, holders, totalAllocated }: 
       </div>
     </div>
   );
-}
+});

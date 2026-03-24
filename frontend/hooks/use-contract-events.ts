@@ -11,7 +11,7 @@ export interface AuditEvent {
   ts: number;
   tx: string;
   data: Record<string, string>;
-  sequenceNumber: number;
+  sequenceNumber: string;
   consensusTimestamp: string;
 }
 
@@ -52,7 +52,7 @@ export function parseContractLog(log: MirrorContractLog): AuditEvent | null {
 
   const base = {
     tx: log.transaction_hash,
-    sequenceNumber: log.index,
+    sequenceNumber: `${log.timestamp}:${log.index}`,
     consensusTimestamp: log.timestamp,
   };
 

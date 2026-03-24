@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
 import type { GuardianProject, VCEvidence } from "@/lib/guardian-types";
@@ -81,7 +81,7 @@ const TYPE_COLORS: Record<TimelineEvent["type"], string> = {
   verification: "bg-bond-green/15 text-bond-green",
 };
 
-export function GuardianEvents() {
+export const GuardianEvents = memo(function GuardianEvents() {
   const { data, isLoading, error } = useGuardian();
   const timeline = useMemo(
     () => (data ? buildTimeline(data.projects) : []),
@@ -150,4 +150,4 @@ export function GuardianEvents() {
       ))}
     </div>
   );
-}
+});

@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { useGuardian } from "@/hooks/use-guardian";
 import { formatNumber } from "@/lib/format";
 import { ProgressBar } from "@/components/ui/progress-bar";
 
-export function ProjectAllocation() {
+export const ProjectAllocation = memo(function ProjectAllocation() {
   const { data } = useGuardian();
 
   const allocations = useMemo(() =>
@@ -71,4 +71,4 @@ export function ProjectAllocation() {
       </div>
     </div>
   );
-}
+});

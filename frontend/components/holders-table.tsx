@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { formatBalance, abbreviateAddress } from "@/lib/format";
 import { DEMO_WALLETS } from "@/lib/constants";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -10,7 +11,7 @@ function holderLabel(address: string): string | null {
   return DEMO_WALLETS[address.toLowerCase()]?.label ?? null;
 }
 
-export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; loading: boolean }) {
+export const HoldersTable = memo(function HoldersTable({ holders, loading }: { holders: HolderInfo[]; loading: boolean }) {
   if (loading) {
     return (
       <div className="card-flush">
@@ -97,4 +98,4 @@ export function HoldersTable({ holders, loading }: { holders: HolderInfo[]; load
       )}
     </div>
   );
-}
+});

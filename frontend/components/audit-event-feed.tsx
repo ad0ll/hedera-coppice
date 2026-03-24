@@ -5,9 +5,9 @@ import { EVENT_BADGE_CLASSES } from "@/lib/event-types";
 import { formatTimestamp } from "@/lib/format";
 import { Spinner } from "@/components/ui/icons";
 import { TxLink } from "@/components/ui/hashscan-link";
-import { useState, useMemo } from "react";
+import { memo, useState, useMemo } from "react";
 
-export function AuditEventFeed() {
+export const AuditEventFeed = memo(function AuditEventFeed() {
   const { events, loading } = useContractEvents();
   const [filter, setFilter] = useState<string>("ALL");
 
@@ -88,4 +88,4 @@ export function AuditEventFeed() {
       </div>
     </div>
   );
-}
+});
