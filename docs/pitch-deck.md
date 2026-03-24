@@ -8,7 +8,7 @@
 ## Slide 1: Title
 
 **Coppice**
-*Verified Green Bonds on Hedera*
+*Green Bonds with Teeth on Hedera*
 
 ad0ll (solo developer) | Live at coppice.cc | Sustainability Track
 
@@ -24,9 +24,9 @@ The world needs **$7.5 trillion/year** in green investment by 2030 for net-zero 
 
 The gap isn't capital. It's trust. Green bonds have crossed **$3 trillion outstanding** [LSEG], but four structural failures undermine confidence:
 
-1. **Self-certified "green"** — Issuers self-report with minimal external verification. 94% of investors believe sustainability reporting contains unsupported claims [PwC 2023]. The EU Green Bond Standard (effective Dec 2024) exists, but only ~30 bonds have been issued under it so far [IEEFA, Feb 2026].
+1. **Self-certified "green"** — Issuers self-report with minimal external verification. 94% of investors believe sustainability reporting contains unsupported claims [PwC 2023]. The EU Green Bond Standard (Dec 2024) is voluntary — only ~30 of thousands of green bonds have adopted it [IEEFA, Feb 2026].
 
-2. **Opaque fund tracking** — Use-of-proceeds reports arrive 12-18 months late as static PDFs. No real-time visibility into whether funds reach green projects.
+2. **Opaque fund tracking** — Investors can't verify where funds went until the issuer publishes an annual report — self-authored, unverified, often 12+ months late.
 
 3. **Off-chain compliance** — KYC/AML and jurisdiction checks live in spreadsheets. Transfer restrictions are voluntary, not protocol-level.
 
@@ -42,16 +42,16 @@ The gap isn't capital. It's trust. Green bonds have crossed **$3 trillion outsta
 
 Coppice combines two financial structures that have never been combined on-chain:
 
-**Green Bond (use-of-proceeds)**
+**Green Bond (use-of-proceeds & MRV)**
 Every fund allocation is a Guardian Verifiable Credential — recorded in real-time, anchored to HCS, stored on IPFS. Investors verify the full trust chain (project registration → allocation → MRV report → independent verification) without waiting for annual PDFs.
 
 **Sustainability-Linked Bond (coupon penalty)**
-The bond defines a Sustainability Performance Target: "Avoid 10,000 tCO2e per coupon period." If verified MRV data falls short, the coupon rate steps up +25bps (4.25% → 4.50%). The backend blocks coupon creation below the penalty rate — Guardian must confirm SPT status.
+The bond defines a Sustainability Performance Target: "Avoid 10,000 tCO2e per coupon period." If verified MRV data falls short, the coupon rate steps up +25bps (4.25% → 4.50%). If climate targets aren't met, the coupon rate increases automatically — creating direct financial consequences for environmental underperformance. The issuer cannot override the penalty.
 
 **Protocol-level compliance**
 ATS enforces identity, KYC, AML, accredited investor status, jurisdiction, and transfer eligibility in the token contract. Non-compliant wallets cannot receive tokens.
 
-Verbund issued the first hybrid green+SLB in traditional finance (EUR 500M, 2021) [Natixis]. To our knowledge, Coppice is the first on-chain implementation.
+Verbund issued the first hybrid green+SLB in traditional finance (EUR 500M, 2021) [Natixis]. Coppice is the first on-chain implementation.
 
 *Presenter note: Each problem from Slide 2 maps to a solution — #1 → Guardian VCs with independent verification, #2 → real-time use-of-proceeds tracking, #3 → ATS on-chain compliance, #4 → SPT coupon penalty. Call this out explicitly.*
 
@@ -70,7 +70,7 @@ Investor connects wallet → **ATS compliance checks** (identity, KYC/AML, accre
 | Service | Role in Coppice |
 |---------|----------------|
 | **Asset Tokenization Studio (ATS)** | Bond deployed as single EVM contract with compliance, KYC, coupon management built in. LifeCycleCashFlow for automated coupon distribution via on-chain snapshots. |
-| **Guardian** | 5 ICMA-aligned VC schemas: bond framework, project registration, fund allocation, MRV report, verification statement. VCs discoverable via HIP-19 [HIP-19]. |
+| **Guardian** | 5 ICMA-aligned VC schemas: bond framework, project registration, fund allocation, MRV report, verification statement. VCs anchored to HCS for tamper-proof audit trail. |
 | **Hedera Consensus Service (HCS)** | Immutable audit trail — Guardian anchors all VCs to HCS topics. On-chain events timestamped and publicly queryable. |
 | **Mirror Node** | Primary frontend data source — contract event logs, HTS balance queries, transaction verification. |
 | **Hedera Token Service (HTS)** | *(Hackathon only)* eUSD stablecoin settlement — testnet stand-in for USDC. ERC-20 facade via HIP-218. |
@@ -81,7 +81,7 @@ Investor connects wallet → **ATS compliance checks** (identity, KYC/AML, accre
 
 ## Slide 5: Live Demo
 
-**Demo Video:** [YouTube link]
+**Demo Video:** [YouTube](https://youtu.be/261J4n4K3t8)
 **Live App:** https://www.coppice.cc
 **Guardian API:** https://guardian.coppice.cc
 **CPC Bond:** `0.0.8254921` — importable in Hedera's testnet Tokenization Studio
@@ -94,7 +94,6 @@ Investor connects wallet → **ATS compliance checks** (identity, KYC/AML, accre
 | **Coupons** | Coupon schedule — 4.25% annual rate, face value, record/execution dates, on-chain snapshot status. |
 | **Impact** | Guardian-verified projects with full trust chain (IPFS + HCS links). SPT target vs actual. ICMA compliance evidence. |
 | **Issuer** | Issue tokens, freeze/unfreeze, pause/unpause, allocate proceeds via Guardian, distribute coupons, register new projects. |
-| **Compliance** | On-chain events from Mirror Node contract logs + Guardian verification events. All with HashScan links. |
 
 Every action is a real Hedera testnet transaction. Every HashScan and IPFS link is clickable and verifiable.
 
@@ -104,7 +103,7 @@ Every action is a real Hedera testnet transaction. Every HashScan and IPFS link 
 
 ## Slide 6: The Hybrid — Green Bond + Sustainability-Linked Bond
 
-### Green Bond Side — Where the Money Goes
+### Green Bond Side — Use of Proceeds & MRV
 
 Use-of-proceeds tracked as **Guardian Verifiable Credentials**. Each step independently verifiable via IPFS + HCS:
 
@@ -152,7 +151,7 @@ World's largest open-source digitized climate methodology library. Converts envi
 
 ### Carbon-Negative Network
 
-Only major L1 verified by UCL as the lowest-energy DLT studied [UCL]. **0.000003 kWh per transaction.** Quarterly carbon offsets via Terrapass make the network carbon-negative. A green bond should run on the greenest chain.
+Only major L1 verified by UCL as the lowest-energy DLT studied [UCL]. **0.000003 kWh per transaction.** Quarterly carbon offsets via Terrapass make the network carbon-negative. A green bond should run on a green chain.
 
 ### Growing dMRV Ecosystem
 
@@ -175,9 +174,9 @@ Coppice's manual MRV is a stepping stone to automated verification. The ecosyste
 
 **EU Green Bond Standard** (Reg. 2023/2631, effective Dec 2024) — Demands taxonomy-aligned use-of-proceeds and external review. Coppice's 5 Guardian VCs map directly to the 4 GBP core components — delivering digitally and in real-time what the standard requires as annual PDFs. [EC]
 
-**EU DLT Pilot Regime** (Reg. 2022/858) — Bonds under EUR 1B can be issued on DLT within a regulatory sandbox. ESMA review delivered March 2026; Commission signaled no expiry. This is the concrete legal pathway for Coppice to issue tokenized bonds in the EU without new legislation. [EUR-Lex]
-
 **30+ EuGBs already issued** — EUR 30B+ issued under EuGBS since Dec 2024. The standard is gaining traction — Coppice provides the on-chain infrastructure to meet its transparency requirements natively. [IEEFA]
+
+**EU DLT Pilot Regime** (Reg. 2022/858) — Bonds under EUR 1B can be issued on DLT within a regulatory sandbox. ESMA review delivered March 2026; Commission signaled no expiry. This is the concrete legal pathway for Coppice to issue tokenized bonds in the EU without new legislation. [EUR-Lex]
 
 ---
 
@@ -186,7 +185,7 @@ Coppice's manual MRV is a stepping stone to automated verification. The ecosyste
 ### What's Built
 
 - Hybrid green bond + sustainability-linked bond on Hedera testnet — the first on-chain implementation combining use-of-proceeds tracking with sustainability-linked coupon penalties
-- Full frontend with investor portal, coupon schedule, impact tracking, issuer dashboard, and compliance monitor
+- Full frontend with investor portal, coupon schedule, impact tracking, and issuer dashboard
 - 5 Hedera services: Smart Contracts (ATS), Guardian, HCS, HTS, Mirror Node
 - Guardian integration: 5 ICMA-aligned VC schemas, trust chain visualization, SPT enforcement
 - Automated coupon distribution via LifeCycleCashFlow (on-chain snapshot + mass payout)
@@ -197,17 +196,16 @@ Coppice's manual MRV is a stepping stone to automated verification. The ecosyste
 
 | Phase | Milestone |
 |-------|-----------|
-| **Institutional Pilot** | Partner with a green bond issuer for a small-scale testnet/mainnet pilot |
-| **EU DLT Pilot Regime** | Apply under Regulation 2022/858 — bonds under EUR 1B qualify for DLT sandbox [EUR-Lex] |
-| **Automated dMRV** | Integrate IoT/satellite data feeding Guardian — HYPHEN and B4E show this is production-ready on Hedera |
+| **Institutional Pilot** | Partner with a green bond issuer for testnet/mainnet pilot |
+| **EU DLT Pilot Regime** | Apply under Reg. 2022/858 — bonds under EUR 1B qualify for DLT sandbox. Concrete legal pathway to mainnet issuance. [EUR-Lex] |
+| **Automated dMRV** | Integrate IoT/satellite data via Guardian — HYPHEN and B4E show this is production-ready on Hedera |
 | **Multi-bond Platform** | Multiple issuers, independent compliance rules, secondary market trading |
-| **Mainnet + Licensing** | Operate on Hedera mainnet within DLT Pilot Regime, transition to permanent authorization |
 
 ### Key Learnings
 
-- **ATS works for bonds on Hedera.** Single contract with compliance, KYC, and coupon management built in. Runs correctly on Hedera EVM.
-- **Guardian is powerful for anti-greenwashing.** VCs with independent verification create a trust chain that traditional green bonds cannot match.
-- **The combination is novel.** No prior Hedera project has combined ATS and Guardian. Green bond tokenization on Hedera is new territory.
+- **ATS is bond-ready.** Coupon scheduling, snapshots, and mass distribution via LifeCycleCashFlow work end-to-end — but required reading contract source directly. First bond implementation on ATS.
+- **Guardian extends beyond carbon credits.** Its VC + HCS + IPFS architecture is a natural fit for bond use-of-proceeds tracking. We built 5 ICMA-aligned schemas from scratch — the methodology library doesn't cover bonds yet, but the infrastructure supports it.
+- **The combination is novel and viable.** No shared documentation between ATS and Guardian — bridging them required mapping undocumented role hashes and adapting Guardian's carbon credit workflows for bond schemas. The result validates the architecture.
 
 ---
 

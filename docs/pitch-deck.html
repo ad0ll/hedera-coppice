@@ -482,16 +482,17 @@
               Issuers self-report with minimal verification. 94% of investors
               believe sustainability reporting contains unsupported claims.
               <span class="muted">[PwC 2023]</span> The EU Green Bond Standard
-              (effective Dec 2024) exists, but only ~30 bonds issued so far.
+              (Dec 2024) is voluntary &mdash; only ~30 of thousands of green
+              bonds have adopted it.
               <span class="muted">[IEEFA, Feb 2026]</span>
             </p>
           </div>
           <div class="card" style="margin-bottom: 0.08in">
             <h3 style="margin: 0 0 0.03in 0">2. Opaque Fund Tracking</h3>
             <p class="small">
-              Use-of-proceeds reports arrive 12&ndash;18 months late as static
-              PDFs. No real-time visibility into whether funds reach green
-              projects.
+              Investors can't verify where funds went until the issuer
+              publishes an annual report &mdash; self-authored, unverified,
+              often 12+ months late.
             </p>
           </div>
         </div>
@@ -577,7 +578,7 @@
             style="margin-bottom: 0.1in; border-left: 3px solid var(--emerald)"
           >
             <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
-              Green Bond &mdash; Use of Proceeds
+              Green Bond &mdash; Use of Proceeds &amp; MRV
             </h3>
             <p class="small">
               Every fund allocation is a
@@ -606,9 +607,10 @@
               &rarr; 4.50%).
             </p>
             <p class="small" style="margin-top: 0.04in">
-              The backend <strong>blocks coupon creation</strong> below the
-              penalty rate &mdash; Guardian must confirm SPT status. The issuer
-              cannot bypass the penalty.
+              If climate targets aren't met, the coupon rate increases
+              automatically &mdash; creating <strong>direct financial
+              consequences</strong> for environmental underperformance. The
+              issuer cannot override the penalty.
             </p>
             <p class="tiny" style="margin-top: 0.04in">
               Solves: No consequences (#4)
@@ -641,8 +643,7 @@
             </p>
             <p class="small" style="margin-top: 0.04in">
               <strong
-                >To our knowledge, Coppice is the first on-chain
-                implementation</strong
+                >Coppice is the first on-chain implementation</strong
               >
               combining use-of-proceeds tracking with sustainability-linked
               coupon penalties.
@@ -712,7 +713,7 @@
       <table style="margin-top: 0.12in">
         <thead>
           <tr>
-            <th style="width: 22%">Hedera Service</th>
+            <th style="width: 26%">Hedera Service</th>
             <th>Role in Coppice</th>
           </tr>
         </thead>
@@ -730,7 +731,7 @@
             <td>
               5 ICMA-aligned VC schemas: bond framework, project registration,
               fund allocation, MRV report, verification statement. VCs
-              discoverable via HIP-19.
+              anchored to HCS for tamper-proof audit trail.
             </td>
           </tr>
           <tr>
@@ -827,7 +828,7 @@
               margin-top: 2px;
             "
           >
-            [YouTube]
+            <a href="https://youtu.be/261J4n4K3t8" style="color: var(--emerald-dark); text-decoration: none;">YouTube</a>
           </div>
         </div>
       </div>
@@ -868,13 +869,6 @@
             <td>
               Issue tokens, freeze/unfreeze, pause/unpause, allocate proceeds
               via Guardian, distribute coupons, register new projects.
-            </td>
-          </tr>
-          <tr>
-            <td><strong>Compliance</strong></td>
-            <td>
-              On-chain events from Mirror Node contract logs + Guardian
-              verification events. All with HashScan links.
             </td>
           </tr>
         </tbody>
@@ -956,7 +950,7 @@
           style="border-left: 3px solid var(--emerald); padding-left: 0.12in"
         >
           <h3 style="margin: 0 0 0.06in 0; color: var(--emerald-dark)">
-            Green Bond Side &mdash; Where the Money Goes
+            Green Bond Side &mdash; Use of Proceeds &amp; MRV
           </h3>
           <p class="small">
             Use-of-proceeds tracked as
@@ -1146,7 +1140,7 @@
               <span class="muted">[UCL]</span>
             </p>
             <p class="small" style="margin-top: 0.04in">
-              <strong>A green bond should run on the greenest chain.</strong>
+              <strong>A green bond should run on a green chain.</strong>
             </p>
           </div>
           <div class="card">
@@ -1294,6 +1288,14 @@
             class="card"
             style="margin-bottom: 0.08in; border-left: 3px solid var(--emerald)"
           >
+            <p class="small"><strong>30+ EuGBs already issued</strong></p>
+            <p class="small" style="margin-top: 0.03in">
+              EUR 30B+ issued under EuGBS since Dec 2024. The standard is
+              gaining traction &mdash; Coppice provides the on-chain
+              infrastructure to meet its transparency requirements natively.
+            </p>
+          </div>
+          <div class="card" style="border-left: 3px solid var(--emerald)">
             <p class="small">
               <strong>EU DLT Pilot Regime</strong> (Reg. 2022/858)
             </p>
@@ -1302,14 +1304,6 @@
               sandbox. ESMA review delivered March 2026; Commission signaled no
               expiry. This is the concrete legal pathway for Coppice to issue
               tokenized bonds in the EU without new legislation.
-            </p>
-          </div>
-          <div class="card" style="border-left: 3px solid var(--emerald)">
-            <p class="small"><strong>30+ EuGBs already issued</strong></p>
-            <p class="small" style="margin-top: 0.03in">
-              EUR 30B+ issued under EuGBS since Dec 2024. The standard is
-              gaining traction &mdash; Coppice provides the on-chain
-              infrastructure to meet its transparency requirements natively.
             </p>
           </div>
         </div>
@@ -1416,26 +1410,24 @@
                 <td>Partner with green bond issuer for small-scale pilot</td>
               </tr>
               <tr>
-                <td><strong>DLT Pilot Regime</strong></td>
+                <td><strong>EU DLT Pilot Regime</strong></td>
                 <td>
-                  Apply under EU Reg. 2022/858 &mdash; bonds &lt;EUR 1B qualify
+                  Apply under Reg. 2022/858 &mdash; bonds &lt;EUR 1B qualify
+                  for DLT sandbox. Concrete legal pathway to mainnet issuance.
                 </td>
               </tr>
               <tr>
                 <td><strong>Automated dMRV</strong></td>
                 <td>
-                  IoT/satellite &rarr; Guardian. HYPHEN + B4E prove this works
-                  on Hedera.
+                  Integrate IoT/satellite data via Guardian &mdash; HYPHEN +
+                  B4E show this is production-ready on Hedera.
                 </td>
               </tr>
               <tr>
-                <td><strong>Multi-bond</strong></td>
-                <td>Multiple issuers, compliance rules, secondary market</td>
-              </tr>
-              <tr>
-                <td><strong>Mainnet</strong></td>
+                <td><strong>Multi-bond Platform</strong></td>
                 <td>
-                  Operate within DLT Pilot Regime, transition to permanent auth.
+                  Multiple issuers, independent compliance rules, secondary
+                  market trading.
                 </td>
               </tr>
             </tbody>
@@ -1444,16 +1436,24 @@
           <h3>Key Learnings</h3>
           <ul class="small">
             <li>
-              <strong>ATS works for bonds.</strong> Single contract with
-              compliance, KYC, coupons built in.
+              <strong>ATS is bond-ready.</strong> Coupon scheduling, snapshots,
+              and mass distribution via LifeCycleCashFlow work end-to-end
+              &mdash; but required reading contract source directly. First bond
+              implementation on ATS.
             </li>
             <li>
-              <strong>Guardian solves greenwashing.</strong> VCs with
-              independent verification &gt; annual PDFs.
+              <strong>Guardian extends beyond carbon credits.</strong> Its VC +
+              HCS + IPFS architecture is a natural fit for bond
+              use-of-proceeds tracking. We built 5 ICMA-aligned schemas from
+              scratch &mdash; the methodology library doesn&rsquo;t cover
+              bonds yet, but the infrastructure supports it.
             </li>
             <li>
-              <strong>The combination is novel.</strong> First ATS + Guardian
-              project on Hedera.
+              <strong>The combination is novel and viable.</strong> No shared
+              documentation between ATS and Guardian &mdash; bridging them
+              required mapping undocumented role hashes and adapting
+              Guardian&rsquo;s carbon credit workflows for bond schemas. The
+              result validates the architecture.
             </li>
           </ul>
         </div>
