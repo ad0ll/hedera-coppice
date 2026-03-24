@@ -24,11 +24,7 @@ const registerProjectSchema = z.object({
   signature: z.string().min(1),
 });
 
-export const registerProjectResponseSchema = z.object({
-  success: z.literal(true),
-  projectName: z.string(),
-});
-export type RegisterProjectResponse = z.infer<typeof registerProjectResponseSchema>;
+export { registerProjectResponseSchema, type RegisterProjectResponse } from "@/lib/api-schemas";
 
 async function guardianLogin(): Promise<string> {
   const loginRes = await fetch(`${GUARDIAN_API_URL}/api/v1/accounts/login`, {

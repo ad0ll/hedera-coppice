@@ -21,12 +21,7 @@ const purchaseBodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
-export const purchaseResponseSchema = z.object({
-  success: z.literal(true),
-  transferTxHash: z.string(),
-  mintTxHash: z.string(),
-});
-export type PurchaseResponse = z.infer<typeof purchaseResponseSchema>;
+export { purchaseResponseSchema, type PurchaseResponse } from "@/lib/api-schemas";
 
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, purchaseBodySchema);

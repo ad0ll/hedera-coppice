@@ -18,11 +18,7 @@ const allocateBodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
-export const allocateResponseSchema = z.object({
-  success: z.literal(true),
-  status: z.string(),
-});
-export type AllocateResponse = z.infer<typeof allocateResponseSchema>;
+export { allocateResponseSchema, type AllocateResponse } from "@/lib/api-schemas";
 
 async function guardianLogin(): Promise<string> {
   const loginRes = await fetch(`${GUARDIAN_API_URL}/api/v1/accounts/login`, {

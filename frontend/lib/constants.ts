@@ -40,6 +40,10 @@ export const CONTRACT_ADDRESSES = {
   claimIssuer: process.env.NEXT_PUBLIC_CLAIM_ISSUER_ADDRESS || "0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A",
 };
 
+// LifeCycleCashFlow (coupon distribution) contract
+export const LCCF_CONTRACT_ADDRESS: string =
+  process.env.NEXT_PUBLIC_LCCF_ADDRESS || "0xC36cd7a8C15B261C1e6D348fB1247D8eCBB8c350";
+
 // CountryRestrictModule deployed address
 export const COUNTRY_RESTRICT_MODULE_ADDRESS: string =
   process.env.NEXT_PUBLIC_COUNTRY_RESTRICT_MODULE_ADDRESS || "0x0000000000000000000000000000000000000000";

@@ -8,7 +8,8 @@ import { Spinner } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { CPC_SECURITY_ID } from "@/lib/constants";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
-import { AddressLink } from "@/components/ui/hashscan-link";
+import { AddressLink, TxLink } from "@/components/ui/hashscan-link";
+import { useCouponTxs } from "@/hooks/use-coupon-txs";
 import { COUPON_STATUS_VARIANT, COUPON_STATUS_LABEL } from "@/lib/event-types";
 import { entranceProps } from "@/lib/animation";
 
@@ -33,6 +34,7 @@ function getNextCouponDate(coupons: CouponInfo[]): string {
 
 export default function CouponsPage() {
   const { data: coupons, isLoading, isError } = useCoupons();
+  const { data: couponTxs } = useCouponTxs();
   const couponList = useMemo(() => coupons ?? [], [coupons]);
   const nextCouponDate = useMemo(() => getNextCouponDate(couponList), [couponList]);
   const [showPaid, setShowPaid] = useState(false);
@@ -248,6 +250,31 @@ export default function CouponsPage() {
                     </p>
                   </div>
                 </div>
+
+                {(() => {
+                  const txInfo = couponTxs?.[coupon.id];
+                  if (!txInfo) return null;
+                  const { creationTxHash, distributionTxHash } = txInfo;
+                  if (!creationTxHash && !distributionTxHash) return null;
+                  return (
+                    <div className="flex items-center gap-3 pt-1 border-t border-white/5">
+                      {creationTxHash && (
+                        <TxLink
+                          hash={creationTxHash}
+                          label="Creation tx"
+                          className="inline-flex items-center gap-1 text-xs text-text-muted hover:text-bond-green transition-colors"
+                        />
+                      )}
+                      {distributionTxHash && (
+                        <TxLink
+                          hash={distributionTxHash}
+                          label="Distribution tx"
+                          className="inline-flex items-center gap-1 text-xs text-bond-green hover:text-bond-green/80 transition-colors"
+                        />
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>

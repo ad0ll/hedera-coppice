@@ -8,7 +8,6 @@
   "workspaces": [
     "packages/*",
     "contracts",
-    "services",
     "scripts",
     "frontend",
     "e2e"

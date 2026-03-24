@@ -28,7 +28,7 @@ graph TD
         IP["Investor Portal"]
         ID["Issuer Dashboard"]
         CM["Compliance Monitor"]
-        WV["wagmi v3 + viem v2"]
+        WV["ethers v6 + MetaMask"]
         API["API Routes\npurchase | allocate | health"]
     end
 
@@ -50,7 +50,6 @@ graph TD
     end
 
     MN["Mirror Node REST API"]
-    EL["Event Logger\nEVM events → HCS"]
 
     IP & ID --> WV
     WV -->|"JSON-RPC\nChain 296"| SC
@@ -58,9 +57,6 @@ graph TD
     API -->|"TopicMessageSubmit"| Impact
     CM --> MN
     IP --> MN
-
-    EL -->|"eth_getLogs poll"| SC
-    EL -->|"TopicMessageSubmit"| Audit
 
     MN -.->|"read"| HCS
     MN -.->|"read"| HTS
@@ -71,7 +67,7 @@ graph TD
 ### 4 Hedera Services Integrated
 
 1. **Smart Contracts (Hedera EVM)** — Full ERC-3643 T-REX suite: Token, IdentityRegistry, ModularCompliance, ClaimIssuer, TrustedIssuersRegistry, ClaimTopicsRegistry, IdentityRegistryStorage, and 3 compliance modules. Deployed via TREXFactory with OnchainID identity proxies.
-2. **Hedera Consensus Service (HCS)** — Two topics: compliance audit trail (every mint, transfer, freeze, pause logged immutably) and green bond use-of-proceeds tracking.
+2. **Hedera Consensus Service (HCS)** — Guardian anchors all Verifiable Credentials to HCS topics, creating an immutable, timestamped, publicly verifiable provenance chain for MRV data.
 3. **Hedera Token Service (HTS)** — eUSD stablecoin (FungibleCommon) for bond purchases, with token association and distribution to demo wallets.
 4. **Mirror Node API** — Real-time HCS event feed, HTS balance queries, and transaction verification.
 
@@ -142,11 +138,7 @@ cd ../scripts
 npx tsx hcs-setup.ts
 npx tsx hts-setup.ts
 
-# 4. Start event logger (bridges contract events to HCS)
-cd ../services
-npx tsx src/event-logger.ts &
-
-# 5. Start frontend
+# 4. Start frontend
 cd ../frontend && npm run dev
 ```
 
@@ -169,10 +161,6 @@ hedera-green-bonds/
 │   ├── config.ts                  # Hedera SDK client setup (for scripts)
 │   ├── hcs-setup.ts               # Create HCS audit + impact topics
 │   └── hts-setup.ts               # Create eUSD, associate wallets, distribute
-├── services/                 # Long-running background services
-│   └── src/
-│       ├── config.ts              # Hedera SDK client setup
-│       └── event-logger.ts        # Contract events → HCS audit trail (polling)
 ├── frontend/                  # Next.js 16 App Router + Tailwind CSS v4
 │   ├── app/
 │   │   ├── layout.tsx             # Server component layout with wagmi providers
@@ -182,7 +170,7 @@ hedera-green-bonds/
 │   │   └── api/                   # API routes (purchase, allocate, health)
 │   ├── components/            # BondDetails, ComplianceStatus, TransferFlow, AuditEventFeed
 │   ├── hooks/                 # useToken, useIdentity, useCompliance, useHCSAudit, useHTS
-│   └── lib/                   # wagmi config, Hedera utils, constants
+│   └── lib/                   # Hedera utils, constants, Guardian types
 ├── e2e/                       # Playwright E2E tests
 │   ├── fixtures/wallet-mock.ts    # EIP-1193 MetaMask mock with real tx signing
 │   └── tests/                     # 6 spec files (desktop + mobile)
@@ -218,7 +206,7 @@ Covers all three frontend pages with a custom MetaMask mock that signs real tran
 |-----------|-----------|-------|
 | Smart Contracts | Solidity 0.8.17, [T-REX v4.1.6](https://github.com/ERC-3643/ERC-3643), [OnchainID v2.0.0](https://github.com/onchain-id/solidity), OpenZeppelin v4.9.6 | All latest stable compatible versions. T-REX pins Solidity 0.8.17 and requires OZ v4.x. |
 | Development | Hardhat, TypeScript, Turborepo | |
-| Frontend | Next.js 16 App Router, React 19, wagmi v3, viem v2, Tailwind CSS v4 | API routes handle purchase/allocate. |
+| Frontend | Next.js 16 App Router, React 19, ethers v6, Tailwind CSS v4 | API routes handle purchase/allocate. |
 | Hedera SDK | @hashgraph/sdk for HCS/HTS | |
 | Testing | Hardhat/viem (contracts), vitest (frontend unit), Playwright (E2E) | 115 tests total: 32 contract + 40 unit + 43 E2E |
 | Deployment | Hedera Testnet (Chain ID 296), Vercel (frontend) | |
@@ -281,4 +269,4 @@ Investor connects wallet
 
 ## License
 
-**Proprietary** — All rights reserved, except `contracts/`, which is GPL-3.0 as required by the [T-REX dependency](https://github.com/ERC-3643/ERC-3643). The frontend and services communicate with deployed contracts via JSON-RPC (not linking) and are independent works under GPL Section 0.
+**Proprietary** — All rights reserved, except `contracts/`, which is GPL-3.0 as required by the [T-REX dependency](https://github.com/ERC-3643/ERC-3643). The frontend communicates with deployed contracts via JSON-RPC (not linking) and is an independent work under GPL Section 0.

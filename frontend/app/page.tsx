@@ -12,7 +12,6 @@ import { useTokenBalance } from "@/hooks/use-token";
 import { useEusdBalance, useInvalidateEusdBalance } from "@/hooks/use-eusd-balance";
 import { FaucetButton } from "@/components/faucet-button";
 import { useGuardian } from "@/hooks/use-guardian";
-import { ImpactSummary } from "@/components/guardian/impact-summary";
 import { SectionErrorBoundary } from "@/components/section-error-boundary";
 import { entranceProps } from "@/lib/animation";
 
@@ -32,7 +31,7 @@ export default function InvestorPortal() {
   return (
     <div className="space-y-8">
       <div {...entranceProps(0)}>
-        <BondDetails />
+        <BondDetails guardianData={guardianData} />
       </div>
 
       <div {...entranceProps(1)}>
@@ -61,27 +60,19 @@ export default function InvestorPortal() {
         )}
       </div>
 
-      <div {...entranceProps(2)}>
-        <SectionErrorBoundary section="compliance checks">
-          <ComplianceStatus onEligibilityChange={setEligible} />
-        </SectionErrorBoundary>
-      </div>
-
       {address && (
-        <div {...entranceProps(3)}>
+        <div {...entranceProps(2)}>
           <SectionErrorBoundary section="purchase flow">
             <TransferFlow enabled={eligible} />
           </SectionErrorBoundary>
         </div>
       )}
 
-      {guardianData && (
-        <div {...entranceProps(4)}>
-          <SectionErrorBoundary section="impact summary">
-            <ImpactSummary data={guardianData} />
-          </SectionErrorBoundary>
-        </div>
-      )}
+      <div {...entranceProps(3)}>
+        <SectionErrorBoundary section="compliance checks">
+          <ComplianceStatus onEligibilityChange={setEligible} />
+        </SectionErrorBoundary>
+      </div>
     </div>
   );
 }

@@ -109,7 +109,13 @@ export async function fetchGuardianData(): Promise<GuardianData | null> {
   const sptTarget = sptMatch ? Number(sptMatch[1].replace(/,/g, "")) : 10_000;
 
   const guardianProjects: GuardianProject[] = projectResults.map((reg) => {
-    const alloc = allocationResults.find((a) => a.cs.ProjectName === reg.cs.ProjectName);
+    const allocs = allocationResults.filter((a) => a.cs.ProjectName === reg.cs.ProjectName);
+    const latestAlloc = allocs.length > 0 ? allocs[allocs.length - 1] : undefined;
+    // Sum all allocations for this project so the per-project total matches the grand total
+    const allocTotal = allocs.reduce((sum, a) => sum + (a.cs.AllocatedAmountEUSD ?? 0), 0);
+    const mergedAlloc = latestAlloc
+      ? { ...latestAlloc.cs, AllocatedAmountEUSD: allocTotal }
+      : undefined;
     const mrv = mrvResults.find((m) => m.cs.ProjectName === reg.cs.ProjectName);
     const verif = verificationResults.find((v) => v.cs.ProjectName === reg.cs.ProjectName);
 
@@ -117,9 +123,9 @@ export async function fetchGuardianData(): Promise<GuardianData | null> {
       registration: reg.cs,
       registrationEvidence: reg.evidence,
       registrationDocument: reg.rawDocument,
-      allocation: alloc?.cs,
-      allocationEvidence: alloc?.evidence,
-      allocationDocument: alloc?.rawDocument,
+      allocation: mergedAlloc,
+      allocationEvidence: latestAlloc?.evidence,
+      allocationDocument: latestAlloc?.rawDocument,
       mrvReport: mrv?.cs,
       mrvEvidence: mrv?.evidence,
       mrvDocument: mrv?.rawDocument,

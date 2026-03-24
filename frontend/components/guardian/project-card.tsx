@@ -41,7 +41,7 @@ function getVerificationStatus(project: GuardianProject) {
 }
 
 function getStatusVariant(project: GuardianProject): "green" | "red" | "amber" {
-  if (project.isVerified) return "green";
+  if (project.verification?.Opinion === "Approved") return "green";
   if (project.verification?.Opinion === "Rejected") return "red";
   return "amber";
 }

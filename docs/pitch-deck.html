@@ -1,798 +1,1468 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Coppice - Pitch Deck</title>
-<style>
-  /* ---- Reset & Base ---- */
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coppice — Green Bonds with Teeth on Hedera</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=Geist+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ── Reset & Base ── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-  :root {
-    --green-900: #064e3b;
-    --green-800: #065f46;
-    --green-700: #047857;
-    --green-600: #059669;
-    --green-500: #10b981;
-    --green-400: #34d399;
-    --green-100: #d1fae5;
-    --green-50:  #ecfdf5;
-    --slate-900: #0f172a;
-    --slate-800: #1e293b;
-    --slate-700: #334155;
-    --slate-600: #475569;
-    --slate-500: #64748b;
-    --slate-400: #94a3b8;
-    --slate-300: #cbd5e1;
-    --slate-200: #e2e8f0;
-    --slate-100: #f1f5f9;
-    --slate-50:  #f8fafc;
-    --amber-500: #f59e0b;
-    --amber-100: #fef3c7;
-    --red-500:   #ef4444;
-    --red-100:   #fee2e2;
-    --blue-500:  #3b82f6;
-    --blue-100:  #dbeafe;
-  }
+      :root {
+        --bg: #ffffff;
+        --bg-2: #f8faf9;
+        --bg-3: #f0f4f2;
+        --text: #1a1a1a;
+        --text-muted: #6b7280;
+        --text-light: #9ca3af;
+        --emerald: #059669;
+        --emerald-light: #d1fae5;
+        --emerald-dark: #047857;
+        --red: #dc2626;
+        --red-light: #fee2e2;
+        --amber: #d97706;
+        --amber-light: #fef3c7;
+        --border: #e5e7eb;
+        --border-dark: #d1d5db;
 
-  body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    color: var(--slate-800);
-    background: white;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-  }
+        --font-display: "Instrument Serif", Georgia, serif;
+        --font-body: "Bricolage Grotesque", system-ui, sans-serif;
+        --font-mono: "Geist Mono", "SF Mono", monospace;
+      }
 
-  /* ---- Slide System ---- */
-  .slide {
-    width: 100%;
-    min-height: 100vh;
-    padding: 48px 64px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    position: relative;
-    page-break-after: always;
-    break-after: page;
-  }
+      html {
+        font-size: 15px;
+      }
+      body {
+        font-family: var(--font-body);
+        color: var(--text);
+        background: var(--bg);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
 
-  .slide:last-child {
-    page-break-after: avoid;
-    break-after: avoid;
-  }
+      /* ── Slide Container ── */
+      .slide {
+        width: 10in;
+        min-height: 7.5in;
+        max-height: 7.5in;
+        padding: 0.6in 0.75in;
+        position: relative;
+        overflow: hidden;
+        page-break-after: always;
+        display: flex;
+        flex-direction: column;
+      }
+      .slide:last-child {
+        page-break-after: avoid;
+      }
 
-  /* ---- Slide Numbers ---- */
-  .slide::after {
-    content: attr(data-slide);
-    position: absolute;
-    bottom: 24px;
-    right: 48px;
-    font-size: 12px;
-    color: var(--slate-400);
-    font-variant-numeric: tabular-nums;
-  }
+      /* ── Typography ── */
+      .slide-title {
+        font-family: var(--font-display);
+        font-size: 2rem;
+        font-weight: 400;
+        color: var(--text);
+        margin-bottom: 0.15in;
+        line-height: 1.15;
+      }
+      .slide-subtitle {
+        font-family: var(--font-body);
+        font-size: 0.95rem;
+        color: var(--emerald-dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.2in;
+      }
+      h3 {
+        font-family: var(--font-body);
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 0.08in;
+        margin-top: 0.18in;
+      }
+      h3:first-child {
+        margin-top: 0;
+      }
+      p,
+      li {
+        font-size: 0.78rem;
+        line-height: 1.55;
+        color: var(--text);
+      }
+      .muted {
+        color: var(--text-muted);
+      }
+      .small {
+        font-size: 0.7rem;
+      }
+      .tiny {
+        font-size: 0.62rem;
+        color: var(--text-light);
+      }
+      .mono {
+        font-family: var(--font-mono);
+      }
+      strong {
+        font-weight: 600;
+      }
+      .emerald {
+        color: var(--emerald-dark);
+      }
+      .red {
+        color: var(--red);
+      }
 
-  /* ---- Slide Footer ---- */
-  .slide::before {
-    content: "Coppice  |  ERC-3643 Green Bond Tokenization on Hedera";
-    position: absolute;
-    bottom: 24px;
-    left: 48px;
-    font-size: 11px;
-    color: var(--slate-400);
-    letter-spacing: 0.02em;
-  }
+      /* ── Lists ── */
+      ul,
+      ol {
+        padding-left: 1.1em;
+      }
+      li {
+        margin-bottom: 0.06in;
+      }
+      li::marker {
+        color: var(--emerald);
+      }
 
-  /* ---- Typography ---- */
-  h1 { font-size: 42px; font-weight: 800; color: var(--green-900); line-height: 1.15; margin-bottom: 8px; letter-spacing: -0.02em; }
-  h2 { font-size: 30px; font-weight: 700; color: var(--slate-900); line-height: 1.2; margin-bottom: 16px; letter-spacing: -0.01em; }
-  h3 { font-size: 20px; font-weight: 600; color: var(--green-800); margin-bottom: 10px; }
-  h4 { font-size: 16px; font-weight: 600; color: var(--slate-700); margin-bottom: 6px; }
-  p  { font-size: 15px; color: var(--slate-700); margin-bottom: 12px; }
-  .subtitle { font-size: 18px; color: var(--slate-500); font-weight: 400; margin-bottom: 24px; }
-  .small { font-size: 12px; color: var(--slate-500); }
-  .eyebrow { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--green-600); margin-bottom: 8px; }
+      /* ── Tables ── */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.72rem;
+        margin: 0.08in 0;
+      }
+      th {
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        padding: 0.06in 0.1in;
+        border-bottom: 2px solid var(--border-dark);
+        background: var(--bg-2);
+      }
+      td {
+        padding: 0.06in 0.1in;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        line-height: 1.45;
+      }
+      tr:last-child td {
+        border-bottom: none;
+      }
 
-  strong { font-weight: 700; color: var(--slate-900); }
-  em { font-style: normal; color: var(--green-700); font-weight: 600; }
+      /* ── Cards / Boxes ── */
+      .card {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.12in 0.15in;
+      }
+      .card-emerald {
+        background: var(--emerald-light);
+        border: 1px solid var(--emerald);
+        border-radius: 6px;
+        padding: 0.1in 0.15in;
+      }
+      .stat-row {
+        display: flex;
+        gap: 0.15in;
+      }
+      .stat-box {
+        flex: 1;
+        text-align: center;
+        padding: 0.1in;
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+      }
+      .stat-value {
+        font-family: var(--font-mono);
+        font-size: 1.3rem;
+        font-weight: 600;
+        color: var(--emerald-dark);
+        line-height: 1.2;
+      }
+      .stat-label {
+        font-size: 0.6rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-top: 2px;
+      }
 
-  /* ---- Layout Helpers ---- */
-  .flex { display: flex; gap: 32px; }
-  .flex-col { flex-direction: column; }
-  .flex-1 { flex: 1; }
-  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
-  .center { text-align: center; }
-  .mt-auto { margin-top: auto; }
-  .mt-16 { margin-top: 16px; }
-  .mt-24 { margin-top: 24px; }
-  .mt-32 { margin-top: 32px; }
-  .mb-8 { margin-bottom: 8px; }
-  .mb-16 { margin-bottom: 16px; }
-  .mb-24 { margin-bottom: 24px; }
+      /* ── Flow Diagram ── */
+      .flow {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        margin: 0.12in 0;
+        flex-wrap: nowrap;
+      }
+      .flow-step {
+        background: var(--bg-2);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.06in 0.1in;
+        text-align: center;
+        font-size: 0.62rem;
+        line-height: 1.35;
+        flex: 1;
+        min-width: 0;
+      }
+      .flow-step strong {
+        display: block;
+        font-size: 0.58rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--emerald-dark);
+        margin-bottom: 1px;
+      }
+      .flow-step.highlight {
+        background: var(--emerald-light);
+        border-color: var(--emerald);
+      }
+      .flow-arrow {
+        font-size: 0.7rem;
+        color: var(--text-light);
+        padding: 0 0.03in;
+        flex-shrink: 0;
+      }
 
-  /* ---- Cards ---- */
-  .card {
-    background: var(--slate-50);
-    border: 1px solid var(--slate-200);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .card-green {
-    background: var(--green-50);
-    border: 1px solid var(--green-400);
-    border-radius: 10px;
-    padding: 20px;
-  }
-  .card-accent {
-    border-left: 4px solid var(--green-500);
-    background: var(--green-50);
-    border-radius: 0 10px 10px 0;
-    padding: 16px 20px;
-  }
+      /* ── Two-column layout ── */
+      .cols {
+        display: flex;
+        gap: 0.2in;
+      }
+      .col {
+        flex: 1;
+      }
+      .col-narrow {
+        flex: 0.8;
+      }
+      .col-wide {
+        flex: 1.2;
+      }
 
-  /* ---- Tables ---- */
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; padding: 8px 12px; background: var(--slate-100); color: var(--slate-700); font-weight: 600; border-bottom: 2px solid var(--slate-300); font-size: 12px; }
-  td { padding: 7px 12px; border-bottom: 1px solid var(--slate-200); color: var(--slate-700); vertical-align: top; }
-  tr:last-child td { border-bottom: none; }
-  .highlight-row { background: var(--green-50); font-weight: 600; }
-  .highlight-row td { color: var(--green-900); }
+      /* ── Slide footer ── */
+      .slide-footer {
+        margin-top: auto;
+        padding-top: 0.08in;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .slide-footer span {
+        font-size: 0.58rem;
+        color: var(--text-light);
+        font-family: var(--font-mono);
+      }
+      .slide-footer .sources {
+        font-family: var(--font-body);
+        font-size: 0.5rem;
+        color: var(--text-light);
+        line-height: 1.55;
+        max-width: 85%;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0 0.12in;
+      }
+      .slide-footer .sources li {
+        margin: 0;
+        padding: 0;
+        font-size: 0.5rem;
+      }
+      .slide-footer .sources a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+      .slide-footer .sources a:hover {
+        text-decoration: underline;
+        color: var(--emerald-dark);
+      }
+      .leaf {
+        color: var(--emerald);
+        font-size: 0.7rem;
+      }
 
-  /* ---- Tags/Badges ---- */
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
-  .badge-green { background: var(--green-100); color: var(--green-800); }
-  .badge-red { background: var(--red-100); color: var(--red-500); }
-  .badge-amber { background: var(--amber-100); color: #92400e; }
-  .badge-blue { background: var(--blue-100); color: #1e40af; }
+      /* ── Badge ── */
+      .badge {
+        display: inline-block;
+        font-size: 0.58rem;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .badge-green {
+        background: var(--emerald-light);
+        color: var(--emerald-dark);
+      }
+      .badge-red {
+        background: var(--red-light);
+        color: var(--red);
+      }
+      .badge-amber {
+        background: var(--amber-light);
+        color: var(--amber);
+      }
 
-  /* ---- Flow Diagram ---- */
-  .flow { display: flex; align-items: center; gap: 0; }
-  .flow-step {
-    flex: 1;
-    text-align: center;
-    padding: 12px 8px;
-    background: var(--green-50);
-    border: 1px solid var(--green-400);
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--green-800);
-  }
-  .flow-arrow {
-    width: 32px;
-    text-align: center;
-    color: var(--green-500);
-    font-size: 18px;
-    flex-shrink: 0;
-  }
+      /* ── Print ── */
+      @media print {
+        html {
+          font-size: 15px;
+        }
+        body {
+          background: white;
+        }
+        .slide {
+          width: 10in;
+          height: 7.5in;
+          min-height: 7.5in;
+          max-height: 7.5in;
+          margin: 0;
+          padding: 0.6in 0.75in;
+          page-break-after: always;
+          page-break-inside: avoid;
+        }
+        .slide:last-child {
+          page-break-after: avoid;
+        }
+        @page {
+          size: 10in 7.5in;
+          margin: 0;
+        }
+      }
 
-  /* ---- Stats ---- */
-  .stat { text-align: center; }
-  .stat-value { font-size: 36px; font-weight: 800; color: var(--green-700); line-height: 1; }
-  .stat-label { font-size: 12px; color: var(--slate-500); margin-top: 4px; }
+      /* ── Screen preview ── */
+      @media screen {
+        body {
+          background: #e5e7eb;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 0.3in 0;
+          gap: 0.3in;
+        }
+        .slide {
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+          border-radius: 4px;
+        }
+      }
 
-  /* ---- Bar chart ---- */
-  .bar-group { margin-bottom: 10px; }
-  .bar-label { font-size: 12px; font-weight: 600; color: var(--slate-700); margin-bottom: 3px; display: flex; justify-content: space-between; }
-  .bar-track { height: 18px; background: var(--slate-100); border-radius: 9px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 9px; }
-  .bar-fill-green { background: linear-gradient(90deg, var(--green-500), var(--green-600)); }
-  .bar-fill-amber { background: linear-gradient(90deg, var(--amber-500), #d97706); }
-  .bar-fill-blue { background: linear-gradient(90deg, var(--blue-500), #2563eb); }
-
-  /* ---- Architecture Diagram ---- */
-  .arch-box {
-    border: 2px solid var(--green-500);
-    border-radius: 10px;
-    padding: 14px 16px;
-    text-align: center;
-    background: white;
-  }
-  .arch-box h4 { color: var(--green-800); margin-bottom: 4px; font-size: 14px; }
-  .arch-box p { font-size: 11px; margin: 0; color: var(--slate-600); }
-  .arch-connector { text-align: center; font-size: 24px; color: var(--green-400); padding: 4px 0; }
-
-  /* ---- Numbered List ---- */
-  .num-list { counter-reset: num-list; list-style: none; padding: 0; }
-  .num-list li { counter-increment: num-list; position: relative; padding-left: 36px; margin-bottom: 14px; font-size: 14px; color: var(--slate-700); }
-  .num-list li::before {
-    content: counter(num-list);
-    position: absolute; left: 0; top: 0;
-    width: 24px; height: 24px; border-radius: 50%;
-    background: var(--green-600); color: white;
-    font-size: 13px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  /* ---- Check/Cross ---- */
-  .check::before { content: "\2713  "; color: var(--green-600); font-weight: 700; }
-  .cross::before { content: "\2717  "; color: var(--red-500); font-weight: 700; }
-
-  /* ---- Divider ---- */
-  hr { border: none; border-top: 1px solid var(--slate-200); margin: 20px 0; }
-
-  /* ---- Print ---- */
-  @media print {
-    body { background: white; }
-    .slide {
-      min-height: 0;
-      height: 100vh;
-      padding: 36px 48px;
-      overflow: hidden;
-    }
-    @page {
-      size: 16in 9in;
-      margin: 0;
-    }
-  }
-
-  /* ---- Screen preview ---- */
-  @media screen {
-    .slide {
-      max-width: 1280px;
-      margin: 0 auto 2px;
-      aspect-ratio: 16 / 9;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-      border: 1px solid var(--slate-200);
-      overflow: hidden;
-    }
-    body { background: var(--slate-300); padding: 16px; }
-  }
-</style>
-</head>
-<body>
-
-<!-- =============================== SLIDE 1: TITLE =============================== -->
-<section class="slide" data-slide="1" style="justify-content: center; align-items: center; background: linear-gradient(135deg, var(--green-900) 0%, var(--slate-900) 100%);">
-  <div style="text-align: center;">
-    <h1 style="color: var(--green-400); font-size: 64px; margin-bottom: 12px;">Coppice</h1>
-    <p class="subtitle" style="color: var(--slate-300); font-size: 22px; margin-bottom: 32px;">Compliant Green Bond Tokenization on Hedera</p>
-    <div style="display: flex; gap: 16px; justify-content: center; margin-bottom: 40px;">
-      <span class="badge badge-green" style="font-size: 13px; padding: 4px 14px;">ERC-3643</span>
-      <span class="badge badge-green" style="font-size: 13px; padding: 4px 14px;">Hedera Consensus Service</span>
-      <span class="badge badge-green" style="font-size: 13px; padding: 4px 14px;">Hedera Token Service</span>
-      <span class="badge badge-green" style="font-size: 13px; padding: 4px 14px;">Mirror Node API</span>
-    </div>
-    <p style="color: var(--slate-400); font-size: 14px;">Hedera Hello Future: Apex Hackathon 2026 &nbsp;|&nbsp; DeFi & Tokenization Track</p>
-    <p style="color: var(--slate-500); font-size: 12px; margin-top: 8px;">Solo developer project &nbsp;&middot;&nbsp; Named after the ancient woodland management technique<br>where trees are sustainably harvested and regrow &mdash; a metaphor for sustainable finance.</p>
-  </div>
-  <div style="position: absolute; bottom: 24px; left: 48px; right: 48px; display: flex; justify-content: space-between;">
-    <span style="font-size: 11px; color: var(--slate-500);">github.com/[repo] &nbsp;|&nbsp; [live-demo-url]</span>
-    <span style="font-size: 11px; color: var(--slate-500);">Demo: [youtube-link]</span>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 2: PROBLEM =============================== -->
-<section class="slide" data-slide="2">
-  <p class="eyebrow">The Problem</p>
-  <h2>Green Bonds Have a Trust Crisis</h2>
-
-  <div class="grid-3 mt-16">
-    <div class="card">
-      <h4>Greenwashing Risk</h4>
-      <p style="font-size: 13px;">Issuers self-certify bonds as "green" with minimal external verification. The EU Green Bond Standard exists (effective Dec 2024), but only <strong>3 issuers</strong> have adopted it.</p>
-      <p class="small">[3][4]</p>
-    </div>
-    <div class="card">
-      <h4>Opaque Fund Tracking</h4>
-      <p style="font-size: 13px;">Use-of-proceeds reports arrive <strong>12-18 months late</strong> as static PDFs. Investors have no real-time visibility into whether funds actually reach green projects.</p>
-    </div>
-    <div class="card">
-      <h4>Compliance Fragmentation</h4>
-      <p style="font-size: 13px;">KYC/AML and jurisdiction checks happen off-chain in spreadsheets. Transfer restrictions are voluntary, not protocol-level. No on-chain enforcement.</p>
-    </div>
-  </div>
-
-  <div class="flex mt-24" style="gap: 48px;">
-    <div class="stat">
-      <div class="stat-value">$3T+</div>
-      <div class="stat-label">Outstanding green bonds [1]</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">$572B</div>
-      <div class="stat-label">Issued in 2024 (record) [2]</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value">$7.5T/yr</div>
-      <div class="stat-label">Needed by 2030 for net-zero [5]</div>
-    </div>
-    <div class="stat">
-      <div class="stat-value" style="color: var(--red-500);">8%</div>
-      <div class="stat-label">Current vs. needed investment</div>
-    </div>
-  </div>
-
-  <div class="card-accent mt-24">
-    <p style="font-size: 14px; margin: 0;"><strong>The gap isn't just about capital &mdash; it's about trust.</strong> Closing the $7T annual shortfall requires infrastructure that makes green finance verifiable, not just claimable.</p>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 3: SOLUTION =============================== -->
-<section class="slide" data-slide="3">
-  <p class="eyebrow">The Solution</p>
-  <h2>Institutional-Grade Green Bond Compliance on a Carbon-Negative Chain</h2>
-
-  <p>Coppice tokenizes green bonds using <em>ERC-3643</em> ($32B+ tokenized [6]) on <em>Hedera</em> (carbon-negative, verified by UCL [7]).</p>
-
-  <div class="grid-2 mt-16">
-    <div class="card-green">
-      <h4>Protocol-Level Compliance</h4>
-      <p style="font-size: 13px; margin: 0;">ERC-3643 enforces identity verification, KYC/AML claims, and jurisdiction checks <strong>in the token contract itself</strong>. Non-compliant transfers revert on-chain. Not optional. Not a wrapper.</p>
-      <p class="small mt-16"><span class="badge badge-green">Smart Contracts (Hedera EVM)</span></p>
-    </div>
-    <div class="card-green">
-      <h4>Immutable Audit Trail</h4>
-      <p style="font-size: 13px; margin: 0;">Every mint, transfer, freeze, and pause is logged to an append-only HCS topic. Regulators, auditors, and investors all verify the <strong>same immutable record</strong>.</p>
-      <p class="small mt-16"><span class="badge badge-green">Hedera Consensus Service</span></p>
-    </div>
-    <div class="card-green">
-      <h4>On-Chain Use-of-Proceeds</h4>
-      <p style="font-size: 13px; margin: 0;">Fund allocations to green projects are recorded to HCS with category, amount, and timestamp. <strong>No more waiting for annual PDF reports.</strong> Verifiable in real time.</p>
-      <p class="small mt-16"><span class="badge badge-green">Hedera Consensus Service</span></p>
-    </div>
-    <div class="card-green">
-      <h4>Stablecoin Settlement</h4>
-      <p style="font-size: 13px; margin: 0;">Bond purchases settle in eUSD, a native HTS fungible token accessible as an ERC-20 via <strong>HIP-218 long-zero address</strong>. Native multi-service integration.</p>
-      <p class="small mt-16"><span class="badge badge-green">Hedera Token Service</span></p>
-    </div>
-  </div>
-
-  <div class="card mt-24" style="background: var(--slate-800); border: none;">
-    <p style="font-size: 14px; color: var(--slate-300); margin: 0;"><strong style="color: white;">What this is NOT:</strong> A wrapper around an ERC-20 with optional compliance. ERC-3643 bakes compliance into the transfer function. You physically cannot send tokens to a non-compliant address.</p>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 4: ARCHITECTURE =============================== -->
-<section class="slide" data-slide="4">
-  <p class="eyebrow">Architecture</p>
-  <h2>4 Hedera Services, One Integrated Platform</h2>
-
-  <div style="text-align: center; margin: 12px 0;">
-    <div class="arch-box" style="display: inline-block; min-width: 500px; border-color: var(--slate-400);">
-      <h4 style="color: var(--slate-800);">Next.js 16 Frontend</h4>
-      <p>Investor Portal &nbsp;|&nbsp; Issuer Dashboard &nbsp;|&nbsp; Compliance Monitor</p>
-      <p>wagmi v3 + viem v2 &nbsp;&middot;&nbsp; Tailwind CSS v4 &nbsp;&middot;&nbsp; API Routes</p>
-    </div>
-  </div>
-  <div class="arch-connector">&darr;&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&darr;&nbsp;&nbsp;&nbsp;&nbsp;&darr;</div>
-  <div class="grid-4">
-    <div class="arch-box">
-      <h4>Smart Contracts</h4>
-      <p>ERC-3643 T-REX v4.1.6</p>
-      <p>12 contracts deployed</p>
-      <p>3 compliance modules</p>
-    </div>
-    <div class="arch-box">
-      <h4>HCS Topics</h4>
-      <p>Audit Trail</p>
-      <p>Impact Tracking</p>
-      <p>Immutable, timestamped</p>
-    </div>
-    <div class="arch-box">
-      <h4>HTS Tokens</h4>
-      <p>eUSD Stablecoin</p>
-      <p>FungibleCommon, 2 dec</p>
-      <p>ERC-20 via HIP-218</p>
-    </div>
-    <div class="arch-box">
-      <h4>Mirror Node</h4>
-      <p>HCS event feed</p>
-      <p>HTS balance queries</p>
-      <p>Account ID mapping</p>
-    </div>
-  </div>
-
-  <div class="mt-24">
-    <h3 style="font-size: 16px;">Tech Stack</h3>
-    <table>
-      <tr><th style="width: 160px;">Layer</th><th>Technology</th></tr>
-      <tr><td>Contracts</td><td>Solidity 0.8.17, T-REX v4.1.6, OnchainID v2.0.0, OpenZeppelin v4.9.6</td></tr>
-      <tr><td>Frontend</td><td>Next.js 16 (App Router), React 19, wagmi v3, viem v2, Tailwind CSS v4</td></tr>
-      <tr><td>Backend</td><td>Next.js API routes (purchase + allocate), Hedera SDK, EIP-191 auth</td></tr>
-      <tr><td>Services</td><td>Event logger daemon (EVM events &rarr; HCS via polling)</td></tr>
-      <tr><td>Testing</td><td>Hardhat + viem (contracts), vitest (frontend), Playwright (E2E)</td></tr>
-      <tr><td>Build</td><td>Turborepo monorepo, TypeScript throughout</td></tr>
-    </table>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 5: DEMO =============================== -->
-<section class="slide" data-slide="5">
-  <p class="eyebrow">Live Demo</p>
-  <h2>Everything You See Is a Real Hedera Testnet Transaction</h2>
-
-  <div class="flex mt-16" style="gap: 24px;">
-    <div class="flex-1">
-      <div style="background: var(--slate-100); border-radius: 10px; padding: 24px; text-align: center; height: 200px; display: flex; align-items: center; justify-content: center; border: 2px dashed var(--slate-300);">
-        <div>
-          <p style="font-size: 16px; font-weight: 600; color: var(--slate-500);">Demo Video</p>
-          <p style="font-size: 13px; color: var(--slate-400);">[Embed YouTube thumbnail here]</p>
-          <p style="font-size: 13px; color: var(--green-600); font-weight: 600; margin-top: 8px;">[youtube-link]</p>
+      /* ── Title slide special ── */
+      .title-slide {
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+      }
+      .title-slide .slide-footer {
+        position: absolute;
+        bottom: 0.4in;
+        left: 0.75in;
+        right: 0.75in;
+      }
+      .title-name {
+        font-family: var(--font-display);
+        font-size: 3.5rem;
+        color: var(--text);
+        line-height: 1;
+        margin-bottom: 0.08in;
+      }
+      .title-tagline {
+        font-family: var(--font-body);
+        font-size: 1.15rem;
+        color: var(--emerald-dark);
+        font-weight: 400;
+        margin-bottom: 0.35in;
+      }
+      .title-meta {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-bottom: 0.06in;
+      }
+      .title-links {
+        font-family: var(--font-mono);
+        font-size: 0.72rem;
+        color: var(--text-muted);
+      }
+      .title-origin {
+        font-size: 0.7rem;
+        color: var(--text-light);
+        font-style: italic;
+        margin-top: 0.35in;
+        max-width: 5in;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 1: TITLE -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide title-slide">
+      <div>
+        <div class="leaf" style="font-size: 2rem; margin-bottom: 0.15in">
+          &#x1F33F;
+        </div>
+        <div class="title-name">Coppice</div>
+        <div class="title-tagline">Green Bonds with Teeth on Hedera</div>
+        <div class="title-meta">
+          Sustainability Track &middot; ad0ll (solo developer) &middot; Hedera
+          Hello Future: Apex 2026
+        </div>
+        <div class="title-links">
+          coppice.cc &nbsp;&middot;&nbsp; guardian.coppice.cc
         </div>
       </div>
-      <p class="small center mt-16">Live app: [vercel-url]</p>
-    </div>
-    <div class="flex-1">
-      <h3 style="font-size: 15px;">Demo Walkthrough</h3>
-      <table style="font-size: 12px;">
-        <tr><th>Scene</th><th>What Happens</th><th>Criteria</th></tr>
-        <tr><td>Alice connects</td><td>4 compliance checks pass, bond purchase executes</td><td><span class="badge badge-green">Execution</span> <span class="badge badge-blue">Integration</span></td></tr>
-        <tr><td>Bob connects</td><td>No identity &mdash; blocked immediately</td><td><span class="badge badge-green">Execution</span></td></tr>
-        <tr><td>Charlie connects</td><td>Identity OK, China restricted &mdash; blocked</td><td><span class="badge badge-green">Execution</span> <span class="badge badge-amber">Innovation</span></td></tr>
-        <tr><td>Issuer mints</td><td>100 CPC minted, real testnet tx</td><td><span class="badge badge-green">Execution</span> <span class="badge badge-blue">Success</span></td></tr>
-        <tr><td>Freeze/Pause</td><td>Wallet frozen, token paused &mdash; regulatory controls</td><td><span class="badge badge-amber">Feasibility</span></td></tr>
-        <tr><td>Allocate proceeds</td><td>$250K to "Nordic Wind Farm" &rarr; HCS</td><td><span class="badge badge-amber">Innovation</span> <span class="badge badge-blue">Integration</span></td></tr>
-        <tr><td>Compliance Monitor</td><td>HCS audit feed, HashScan links</td><td><span class="badge badge-blue">Integration</span> <span class="badge badge-blue">Success</span></td></tr>
-      </table>
-    </div>
-  </div>
+      <div class="slide-footer">
+        <span>Coppice &mdash; Pitch Deck</span>
+        <span>1 / 9</span>
+      </div>
+    </section>
 
-  <div class="card-accent mt-24">
-    <p style="margin: 0; font-size: 14px;"><strong>Every HashScan link in the demo is clickable and verifiable.</strong> No mock data. No simulated transactions. Real Hedera testnet activity.</p>
-  </div>
-</section>
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 2: THE PROBLEM -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">The Problem</div>
+      <div class="slide-title">The Green Investment Trust Gap</div>
 
-<!-- =============================== SLIDE 6: COMPLIANCE =============================== -->
-<section class="slide" data-slide="6">
-  <p class="eyebrow">Compliance Deep-Dive</p>
-  <h2>The Four-Gate Transfer Model</h2>
+      <div class="stat-row" style="margin-bottom: 0.15in">
+        <div class="stat-box">
+          <div class="stat-value">$7.5T</div>
+          <div class="stat-label">needed/year by 2030</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">$600B</div>
+          <div class="stat-label">current annual issuance</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">8%</div>
+          <div class="stat-label">of net-zero target</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">94%</div>
+          <div class="stat-label">doubt sustainability claims</div>
+        </div>
+      </div>
 
-  <div class="flow mt-16">
-    <div class="flow-step">1. Identity<br><span style="font-size: 10px; font-weight: 400;">ONCHAINID<br>registered?</span></div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">2. Claims<br><span style="font-size: 10px; font-weight: 400;">KYC + AML +<br>Accredited?</span></div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">3. Jurisdiction<br><span style="font-size: 10px; font-weight: 400;">Country<br>approved?</span></div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step">4. Modules<br><span style="font-size: 10px; font-weight: 400;">MaxBalance +<br>SupplyLimit?</span></div>
-    <div class="flow-arrow">&rarr;</div>
-    <div class="flow-step" style="background: var(--green-600); color: white; border-color: var(--green-700);">Transfer<br>Executes</div>
-  </div>
+      <p style="margin-bottom: 0.12in">
+        Green bonds have crossed <strong>$3 trillion outstanding</strong>, but
+        four structural failures undermine confidence:
+      </p>
 
-  <div class="grid-2 mt-24">
-    <div>
-      <h3 style="font-size: 15px;">Compliance Modules Deployed</h3>
-      <table>
-        <tr><th>Module</th><th>Setting</th></tr>
-        <tr><td>CountryRestrictModule</td><td>China (156) blocked</td></tr>
-        <tr><td>MaxBalanceModule</td><td>1,000,000 CPC per wallet</td></tr>
-        <tr><td>SupplyLimitModule</td><td>1,000,000 CPC total supply</td></tr>
-      </table>
-    </div>
-    <div>
-      <h3 style="font-size: 15px;">Demo Wallet Scenarios</h3>
-      <table>
-        <tr><th>Wallet</th><th>Country</th><th>Result</th></tr>
-        <tr><td>Alice</td><td>DE (276)</td><td><span class="badge badge-green">Eligible</span></td></tr>
-        <tr><td>Bob</td><td>US (840)</td><td><span class="badge badge-red">No identity</span></td></tr>
-        <tr><td>Charlie</td><td>CN (156)</td><td><span class="badge badge-red">Restricted</span></td></tr>
-        <tr><td>Diana</td><td>FR (250)</td><td><span class="badge badge-amber">Freeze demo</span></td></tr>
-      </table>
-    </div>
-  </div>
+      <div class="cols">
+        <div class="col">
+          <div class="card" style="margin-bottom: 0.08in">
+            <h3 style="margin: 0 0 0.03in 0">1. Self-Certified "Green"</h3>
+            <p class="small">
+              Issuers self-report with minimal verification. 94% of investors
+              believe sustainability reporting contains unsupported claims.
+              <span class="muted">[PwC 2023]</span> The EU Green Bond Standard
+              (effective Dec 2024) exists, but only ~30 bonds issued so far.
+              <span class="muted">[IEEFA, Feb 2026]</span>
+            </p>
+          </div>
+          <div class="card" style="margin-bottom: 0.08in">
+            <h3 style="margin: 0 0 0.03in 0">2. Opaque Fund Tracking</h3>
+            <p class="small">
+              Use-of-proceeds reports arrive 12&ndash;18 months late as static
+              PDFs. No real-time visibility into whether funds reach green
+              projects.
+            </p>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card" style="margin-bottom: 0.08in">
+            <h3 style="margin: 0 0 0.03in 0">3. Off-Chain Compliance</h3>
+            <p class="small">
+              KYC/AML and jurisdiction checks live in spreadsheets. Transfer
+              restrictions are voluntary, not protocol-level.
+            </p>
+          </div>
+          <div class="card" style="margin-bottom: 0.08in">
+            <h3 style="margin: 0 0 0.03in 0">4. No Consequences</h3>
+            <p class="small">
+              Green bonds have zero penalty for missing targets.
+              Sustainability-linked bonds (SLBs) penalize but don't track where
+              funds go. <strong>No on-chain instrument combines both.</strong>
+            </p>
+          </div>
+        </div>
+      </div>
 
-  <div class="card mt-24" style="background: var(--slate-800); border: none;">
-    <p style="font-size: 14px; color: var(--slate-300); margin: 0;"><strong style="color: white;">ERC-3643 vs. ERC-20:</strong> A standard ERC-20 token allows any address to receive tokens. ERC-3643 makes every <code style="color: var(--green-400);">transfer()</code> call pass through the full compliance stack. Non-compliant transfers revert at the protocol level.</p>
-  </div>
-</section>
+      <div class="card-emerald" style="margin-top: 0.06in">
+        <p class="small">
+          <strong>The demand exists.</strong> 80% of Gen Z/millennials plan to
+          increase sustainable allocations, but greenwashing is the #1 barrier
+          cited by 70% of all investors.
+          <span class="muted">[Morgan Stanley 2025]</span>
+        </p>
+      </div>
 
-<!-- =============================== SLIDE 7: USE OF PROCEEDS =============================== -->
-<section class="slide" data-slide="7">
-  <p class="eyebrow">Use-of-Proceeds Tracking</p>
-  <h2>Real-Time Transparency via Hedera Consensus Service</h2>
-
-  <div class="grid-2 mt-16">
-    <div>
-      <h3 style="font-size: 15px;">The Transparency Gap</h3>
-      <div class="card mb-16">
-        <h4>Traditional Green Bonds</h4>
-        <ul style="font-size: 13px; padding-left: 18px; color: var(--slate-600);">
-          <li class="cross">Reports arrive 12-18 months late</li>
-          <li class="cross">Static PDFs, no independent verification</li>
-          <li class="cross">Investors must trust issuer self-reporting</li>
+      <div class="slide-footer">
+        <ul class="sources">
+          <li>
+            [CBI] <a href="https://www.climatebonds.net/">climatebonds.net</a>
+          </li>
+          <li>
+            [LSEG]
+            <a
+              href="https://www.lseg.com/en/insights/green-debt-market-passes-3-trillion-milestone"
+              >lseg.com</a
+            >
+          </li>
+          <li>
+            [PwC 2023]
+            <a
+              href="https://www.pwc.com/gx/en/news-room/press-releases/2023/pwc-2023-global-investor-survey.html"
+              >pwc.com</a
+            >
+          </li>
+          <li>
+            [IEEFA]
+            <a
+              href="https://ieefa.org/articles/first-year-european-green-bond-standard-sets-stage-growth"
+              >ieefa.org</a
+            >
+          </li>
+          <li>
+            [Morgan Stanley 2025]
+            <a
+              href="https://www.morganstanley.com/insights/articles/sustainable-investing-interest-2025"
+              >morganstanley.com</a
+            >
+          </li>
         </ul>
+        <span>2 / 9</span>
       </div>
-      <div class="card-green">
-        <h4>Coppice (HCS Impact Tracking)</h4>
-        <ul style="font-size: 13px; padding-left: 18px; color: var(--green-800);">
-          <li class="check">Allocations recorded in real time</li>
-          <li class="check">Immutable, timestamped HCS messages</li>
-          <li class="check">Anyone can verify via Mirror Node</li>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 3: THE SOLUTION -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">The Solution</div>
+      <div class="slide-title">
+        Two Instruments, Combined On-Chain for the First Time
+      </div>
+
+      <div class="cols" style="margin-top: 0.05in">
+        <div class="col">
+          <div
+            class="card"
+            style="margin-bottom: 0.1in; border-left: 3px solid var(--emerald)"
+          >
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Green Bond &mdash; Use of Proceeds
+            </h3>
+            <p class="small">
+              Every fund allocation is a
+              <strong>Guardian Verifiable Credential</strong> &mdash; recorded
+              in real-time, anchored to HCS, stored on IPFS.
+            </p>
+            <p class="small" style="margin-top: 0.04in">
+              Investors verify the full trust chain: project registration &rarr;
+              allocation &rarr; MRV report &rarr; independent verification. No
+              waiting for annual PDFs.
+            </p>
+            <p class="tiny" style="margin-top: 0.04in">
+              Solves: Self-certification (#1) + Opaque tracking (#2)
+            </p>
+          </div>
+          <div
+            class="card"
+            style="margin-bottom: 0.1in; border-left: 3px solid var(--amber)"
+          >
+            <h3 style="margin: 0 0 0.04in 0; color: var(--amber)">
+              Sustainability-Linked Bond &mdash; Coupon Penalty
+            </h3>
+            <p class="small">
+              SPT: <strong>"Avoid 10,000 tCO2e per coupon period."</strong> If
+              verified MRV data falls short, coupon steps up +25bps (4.25%
+              &rarr; 4.50%).
+            </p>
+            <p class="small" style="margin-top: 0.04in">
+              The backend <strong>blocks coupon creation</strong> below the
+              penalty rate &mdash; Guardian must confirm SPT status. The issuer
+              cannot bypass the penalty.
+            </p>
+            <p class="tiny" style="margin-top: 0.04in">
+              Solves: No consequences (#4)
+            </p>
+          </div>
+        </div>
+        <div class="col">
+          <div
+            class="card"
+            style="margin-bottom: 0.1in; border-left: 3px solid var(--text)"
+          >
+            <h3 style="margin: 0 0 0.04in 0">Protocol-Level Compliance</h3>
+            <p class="small">
+              ATS enforces identity, KYC, AML, accredited investor status,
+              jurisdiction, and transfer eligibility
+              <strong>in the token contract</strong>. Non-compliant wallets
+              cannot receive tokens.
+            </p>
+            <p class="tiny" style="margin-top: 0.04in">
+              Solves: Off-chain compliance (#3)
+            </p>
+          </div>
+          <div class="card-emerald">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Novel Hybrid Structure
+            </h3>
+            <p class="small">
+              Verbund issued the first hybrid green+SLB in traditional finance
+              (EUR 500M, 2021). <span class="muted">[Natixis]</span>
+            </p>
+            <p class="small" style="margin-top: 0.04in">
+              <strong
+                >To our knowledge, Coppice is the first on-chain
+                implementation</strong
+              >
+              combining use-of-proceeds tracking with sustainability-linked
+              coupon penalties.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <ul class="sources">
+          <li>
+            [Natixis]
+            <a
+              href="https://gsh.cib.natixis.com/our-center-of-expertise/articles/verbund-issues-world-s-first-bond-combining-use-of-proceeds-earmarking-and-kpi-linking-mechanism"
+              >gsh.cib.natixis.com</a
+            >
+          </li>
         </ul>
+        <span>3 / 9</span>
       </div>
-    </div>
-    <div>
-      <h3 style="font-size: 15px;">HCS Message Format</h3>
-      <div class="card" style="font-family: monospace; font-size: 12px; background: var(--slate-800); color: var(--green-400); border: none;">
-        <pre style="margin: 0; white-space: pre-wrap;">{
-  "type": "PROCEEDS_ALLOCATED",
-  "ts": "2026-03-15T14:30:00Z",
-  "data": {
-    "project": "Nordic Wind Farm",
-    "category": "Renewable Energy",
-    "amount": 250000,
-    "currency": "USD"
-  }
-}</pre>
-      </div>
-      <h3 style="font-size: 15px; margin-top: 16px;">Green Categories</h3>
-      <div class="bar-group">
-        <div class="bar-label"><span>Renewable Energy</span><span>42%</span></div>
-        <div class="bar-track"><div class="bar-fill bar-fill-green" style="width: 42%;"></div></div>
-      </div>
-      <div class="bar-group">
-        <div class="bar-label"><span>Energy Efficiency</span><span>25%</span></div>
-        <div class="bar-track"><div class="bar-fill bar-fill-amber" style="width: 25%;"></div></div>
-      </div>
-      <div class="bar-group">
-        <div class="bar-label"><span>Clean Transportation</span><span>18%</span></div>
-        <div class="bar-track"><div class="bar-fill bar-fill-blue" style="width: 18%;"></div></div>
-      </div>
-      <div class="bar-group">
-        <div class="bar-label"><span>Sustainable Water</span><span>10%</span></div>
-        <div class="bar-track"><div class="bar-fill bar-fill-green" style="width: 10%;"></div></div>
-      </div>
-      <div class="bar-group">
-        <div class="bar-label"><span>Green Buildings</span><span>5%</span></div>
-        <div class="bar-track"><div class="bar-fill bar-fill-amber" style="width: 5%;"></div></div>
-      </div>
-    </div>
-  </div>
-</section>
+    </section>
 
-<!-- =============================== SLIDE 8: WHY HEDERA =============================== -->
-<section class="slide" data-slide="8">
-  <p class="eyebrow">Why Hedera</p>
-  <h2>The Right Chain for Green Finance</h2>
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 4: HOW IT WORKS -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Architecture</div>
+      <div class="slide-title">How It Works &mdash; 5 Hedera Services</div>
 
-  <div class="grid-2 mt-16">
-    <div class="card-green">
-      <h3 style="font-size: 16px;">1. Carbon-Negative Network</h3>
-      <p style="font-size: 13px;">Verified by <strong>UCL's Centre for Blockchain Technologies</strong>. Energy per transaction: <strong>0.000003 kWh</strong> &mdash; less than a Google search. Carbon offsets via Terrapass green-e certified credits. [7]</p>
-      <p style="font-size: 13px; margin: 0;"><em>A green bond should run on the greenest network.</em></p>
-    </div>
-    <div class="card-green">
-      <h3 style="font-size: 16px;">2. Low, Predictable Fees</h3>
-      <p style="font-size: 13px;">ERC-3643 transfers trigger <strong>4-6 contract calls</strong> (identity, claims, country, compliance modules). At ~$0.0001/tx on Hedera vs. $5-50 on Ethereum L1, compliance-heavy tokens are economically viable. [8]</p>
-    </div>
-    <div class="card-green">
-      <h3 style="font-size: 16px;">3. Strategic Alignment</h3>
-      <p style="font-size: 13px;"><strong>Hedera Foundation joined the ERC-3643 Association</strong> (March 2025) alongside DTCC, ABN AMRO, Deloitte, Fireblocks, OpenZeppelin. ERC-3643 integrated into <strong>Asset Tokenization Studio</strong> (Nov 2025). [9][10]</p>
-    </div>
-    <div class="card-green">
-      <h3 style="font-size: 16px;">4. Multi-Service Architecture</h3>
-      <p style="font-size: 13px;">No other chain combines: EVM smart contracts + Consensus Service (audit) + Token Service (settlement) + Mirror Node (queries). Coppice is a <strong>native multi-service Hedera app</strong>, not just EVM code on a relay.</p>
-    </div>
-  </div>
+      <div class="flow" style="margin-top: 0.08in">
+        <div class="flow-step">
+          <strong>Investor</strong>
+          Connects wallet
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step highlight">
+          <strong>ATS Compliance</strong>
+          Identity, KYC/AML, accredited,<br />jurisdiction, transfer eligibility
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">
+          <strong>Purchase</strong>
+          eUSD &rarr; CPC tokens<br /><span class="tiny">HTS settlement</span>
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step highlight">
+          <strong>Fund Allocation</strong>
+          Guardian VC per project<br /><span class="tiny"
+            >Anchored to HCS + IPFS</span
+          >
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">
+          <strong>MRV &amp; Verify</strong>
+          tCO2e reports +<br />independent review
+        </div>
+        <div class="flow-arrow">&rarr;</div>
+        <div
+          class="flow-step"
+          style="background: var(--amber-light); border-color: var(--amber)"
+        >
+          <strong>SPT Check</strong>
+          Target met? Base rate.<br />Missed? +25bps penalty.
+        </div>
+      </div>
 
-  <div class="mt-24">
-    <h3 style="font-size: 15px;">Why Not Polygon (ABN AMRO's Choice)?</h3>
-    <table>
-      <tr><th style="width: 200px;"></th><th>Polygon (ABN AMRO)</th><th>Hedera (Coppice)</th></tr>
-      <tr><td>Carbon status</td><td>Carbon-neutral pledge</td><td><strong>Carbon-negative (UCL verified)</strong></td></tr>
-      <tr><td>Use-of-proceeds</td><td>Off-chain PDF reports</td><td><strong>On-chain HCS (real-time)</strong></td></tr>
-      <tr><td>Settlement</td><td>Off-chain fiat</td><td><strong>On-chain eUSD (HTS)</strong></td></tr>
-      <tr><td>Audit trail</td><td>Event logs only</td><td><strong>HCS immutable topic</strong></td></tr>
-      <tr><td>ERC-3643 support</td><td>Community deployed</td><td><strong>Official ATS integration</strong></td></tr>
-    </table>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 9: VALIDATION =============================== -->
-<section class="slide" data-slide="9">
-  <p class="eyebrow">Market Validation</p>
-  <h2>Institutional Precedent + Regulatory Tailwinds</h2>
-
-  <div class="grid-3 mt-16">
-    <div class="card">
-      <h4>ABN AMRO (Sept 2023)</h4>
-      <p style="font-size: 12px;">EUR 5M digital green bond on Polygon. ERC-3643 + Tokeny. Investor: DekaBank. Custody: Fireblocks. [11]</p>
-      <p style="font-size: 12px; margin: 0;"><em>Proves green bond + ERC-3643 works in production.</em></p>
-    </div>
-    <div class="card">
-      <h4>HKSAR (Feb 2023)</h4>
-      <p style="font-size: 12px;">HK$800M tokenized government green bond. T+1 settlement. First government-scale tokenized green bond. [12]</p>
-      <p style="font-size: 12px; margin: 0;"><em>Proves government-scale tokenization works.</em></p>
-    </div>
-    <div class="card">
-      <h4>BIS Project Genesis (2022)</h4>
-      <p style="font-size: 12px;">Retail green bond prototype with real-time ESG tracking via IoT sensors. BIS Innovation Hub + HKMA. [13]</p>
-      <p style="font-size: 12px; margin: 0;"><em>Validates real-time impact verification concept.</em></p>
-    </div>
-  </div>
-
-  <div class="grid-2 mt-24">
-    <div>
-      <h3 style="font-size: 15px;">Regulatory Tailwinds</h3>
-      <ol class="num-list">
-        <li><strong>EU Green Bond Standard</strong> (Regulation 2023/2631) &mdash; effective Dec 2024. Demands taxonomy-aligned use-of-proceeds and external review. [3]</li>
-        <li><strong>ERC-3643 Association</strong> &mdash; 24 institutional members. DTCC, Deloitte, Hedera, ABN AMRO, OpenZeppelin. $32B+ tokenized. [6]</li>
-        <li><strong>Hedera ecosystem</strong> &mdash; DeFi TVL grew 141% YoY to $208M. $10B+ in RWA settlements. HBAR ETF live on Nasdaq. [14]</li>
-      </ol>
-    </div>
-    <div>
-      <h3 style="font-size: 15px;">Competitive Landscape</h3>
-      <table style="font-size: 12px;">
-        <tr><th>Project</th><th>Compliance</th><th>Impact</th><th>Green?</th></tr>
-        <tr><td>ABN AMRO</td><td>ERC-3643</td><td>Off-chain</td><td><span class="cross"></span></td></tr>
-        <tr><td>Securitize</td><td>Custom</td><td>Off-chain</td><td><span class="cross"></span></td></tr>
-        <tr><td>Obligate</td><td>Swiss DLT</td><td>Off-chain</td><td><span class="cross"></span></td></tr>
-        <tr class="highlight-row"><td>Coppice</td><td>ERC-3643</td><td>On-chain</td><td><span class="check"></span></td></tr>
+      <table style="margin-top: 0.12in">
+        <thead>
+          <tr>
+            <th style="width: 22%">Hedera Service</th>
+            <th>Role in Coppice</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Asset Tokenization Studio</strong> (ATS)</td>
+            <td>
+              Bond deployed as single EVM contract with compliance, KYC, coupon
+              management built in. LifeCycleCashFlow for automated coupon
+              distribution via on-chain snapshots.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Guardian</strong></td>
+            <td>
+              5 ICMA-aligned VC schemas: bond framework, project registration,
+              fund allocation, MRV report, verification statement. VCs
+              discoverable via HIP-19.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Hedera Consensus Service</strong> (HCS)</td>
+            <td>
+              Immutable audit trail &mdash; Guardian anchors all VCs to HCS
+              topics. On-chain events timestamped and publicly queryable.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Mirror Node</strong></td>
+            <td>
+              Primary frontend data source &mdash; contract event logs, HTS
+              balance queries, transaction verification.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Hedera Token Service</strong> (HTS)</td>
+            <td>
+              <em>(Hackathon only)</em> eUSD stablecoin settlement &mdash;
+              testnet stand-in for USDC. ERC-20 facade via HIP-218.
+            </td>
+          </tr>
+        </tbody>
       </table>
-    </div>
-  </div>
-</section>
 
-<!-- =============================== SLIDE 10: GTM =============================== -->
-<section class="slide" data-slide="10">
-  <p class="eyebrow">Go-To-Market</p>
-  <h2>Lean Canvas & Business Model</h2>
+      <div class="slide-footer">
+        <span></span>
+        <span>4 / 9</span>
+      </div>
+    </section>
 
-  <table class="mt-16" style="font-size: 13px;">
-    <tr><th style="width: 170px;">Block</th><th>Content</th></tr>
-    <tr><td><strong>Problem</strong></td><td>1) $100K+ minimums lock out retail investors. 2) Greenwashing &mdash; no verifiable proof. 3) T+2 settlement, no liquidity.</td></tr>
-    <tr><td><strong>Customer Segments</strong></td><td>Institutional issuers (banks, corporates), ESG-focused retail investors, compliance officers, sustainability reporting teams</td></tr>
-    <tr><td><strong>Unique Value Prop</strong></td><td>First compliant green bond platform on a carbon-negative chain &mdash; ERC-3643 compliance + HCS impact tracking + fractional ownership</td></tr>
-    <tr><td><strong>Solution</strong></td><td>Tokenized green bonds with on-chain KYC/AML, HCS audit trail, eUSD settlement, category-tagged use-of-proceeds</td></tr>
-    <tr><td><strong>Channels</strong></td><td>Hedera ecosystem partnerships, green finance conferences, EU/Asia regulatory sandboxes, DeFi integrations</td></tr>
-    <tr><td><strong>Revenue</strong></td><td>Issuance fees (0.1-0.5%), annual compliance/management fees, premium ESG reporting tier</td></tr>
-    <tr><td><strong>Cost Structure</strong></td><td>Smart contract audits, regulatory licensing, Hedera fees (~$0.0001/tx), development</td></tr>
-    <tr><td><strong>Key Metrics</strong></td><td>AUM (bonds issued), verified investors, jurisdictions covered, settlement time (T+0 target)</td></tr>
-    <tr><td><strong>Unfair Advantage</strong></td><td>First-mover on ERC-3643 + Hedera, Foundation's Association membership, EU GBS alignment</td></tr>
-  </table>
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 5: LIVE DEMO -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Execution</div>
+      <div class="slide-title">Live Demo &mdash; Hedera Testnet</div>
 
-  <div class="mt-24">
-    <h3 style="font-size: 15px;">Target Path</h3>
-    <div class="flow">
-      <div class="flow-step" style="background: var(--green-600); color: white; border-color: var(--green-700);">Now<br><span style="font-size: 10px; font-weight: 400;">Hackathon PoC<br>Testnet demo</span></div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step">Phase 1<br><span style="font-size: 10px; font-weight: 400;">Mainnet pilot<br>Real issuer</span></div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step">Phase 2<br><span style="font-size: 10px; font-weight: 400;">Multi-bond<br>Secondary market</span></div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step">Phase 3<br><span style="font-size: 10px; font-weight: 400;">Regulatory sandbox<br>EU / SG / UAE</span></div>
-      <div class="flow-arrow">&rarr;</div>
-      <div class="flow-step">Phase 4<br><span style="font-size: 10px; font-weight: 400;">IoT impact data<br>BIS Genesis model</span></div>
-    </div>
-  </div>
-</section>
+      <div class="stat-row" style="margin-bottom: 0.12in">
+        <div class="stat-box">
+          <div class="stat-label">Live App</div>
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 0.78rem;
+              color: var(--emerald-dark);
+              font-weight: 600;
+              margin-top: 2px;
+            "
+          >
+            coppice.cc
+          </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Guardian API</div>
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 0.78rem;
+              color: var(--emerald-dark);
+              font-weight: 600;
+              margin-top: 2px;
+            "
+          >
+            guardian.coppice.cc
+          </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">CPC Bond (ATS)</div>
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 0.78rem;
+              color: var(--emerald-dark);
+              font-weight: 600;
+              margin-top: 2px;
+            "
+          >
+            0.0.8254921
+          </div>
+          <div class="tiny" style="margin-top: 1px">
+            Importable in Tokenization Studio
+          </div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Demo Video</div>
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 0.78rem;
+              color: var(--emerald-dark);
+              font-weight: 600;
+              margin-top: 2px;
+            "
+          >
+            [YouTube]
+          </div>
+        </div>
+      </div>
 
-<!-- =============================== SLIDE 11: SUCCESS METRICS =============================== -->
-<section class="slide" data-slide="11">
-  <p class="eyebrow">Success Metrics</p>
-  <h2>Ecosystem Impact & Projections</h2>
-
-  <div class="grid-2 mt-16">
-    <div>
-      <h3 style="font-size: 15px;">Hedera Ecosystem Growth</h3>
       <table>
-        <tr><th>Metric</th><th>How Coppice Contributes</th></tr>
-        <tr><td>Account creation</td><td>Every investor = Hedera account + ONCHAINID. 100 investors = 200+ accounts.</td></tr>
-        <tr><td>TPS growth</td><td>4-6 contract calls per transfer + HCS submissions. Sustained activity.</td></tr>
-        <tr><td>TVL increase</td><td>EUR 5M bond = ~2.5% of current Hedera DeFi TVL ($208M).</td></tr>
-        <tr><td>Institutional adoption</td><td>ERC-3643 is the DTCC/Deloitte-backed standard. Coppice proves Hedera runs it.</td></tr>
+        <thead>
+          <tr>
+            <th style="width: 14%">Page</th>
+            <th>What It Shows</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Invest</strong></td>
+            <td>
+              Real-time compliance verification. Alice passes all checks,
+              purchases CPC with eUSD. Bob eligible via self-promotion (judge
+              onboarding). Charlie blocked &mdash; restricted jurisdiction
+              enforced at protocol level.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Coupons</strong></td>
+            <td>
+              Coupon schedule &mdash; 4.25% annual rate, face value,
+              record/execution dates, on-chain snapshot status.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Impact</strong></td>
+            <td>
+              Guardian-verified projects with full trust chain (IPFS + HCS
+              links). SPT target vs actual. ICMA compliance evidence.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Issuer</strong></td>
+            <td>
+              Issue tokens, freeze/unfreeze, pause/unpause, allocate proceeds
+              via Guardian, distribute coupons, register new projects.
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Compliance</strong></td>
+            <td>
+              On-chain events from Mirror Node contract logs + Guardian
+              verification events. All with HashScan links.
+            </td>
+          </tr>
+        </tbody>
       </table>
 
-      <h3 style="font-size: 15px; margin-top: 20px;">Validation & Feedback Plan</h3>
-      <table>
-        <tr><th>Channel</th><th>Method</th><th>Status</th></tr>
-        <tr><td>User testing</td><td>Demo to Hedera community</td><td><span class="badge badge-amber">Planned</span></td></tr>
-        <tr><td>Issuer validation</td><td>ERC-3643 Association outreach</td><td><span class="badge badge-amber">Planned</span></td></tr>
-        <tr><td>Regulatory</td><td>EU/SG sandbox submissions</td><td><span class="badge badge-amber">Post-hack</span></td></tr>
-        <tr><td>Open source</td><td>Public repo, community audit</td><td><span class="badge badge-green">Active</span></td></tr>
-      </table>
-    </div>
-    <div>
-      <h3 style="font-size: 15px;">At Scale: 100 Green Bonds on Hedera</h3>
-      <div class="grid-2" style="margin-bottom: 16px;">
-        <div class="stat">
-          <div class="stat-value" style="font-size: 28px;">10K+</div>
-          <div class="stat-label">Verified investors</div>
+      <div style="margin-top: 0.1in; display: flex; gap: 0.15in">
+        <div class="card" style="flex: 1; text-align: center">
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: var(--emerald-dark);
+            "
+          >
+            78%
+          </div>
+          <div class="stat-label">Test coverage (220+ tests)</div>
         </div>
-        <div class="stat">
-          <div class="stat-value" style="font-size: 28px;">20K+</div>
-          <div class="stat-label">On-chain identities</div>
+        <div class="card" style="flex: 1; text-align: center">
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: var(--emerald-dark);
+            "
+          >
+            WCAG 2.1 AA
+          </div>
+          <div class="stat-label">Accessible</div>
+        </div>
+        <div class="card" style="flex: 1; text-align: center">
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: var(--emerald-dark);
+            "
+          >
+            100%
+          </div>
+          <div class="stat-label">Real testnet transactions</div>
+        </div>
+        <div class="card" style="flex: 1; text-align: center">
+          <div
+            style="
+              font-family: var(--font-mono);
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: var(--emerald-dark);
+            "
+          >
+            Mobile
+          </div>
+          <div class="stat-label">Responsive design</div>
         </div>
       </div>
-      <div class="grid-2" style="margin-bottom: 16px;">
-        <div class="stat">
-          <div class="stat-value" style="font-size: 28px;">50K+</div>
-          <div class="stat-label">Monthly compliance txns</div>
+
+      <div class="slide-footer">
+        <span></span>
+        <span>5 / 9</span>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 6: GUARDIAN & SPT -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Innovation</div>
+      <div class="slide-title">
+        The Hybrid: Green Bond + Sustainability-Linked Bond
+      </div>
+
+      <div class="cols" style="margin-top: 0.05in">
+        <div
+          class="col"
+          style="border-left: 3px solid var(--emerald); padding-left: 0.12in"
+        >
+          <h3 style="margin: 0 0 0.06in 0; color: var(--emerald-dark)">
+            Green Bond Side &mdash; Where the Money Goes
+          </h3>
+          <p class="small">
+            Use-of-proceeds tracked as
+            <strong>Guardian Verifiable Credentials</strong>. Each step is
+            independently verifiable via IPFS + HCS:
+          </p>
+          <table style="margin-top: 0.06in">
+            <thead>
+              <tr>
+                <th style="width: 24%">VC Type</th>
+                <th style="width: 30%">GBP Component</th>
+                <th>What It Records</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Bond Framework</strong></td>
+                <td class="tiny" style="color: var(--text)">
+                  Project Evaluation &amp; Selection
+                </td>
+                <td>Eligible ICMA categories, SPT target, coupon terms</td>
+              </tr>
+              <tr>
+                <td><strong>Project Registration</strong></td>
+                <td class="tiny" style="color: var(--text)">
+                  Project Evaluation &amp; Selection
+                </td>
+                <td>Name, ICMA category, location, EU Taxonomy alignment</td>
+              </tr>
+              <tr>
+                <td><strong>Fund Allocation</strong></td>
+                <td class="tiny" style="color: var(--text)">
+                  Use of Proceeds + Management
+                </td>
+                <td>
+                  Amount, purpose, Hedera tx ID &mdash; on-chain cross-ref
+                </td>
+              </tr>
+              <tr>
+                <td><strong>MRV Report</strong></td>
+                <td class="tiny" style="color: var(--text)">
+                  Reporting (ICMA Harmonised Framework)
+                </td>
+                <td>tCO2e avoided, MWh generated, methodology</td>
+              </tr>
+              <tr>
+                <td><strong>Verification</strong></td>
+                <td class="tiny" style="color: var(--text)">External Review</td>
+                <td>Independent verifier (separate DID) confirms impact</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="stat">
-          <div class="stat-value" style="font-size: 28px;">240%</div>
-          <div class="stat-label">of current Hedera DeFi TVL</div>
+        <div
+          class="col"
+          style="border-left: 3px solid var(--amber); padding-left: 0.12in"
+        >
+          <h3 style="margin: 0 0 0.06in 0; color: var(--amber)">
+            SLB Side &mdash; Consequences for Missing Targets
+          </h3>
+          <p class="small">
+            Sustainability Performance Target ties the coupon rate to
+            <strong>verified MRV data</strong> from the green bond side:
+          </p>
+          <div class="card" style="margin-top: 0.06in; margin-bottom: 0.06in">
+            <p class="small">
+              <strong>SPT:</strong> &ldquo;Avoid 10,000 tCO2e per coupon period
+              across all funded projects.&rdquo;
+            </p>
+          </div>
+          <div style="display: flex; gap: 0.08in; margin-bottom: 0.06in">
+            <div
+              class="card"
+              style="
+                flex: 1;
+                background: var(--emerald-light);
+                border-color: var(--emerald);
+              "
+            >
+              <p class="small emerald"><strong>Target met</strong></p>
+              <p class="small">Coupon: <span class="mono">4.25%</span></p>
+            </div>
+            <div
+              class="card"
+              style="
+                flex: 1;
+                background: var(--red-light);
+                border-color: var(--red);
+              "
+            >
+              <p class="small red"><strong>Target missed</strong></p>
+              <p class="small">
+                Coupon: <span class="mono">4.50%</span> (+25bps)
+              </p>
+            </div>
+          </div>
+          <div class="card">
+            <p class="small">
+              <strong>Hard-gated:</strong> Verified Guardian MRV data determines
+              the coupon rate. If climate targets are missed, the rate steps up
+              automatically. Coupons are distributed on-chain via ATS at the
+              verified rate &mdash; the issuer cannot override the penalty.
+            </p>
+          </div>
         </div>
       </div>
 
-      <h3 style="font-size: 15px;">MVP Quality</h3>
-      <ul style="font-size: 13px; padding-left: 18px; color: var(--slate-600); line-height: 1.8;">
-        <li class="check">Fully functional on Hedera testnet</li>
-        <li class="check">WCAG 2.1 AA accessibility</li>
-        <li class="check">Mobile responsive (390x844)</li>
-        <li class="check">Auto eUSD refund on mint failure</li>
-        <li class="check">EIP-191 wallet auth (60s expiry)</li>
-      </ul>
-    </div>
-  </div>
-</section>
-
-<!-- =============================== SLIDE 12: ROADMAP =============================== -->
-<section class="slide" data-slide="12">
-  <p class="eyebrow">Roadmap & Learnings</p>
-  <h2>What's Built, What's Next</h2>
-
-  <div class="grid-2 mt-16">
-    <div>
-      <h3 style="font-size: 15px;">Built During Hackathon</h3>
-      <ul style="font-size: 13px; padding-left: 18px; color: var(--slate-600); line-height: 1.8;">
-        <li class="check">Full ERC-3643 T-REX suite (12 contracts + 3 modules)</li>
-        <li class="check">Investor portal with 4-gate compliance verification</li>
-        <li class="check">Issuer dashboard (mint, freeze, pause, allocate)</li>
-        <li class="check">Compliance monitor with real-time HCS feed</li>
-        <li class="check">eUSD stablecoin settlement via HTS</li>
-        <li class="check">Use-of-proceeds tracking with category visualization</li>
-        <li class="check">Event logger daemon (EVM &rarr; HCS bridge)</li>
-        <li class="check">115 tests (contract + unit + E2E)</li>
-        <li class="check">Accessible, mobile-responsive frontend</li>
-        <li class="check">EIP-191 authenticated API routes</li>
-      </ul>
-    </div>
-    <div>
-      <h3 style="font-size: 15px;">Roadmap</h3>
-      <table style="font-size: 12px;">
-        <tr><th>Phase</th><th>Milestone</th><th>When</th></tr>
-        <tr><td>1</td><td>Mainnet deploy, real USDC settlement</td><td>Q2 2026</td></tr>
-        <tr><td>2</td><td>Automated coupon payments (HTS scheduled)</td><td>Q3 2026</td></tr>
-        <tr><td>3</td><td>Secondary market with compliance transfers</td><td>Q3 2026</td></tr>
-        <tr><td>4</td><td>Multi-bond platform, multiple issuers</td><td>Q4 2026</td></tr>
-        <tr><td>5</td><td>Regulatory sandbox (EU, SG, UAE)</td><td>Q4 2026</td></tr>
-        <tr><td>6</td><td>IoT impact data (BIS Genesis model)</td><td>2027</td></tr>
-      </table>
-
-      <h3 style="font-size: 15px; margin-top: 20px;">Key Learnings</h3>
-      <div class="card" style="font-size: 13px;">
-        <p><strong>ERC-3643 on Hedera works.</strong> T-REX v4.1.6 deploys and runs correctly on Hedera EVM. No modifications needed.</p>
-        <p><strong>HCS is ideal for compliance audit trails.</strong> Immutable, timestamped, publicly queryable &mdash; exactly what regulators want.</p>
-        <p><strong>HTS + EVM interop is powerful.</strong> HIP-218 long-zero mapping lets HTS tokens behave as ERC-20s inside EVM contracts.</p>
-        <p style="margin: 0;"><strong>Solo scope demands focus.</strong> Every feature is tested and functional. No half-built features.</p>
+      <div class="card-emerald" style="margin-top: 0.06in">
+        <p class="small">
+          <strong>The bridge:</strong> MRV reports (green bond) feed directly
+          into the SPT check (SLB). Guardian is both the evidence chain for
+          investors <em>and</em> the enforcement mechanism for coupon penalties.
+          Miss the environmental target &rarr; pay more interest. No other
+          on-chain instrument does both.
+        </p>
       </div>
-    </div>
-  </div>
 
-  <div class="card mt-24" style="background: var(--green-900); border: none; text-align: center;">
-    <p style="font-size: 18px; color: var(--green-100); font-weight: 700; margin: 0;">Coppice brings institutional-grade compliant tokenization to Hedera.</p>
-    <p style="font-size: 14px; color: var(--green-400); margin-top: 8px; margin-bottom: 0;">github.com/[repo] &nbsp;&middot;&nbsp; [live-demo-url] &nbsp;&middot;&nbsp; [youtube-demo]</p>
-  </div>
-</section>
+      <div class="slide-footer">
+        <span></span>
+        <span>6 / 9</span>
+      </div>
+    </section>
 
-<!-- =============================== SOURCES =============================== -->
-<section class="slide" data-slide="Sources" style="font-size: 11px;">
-  <p class="eyebrow">Sources</p>
-  <h2 style="font-size: 20px;">References</h2>
-  <div class="grid-2 mt-16" style="font-size: 11px; color: var(--slate-600);">
-    <div>
-      <p>[1] LSEG. "Green Debt Market Passes $3 Trillion Milestone." 2025. lseg.com</p>
-      <p>[2] Environmental Finance. "The Sustainable Bond Market in 2025." environmental-finance.com</p>
-      <p>[3] European Commission. "European Green Bond Standard." Regulation (EU) 2023/2631. finance.ec.europa.eu</p>
-      <p>[4] ABN AMRO Research. "EU GBS Uptick Will Be Limited." 2025. abnamro.com/research</p>
-      <p>[5] Climate Bonds Initiative. "Global State of the Market 2024." climatebonds.net</p>
-      <p>[6] ERC-3643 Association. "About." erc3643.org</p>
-      <p>[7] UCL Centre for Blockchain Technologies. "Hedera Energy Study." hedera.com/ucl-blockchain-energy</p>
-    </div>
-    <div>
-      <p>[8] Hedera. "Fees." hedera.com/fees</p>
-      <p>[9] Hedera Foundation. "HBAR Foundation Joins ERC-3643 Association." March 2025. hedera.foundation</p>
-      <p>[10] Hedera. "ERC-3643 Integrated into Asset Tokenization Studio." Nov 2025. hedera.com/blog</p>
-      <p>[11] Tokeny. "ABN AMRO Bond Tokenization Success Story." tokeny.com</p>
-      <p>[12] CoinTelegraph. "Hong Kong $800M Tokenized Green Bond." Feb 2023. cointelegraph.com</p>
-      <p>[13] BIS Innovation Hub. "Project Genesis: Green Bond Tokenisation." bis.org</p>
-      <p>[14] Hedera Foundation. "Hedera 2025 Year in Review." hedera.foundation</p>
-    </div>
-  </div>
-</section>
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 7: WHY HEDERA -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Integration</div>
+      <div class="slide-title">Why Hedera</div>
 
-</body>
+      <div class="cols" style="margin-top: 0.05in">
+        <div class="col">
+          <div class="card" style="margin-bottom: 0.1in">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              ATS: Compliance in a Single Contract
+            </h3>
+            <p class="small">
+              Bond deployed as a single contract with compliance, KYC/AML,
+              jurisdiction controls, whitelist enforcement, and coupon
+              management built in. Non-compliant transfers revert at the
+              protocol level.
+            </p>
+          </div>
+          <div class="card" style="margin-bottom: 0.1in">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Guardian: Open-Source dMRV &amp; Policy Engine
+            </h3>
+            <p class="small">
+              World's largest open-source digitized climate methodology library.
+              Converts environmental compliance into
+              <strong>programmable policy-as-code</strong> &mdash; CDM, GHGP,
+              Gold Standard, Verra, iREC methodologies represented. Automates
+              MRV as auditable VCs anchored to HCS + IPFS.
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Ecosystem Validation
+            </h3>
+            <ul class="small" style="margin-top: 0">
+              <li>
+                <strong>ERC-3643 Association</strong> &mdash; DTCC, ABN AMRO,
+                Deloitte, Fireblocks, Hedera Foundation. $32B+ tokenized using
+                this standard. <span class="muted">[March 2025]</span>
+              </li>
+              <li>
+                <strong>Verra</strong> (1.3B+ tonnes verified) &mdash; 5-year
+                partnership with Guardian to digitalize 20+ carbon
+                methodologies. First standards body to integrate with blockchain
+                MRV. <span class="muted">[May 2025]</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card" style="margin-bottom: 0.1in">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Carbon-Negative Network
+            </h3>
+            <p class="small">
+              Only major L1 verified by <strong>UCL</strong> as the
+              lowest-energy DLT.
+              <span class="mono" style="font-size: 0.72rem"
+                >0.000003 kWh/tx.</span
+              >
+              Quarterly carbon offsets via Terrapass.
+              <span class="muted">[UCL]</span>
+            </p>
+            <p class="small" style="margin-top: 0.04in">
+              <strong>A green bond should run on the greenest chain.</strong>
+            </p>
+          </div>
+          <div class="card">
+            <h3 style="margin: 0 0 0.04in 0; color: var(--emerald-dark)">
+              Growing dMRV Ecosystem
+            </h3>
+            <p class="small">
+              Coppice's manual MRV is a stepping stone to automated
+              verification. The ecosystem is already building:
+            </p>
+            <ul class="small" style="margin-top: 0.04in">
+              <li>
+                <strong>HYPHEN</strong> &mdash; flux towers measure GHG every 10
+                seconds on Hedera
+              </li>
+              <li>
+                <strong>B4E</strong> (Chevron, ExxonMobil, Repsol,
+                ConocoPhillips) &mdash; joined Hedera Council for energy dMRV
+                <span class="muted">[June 2025]</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <ul class="sources">
+          <li>
+            [ERC-3643]
+            <a
+              href="https://www.erc3643.org/news/erc3643-association-welcomes-24-new-members-to-advance-the-institutional-tokenization-standard"
+              >erc3643.org</a
+            >
+          </li>
+          <li>
+            [Verra]
+            <a
+              href="https://verra.org/verra-and-hedera-to-accelerate-digital-transformation-of-carbon-markets/"
+              >verra.org</a
+            >
+          </li>
+          <li>
+            [UCL]
+            <a href="https://hedera.com/ucl-blockchain-energy">hedera.com</a>
+          </li>
+          <li>
+            [HYPHEN]
+            <a
+              href="https://www.hyphen.earth/post/hyphen-joins-hedera-guardian-ecosystem-to-develop-new-dmrv-methodologies"
+              >hyphen.earth</a
+            >
+          </li>
+          <li>
+            [B4E]
+            <a
+              href="https://hedera.com/blog/blockchain-for-energy-b4e-joins-hedera-council-to-advance-emissions-reporting-standards/"
+              >hedera.com</a
+            >
+          </li>
+        </ul>
+        <span>7 / 9</span>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 8: VALIDATION & IMPACT -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Validation</div>
+      <div class="slide-title">Market Precedent &amp; Regulatory Pathway</div>
+
+      <div class="cols" style="margin-top: 0.05in">
+        <div class="col">
+          <h3>Institutional Precedent</h3>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 22%">Deployment</th>
+                <th style="width: 40%">Details</th>
+                <th>What Coppice Adds</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <strong>ABN AMRO</strong><br /><span class="tiny"
+                    >Sept 2023</span
+                  >
+                </td>
+                <td>EUR 5M green bond, Polygon, ERC-3643 + Tokeny</td>
+                <td>
+                  Guardian impact tracking + SPT penalties + carbon-negative
+                  chain
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>HKSAR</strong><br /><span class="tiny">Feb 2023</span>
+                </td>
+                <td>HK$800M tokenized government green bond, T+1 settlement</td>
+                <td>On-chain compliance + use-of-proceeds tracking</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>BIS Genesis</strong><br /><span class="tiny"
+                    >2022</span
+                  >
+                </td>
+                <td>Green bond prototype with IoT-based ESG tracking</td>
+                <td>Production MRV verification implementation</td>
+              </tr>
+              <tr>
+                <td>
+                  <strong>30+ EuGBs</strong><br /><span class="tiny"
+                    >Since Dec 2024</span
+                  >
+                </td>
+                <td>
+                  EUR 30B+ under EU Green Bond Standard. First by A2A (Jan
+                  2025), largest by EIB (EUR 3B).
+                </td>
+                <td>On-chain enforcement of same transparency principles</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="col">
+          <h3>Regulatory Pathway for Coppice</h3>
+          <div
+            class="card"
+            style="margin-bottom: 0.08in; border-left: 3px solid var(--emerald)"
+          >
+            <p class="small">
+              <strong>EU Green Bond Standard</strong> (Reg. 2023/2631, effective
+              Dec 2024)
+            </p>
+            <p class="small" style="margin-top: 0.03in">
+              Demands taxonomy-aligned use-of-proceeds and external review.
+              Coppice&rsquo;s 5 Guardian VCs map directly to the 4 GBP core
+              components &mdash; delivering digitally and in real-time what the
+              standard requires as annual PDFs.
+            </p>
+          </div>
+          <div
+            class="card"
+            style="margin-bottom: 0.08in; border-left: 3px solid var(--emerald)"
+          >
+            <p class="small">
+              <strong>EU DLT Pilot Regime</strong> (Reg. 2022/858)
+            </p>
+            <p class="small" style="margin-top: 0.03in">
+              Bonds under EUR 1B can be issued on DLT within a regulatory
+              sandbox. ESMA review delivered March 2026; Commission signaled no
+              expiry. This is the concrete legal pathway for Coppice to issue
+              tokenized bonds in the EU without new legislation.
+            </p>
+          </div>
+          <div class="card" style="border-left: 3px solid var(--emerald)">
+            <p class="small"><strong>30+ EuGBs already issued</strong></p>
+            <p class="small" style="margin-top: 0.03in">
+              EUR 30B+ issued under EuGBS since Dec 2024. The standard is
+              gaining traction &mdash; Coppice provides the on-chain
+              infrastructure to meet its transparency requirements natively.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <ul class="sources">
+          <li>
+            [Tokeny]
+            <a
+              href="https://tokeny.com/success-story-abn-amros-bond-tokenization-on-polygon/"
+              >tokeny.com</a
+            >
+          </li>
+          <li>
+            [BIS]
+            <a
+              href="https://www.bis.org/about/bisih/topics/green_finance/green_bonds.htm"
+              >bis.org</a
+            >
+          </li>
+          <li>
+            [IEEFA]
+            <a
+              href="https://ieefa.org/articles/first-year-european-green-bond-standard-sets-stage-growth"
+              >ieefa.org</a
+            >
+          </li>
+          <li>
+            [EC]
+            <a
+              href="https://finance.ec.europa.eu/sustainable-finance/tools-and-standards/european-green-bond-standard-supporting-transition_en"
+              >Reg. 2023/2631</a
+            >
+          </li>
+          <li>
+            [EUR-Lex]
+            <a href="https://eur-lex.europa.eu/eli/reg/2022/858/oj/eng"
+              >Reg. 2022/858</a
+            >
+          </li>
+        </ul>
+        <span>8 / 9</span>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════ -->
+    <!-- SLIDE 9: ROADMAP -->
+    <!-- ════════════════════════════════════════════════════ -->
+    <section class="slide">
+      <div class="slide-subtitle">Roadmap</div>
+      <div class="slide-title">What's Built &amp; What's Next</div>
+
+      <div class="cols" style="margin-top: 0.05in">
+        <div class="col">
+          <h3>Built During Hackathon</h3>
+          <ul class="small">
+            <li>
+              <strong>Hybrid green bond + sustainability-linked bond</strong> on
+              Hedera testnet &mdash; the first on-chain implementation combining
+              use-of-proceeds tracking with sustainability-linked coupon
+              penalties
+            </li>
+            <li>
+              <strong>Full frontend</strong> with investor portal, coupon
+              schedule, impact tracking, issuer dashboard, and compliance
+              monitor
+            </li>
+            <li>
+              <strong>5 Hedera services</strong>: Smart Contracts (ATS),
+              Guardian, HCS, HTS, Mirror Node
+            </li>
+            <li>
+              <strong>Guardian integration</strong>: 5 ICMA-aligned VC schemas,
+              trust chain visualization, SPT enforcement
+            </li>
+            <li>
+              <strong>Automated coupons</strong> via LifeCycleCashFlow (on-chain
+              snapshot + mass payout)
+            </li>
+            <li>
+              <strong>78% test coverage</strong> (220+ tests: 32 contract + 119
+              unit + 69 E2E)
+            </li>
+            <li>
+              <strong>Live</strong> at
+              <a href="https://www.coppice.cc">coppice.cc</a> +
+              <a href="https://guardian.coppice.cc">guardian.coppice.cc</a>
+            </li>
+          </ul>
+        </div>
+        <div class="col">
+          <h3>What's Next</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Phase</th>
+                <th>Milestone</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Institutional Pilot</strong></td>
+                <td>Partner with green bond issuer for small-scale pilot</td>
+              </tr>
+              <tr>
+                <td><strong>DLT Pilot Regime</strong></td>
+                <td>
+                  Apply under EU Reg. 2022/858 &mdash; bonds &lt;EUR 1B qualify
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Automated dMRV</strong></td>
+                <td>
+                  IoT/satellite &rarr; Guardian. HYPHEN + B4E prove this works
+                  on Hedera.
+                </td>
+              </tr>
+              <tr>
+                <td><strong>Multi-bond</strong></td>
+                <td>Multiple issuers, compliance rules, secondary market</td>
+              </tr>
+              <tr>
+                <td><strong>Mainnet</strong></td>
+                <td>
+                  Operate within DLT Pilot Regime, transition to permanent auth.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Key Learnings</h3>
+          <ul class="small">
+            <li>
+              <strong>ATS works for bonds.</strong> Single contract with
+              compliance, KYC, coupons built in.
+            </li>
+            <li>
+              <strong>Guardian solves greenwashing.</strong> VCs with
+              independent verification &gt; annual PDFs.
+            </li>
+            <li>
+              <strong>The combination is novel.</strong> First ATS + Guardian
+              project on Hedera.
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="slide-footer">
+        <span></span>
+        <span>9 / 9</span>
+      </div>
+    </section>
+  </body>
 </html>

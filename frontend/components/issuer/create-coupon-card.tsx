@@ -11,7 +11,7 @@ import { useOperationStatus } from "@/hooks/use-operation-status";
 import { getErrorMessage } from "@/lib/format";
 import { signAuthMessage } from "@/lib/auth";
 import { fetchAPI } from "@/lib/api-client";
-import { createCouponResponseSchema } from "@/app/api/issuer/create-coupon/route";
+import { createCouponResponseSchema } from "@/lib/api-schemas";
 import type { getMinimumCouponRate } from "@/lib/spt-enforcement";
 
 interface CreateCouponCardProps {

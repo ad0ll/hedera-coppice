@@ -6,7 +6,7 @@ import { useConnection, useAts } from "@/contexts/ats-context";
 import { EUSD_EVM_ADDRESS, EUSD_TOKEN_ID } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/format";
 import { fetchAPI } from "@/lib/api-client";
-import { faucetResponseSchema } from "@/app/api/faucet/route";
+import { faucetResponseSchema } from "@/lib/api-schemas";
 import { getHederaAccountId, getHtsTokenBalance } from "@/lib/mirror-node";
 
 const HTS_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000167";

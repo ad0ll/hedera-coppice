@@ -12,6 +12,7 @@ import {
 } from "@/lib/onchain-id";
 import { withRetry } from "@/lib/retry";
 import { parseRequestBody, recoverAddressOrError } from "@/lib/api-helpers";
+import type { OnboardEvent } from "@/lib/api-schemas";
 
 const onboardBodySchema = z.object({
   country: z.number().int().positive(),
@@ -48,17 +49,7 @@ function getEnvAddress(name: string): string {
   return ethers.getAddress(value);
 }
 
-/** SSE event types streamed to the client during onboarding. */
-export const onboardEventSchema = z.object({
-  type: z.enum(["step", "complete", "error"]),
-  step: z.string().optional(),
-  label: z.string().optional(),
-  txHash: z.string().optional(),
-  identityAddress: z.string().optional(),
-  transactions: z.record(z.string(), z.string()).optional(),
-  error: z.string().optional(),
-});
-export type OnboardEvent = z.infer<typeof onboardEventSchema>;
+export { onboardEventSchema, type OnboardEvent } from "@/lib/api-schemas";
 
 function sseEncode(event: OnboardEvent): string {
   return `data: ${JSON.stringify(event)}\n\n`;

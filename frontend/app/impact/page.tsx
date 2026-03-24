@@ -28,7 +28,7 @@ function MetricsSkeleton() {
 export default function ImpactPage() {
   const { data, isLoading, error } = useGuardian();
 
-  const metrics = useMemo(() => data
+  const metrics: { label: string; value: string; unit: string; valueColor?: string }[] = useMemo(() => data
     ? [
         {
           label: "tCO\u2082e Verified",
@@ -49,6 +49,7 @@ export default function ImpactPage() {
           label: "SPT Status",
           value: data.sptMet ? "Met" : "Below",
           unit: `${formatNumber(data.totalVerifiedCO2e)} / ${formatNumber(data.sptTarget)} tCO₂e`,
+          valueColor: data.sptMet ? "text-bond-green" : "text-bond-amber",
         },
       ]
     : [], [data]);
@@ -70,7 +71,7 @@ export default function ImpactPage() {
             {metrics.map((m) => (
               <div key={m.label}>
                 <p className="stat-label mb-1.5">{m.label}</p>
-                <p className="font-display text-3xl text-text">
+                <p className={`font-display text-3xl ${m.valueColor ?? "text-text"}`}>
                   <span className="font-mono">{m.value}</span>
                 </p>
                 <p className="text-xs text-text-muted mt-1">{m.unit}</p>

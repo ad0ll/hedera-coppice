@@ -9,7 +9,7 @@ import { useCompliance } from "@/hooks/use-compliance";
 import { useEusdBalance } from "@/hooks/use-eusd-balance";
 import { signAuthMessage } from "@/lib/auth";
 import { fetchAPI } from "@/lib/api-client";
-import { purchaseResponseSchema } from "@/app/api/purchase/route";
+import { purchaseResponseSchema } from "@/lib/api-schemas";
 import { EUSD_EVM_ADDRESS, DEMO_WALLETS } from "@/lib/constants";
 import { formatNumber, getErrorMessage } from "@/lib/format";
 import { ERC20_ABI, EUSD_DECIMALS } from "@/lib/abis";

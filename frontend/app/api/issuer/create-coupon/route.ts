@@ -20,12 +20,7 @@ const createCouponBodySchema = z.object({
 });
 type CreateCouponBody = z.infer<typeof createCouponBodySchema>;
 
-export const createCouponResponseSchema = z.object({
-  success: z.literal(true),
-  txHash: z.string(),
-  couponId: z.number(),
-});
-export type CreateCouponResponse = z.infer<typeof createCouponResponseSchema>;
+export { createCouponResponseSchema, type CreateCouponResponse } from "@/lib/api-schemas";
 
 /** Convert a percentage rate (e.g. 4.25) to ATS rate format (rate=425, rateDecimals=4). */
 function convertRate(percentRate: number): { rate: number; rateDecimals: number } {

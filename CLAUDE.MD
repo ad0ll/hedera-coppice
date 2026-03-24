@@ -2,38 +2,39 @@
 
 ## Project Overview
 
-Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello Future Apex Hackathon 2026.
+Compliant green bond tokenization using ERC-3643 (via Hedera ATS) on Hedera for the Hello Future Apex Hackathon 2026. Guardian integration for anti-greenwashing MRV verification.
 
 ## Architecture
 
 - **contracts/**: Hardhat project with T-REX v4.1.6 + OnchainID v2.0.0. Solidity 0.8.17.
 - **scripts/**: One-time Hedera setup scripts (HCS topics, HTS eUSD stablecoin).
-- **services/**: Long-running background services (event logger — writes to HCS, but frontend no longer reads from HCS).
-- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via ethers v6. API routes handle purchase/allocate. On-chain events read from Mirror Node contract logs (not HCS). Fund allocations submitted to Guardian API.
+- **frontend/**: Next.js 16 App Router + Tailwind CSS v4. MetaMask wallet integration via ethers v6. API routes handle purchase/allocate. On-chain events read from Mirror Node contract logs. Fund allocations submitted to Guardian API.
 - **e2e/**: Playwright E2E tests with MetaMask mocking.
 
 ## Critical Constraints
 
-- Do NOT rewrite T-REX contracts — use them as-is from @tokenysolutions/t-rex@4.1.6
-- Do NOT rewrite OnchainID contracts — use ABIs from @onchain-id/solidity@2.0.0
-- Deployment follows exact sequence from reference/deploy-full-suite.fixture.ts
-- Claims are signed by claimIssuerSigningKey (random wallet), added by wallet owner
+- CPC bond is deployed via ATS (Asset Tokenization Studio) diamond proxy — NOT raw T-REX contracts
+- T-REX v4.1.6 and OnchainID v2.0.0 ABIs are still in contracts/ for Hardhat compilation but are NOT the deployed bond
+- ATS uses `issue()` (ERC1594), NOT `mint()` — purchase API must call `issue(address, uint256, bytes)`
+- ATS API differs from T-REX: `isPaused()` not `paused()`, `isFrozen()` reverts on unregistered addresses, coupons are 1-indexed
 - Token starts paused after deployment — must call unpause()
 - Always verify contracts on HashScan after deploying
-- Only the deployer (token agent) can mint CPC tokens — purchase flow uses backend API
+- Only the deployer (token agent) can issue CPC tokens — purchase flow uses backend API
+- Frontend uses ethers v6 with custom AtsContext — NOT wagmi or viem
 
 ## Key Files
 
-- Implementation plan: docs/plans/2026-03-13-coppice-green-bonds.md
-- Low-hanging fruit plan: docs/plans/2026-03-14-low-hanging-fruit.md
-- Frontend rebuild plan: docs/plans/2026-03-14-frontend-rebuild.md
-- Audit docs: docs/audit-*.md
 - Reference fixture: reference/deploy-full-suite.fixture.ts
-- Accounts & keys: each workspace has its own .env (contracts, frontend, services, scripts, e2e)
-- Wagmi config: frontend/lib/wagmi.ts
+- Accounts & keys: each workspace has its own .env (contracts, frontend, scripts, e2e)
+- ATS context: frontend/contexts/ats-context.tsx
 - Shared ABIs: packages/common/ (generated via wagmi CLI from contract artifacts)
-- Purchase/allocate API routes: frontend/app/api/purchase/route.ts, frontend/app/api/issuer/allocate/route.ts
+- Constants: frontend/lib/constants.ts
+- Guardian types: frontend/lib/guardian-types.ts
+- Purchase API: frontend/app/api/purchase/route.ts
+- Allocate API (Guardian): frontend/app/api/issuer/allocate/route.ts
+- Guardian data proxy: frontend/app/api/guardian/data/route.ts
 - Hedera server utils: frontend/lib/hedera.ts
+- Guardian scripts: scripts/guardian/
 
 ## Deployed Contracts & Topics
 
@@ -43,7 +44,7 @@ Compliant green bond tokenization using ERC-3643 (T-REX) on Hedera for the Hello
 - IdentityRegistry: 0x03ecdB8673d65b81752AC14dAaCa797D846c1B31
 - ModularCompliance: 0xb6F624B66731AFeEE1443b3F857Cd73b682af4cf
 - ClaimIssuer: 0x6746C2A65b834F3A83Aa95eCAc9C80dF9Bf2AB7A
-- Audit HCS Topic: 0.0.8214934 (services event-logger writes here; frontend reads Mirror Node contract logs instead)
+- Audit HCS Topic: 0.0.8214934
 - Impact HCS Topic: 0.0.8214935 (deprecated — allocations now go through Guardian API)
 - eUSD Token (HTS): 0.0.8214937
 
@@ -76,9 +77,6 @@ cd contracts && npx hardhat run scripts/verify-contracts.ts --network hederaTest
 # Scripts (one-time Hedera setup)
 cd scripts && npx tsx hcs-setup.ts
 cd scripts && npx tsx hts-setup.ts
-
-# Services (background daemons)
-cd services && npm run event-logger
 
 # Frontend (Next.js — includes API routes for purchase/allocate)
 cd frontend && npm run dev

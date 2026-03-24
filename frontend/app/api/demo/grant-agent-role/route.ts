@@ -12,11 +12,7 @@ const bodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
-export const grantAgentRoleResponseSchema = z.object({
-  success: z.literal(true),
-  txHash: z.string(),
-});
-export type GrantAgentRoleResponse = z.infer<typeof grantAgentRoleResponseSchema>;
+export { grantAgentRoleResponseSchema, type GrantAgentRoleResponse } from "@/lib/api-schemas";
 
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, bodySchema);

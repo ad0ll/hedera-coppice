@@ -36,7 +36,7 @@
 | `eth_subscribe` | Supported (HIP-694) | WebSocket, `logs` and `newHeads` |
 | `eth_getFilterChanges` | Supported | Polling-based |
 
-**Key limitation:** The public Hashio relay may not support all filter methods in batch mode. Our event-logger uses polling `eth_getLogs` as the most reliable approach.
+**Key limitation:** The public Hashio relay may not support all filter methods in batch mode. The frontend uses Mirror Node REST API for contract event logs as the most reliable approach.
 
 ### Mirror Node REST API
 - Base: `https://testnet.mirrornode.hedera.com`
@@ -90,8 +90,9 @@
 
 ### Hedera-Specific Considerations
 - HTS system contracts do NOT natively support ERC-3643 — must deploy as standard EVM contracts
-- ERC-3643 tokens deployed as standard Solidity contracts work fine on Hedera's EVM
-- Our approach (deploying T-REX v4.1.6 contracts directly) is correct
+- Hedera's Asset Tokenization Studio (ATS) deploys ERC-3643 as a diamond proxy pattern with all compliance facets (ERC20, ERC1594, KYC, Bond, AccessControl, ControlList) at a single address
+- **Coppice uses ATS** (migrated from T-REX v4.1.6 direct deployment to ATS diamond proxy in March 2026)
+- ATS API differs from T-REX: `isPaused()` not `paused()`, `isFrozen()` reverts on unregistered addresses, `owner()` reverts (uses role-based access), coupons are 1-indexed
 
 ### ABN AMRO Precedent (Sept 2023)
 - ABN AMRO tokenized a EUR 5M green bond using ERC-3643 + Tokeny on Polygon
@@ -121,10 +122,12 @@ npx hardhat hashscan-verify <ADDRESS> --contract contracts/X.sol:X --network tes
 | Package | Purpose | Our Version |
 |---------|---------|-------------|
 | `@hashgraph/sdk` | Hedera native SDK | ^2.51.0 (resolves to 2.81.0) |
-| `ethers` | EVM interaction | v6 |
+| `ethers` | EVM interaction (frontend + scripts) | v6 |
 | `hashscan-verify` | Contract verification | Not yet installed |
-| `@tokenysolutions/t-rex` | ERC-3643 contracts | v4.1.6 |
-| `@onchain-id/solidity` | OnchainID contracts | v2.0.0 |
+| `@tokenysolutions/t-rex` | ERC-3643 contracts (ABIs only, superseded by ATS) | v4.1.6 |
+| `@onchain-id/solidity` | OnchainID contracts (ABIs only) | v2.0.0 |
+
+> **Note:** The frontend uses ethers v6 with a custom AtsContext — wagmi and viem were removed during the ATS migration. The old T-REX contract ABIs are still referenced in `packages/common/wagmi.config.ts` for code generation but are not used at runtime.
 
 ## SDK Deprecations (@hashgraph/sdk 2.81.0)
 
@@ -142,7 +145,7 @@ npx hardhat hashscan-verify <ADDRESS> --contract contracts/X.sol:X --network tes
 ### In Our Codebase
 - `create-diana.ts:18` — uses `.setKey()` (deprecated)
 - `create-diana.ts:20` — uses `.setAlias()` (deprecated)
-- No other deprecated methods found in services/config/scripts/hcs-setup/hts-setup/event-logger
+- No other deprecated methods found in scripts/hcs-setup/hts-setup
 
 ## Hiero Transition
 - Hedera SDKs are being rebranded under "Hiero" (e.g., `hiero-sdk-js`)

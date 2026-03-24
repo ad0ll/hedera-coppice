@@ -466,3 +466,15 @@ If pursuing Guardian integration seriously after the hackathon:
 - [Standard Bank Bond Marketplace Analysis](https://hedera.com/blog/standard-bank-an-analysis-of-decentralized-bond-marketplaces/)
 - [IFC Green Bond Handbook](https://www.ifc.org/content/dam/ifc/doc/mgrt/202203-ifc-green-bond-handbook.pdf)
 - [Verra & Hedera Integration](https://verra.org/verra-and-hedera-to-accelerate-digital-transformation-of-carbon-markets/)
+
+
+## GTM
+
+Initial product focuses on EU market: 
+  - Largest market share, best political alignment, clearest regulations
+  - Founding team has EU citizens
+
+Target Millenials and Gen-Z as core customer
+  - RWAs are more interesting than bonds at a surface level even if they're functionally the same tihng
+  - Younger generation is fed up with greenwashing, full immutable transparency can be
+

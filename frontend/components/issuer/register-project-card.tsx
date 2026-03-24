@@ -9,7 +9,7 @@ import { useOperationStatus } from "@/hooks/use-operation-status";
 import { getErrorMessage } from "@/lib/format";
 import { signAuthMessage } from "@/lib/auth";
 import { fetchAPI } from "@/lib/api-client";
-import { registerProjectResponseSchema } from "@/app/api/issuer/register-project/route";
+import { registerProjectResponseSchema } from "@/lib/api-schemas";
 
 interface RegisterProjectCardProps {
   address: string;

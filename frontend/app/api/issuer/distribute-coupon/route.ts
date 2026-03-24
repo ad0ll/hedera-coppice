@@ -13,12 +13,7 @@ const distributeBodySchema = z.object({
   signature: z.string().nonempty(),
 });
 
-export const distributeResponseSchema = z.object({
-  success: z.literal(true),
-  txHash: z.string(),
-  status: z.string(),
-});
-export type DistributeResponse = z.infer<typeof distributeResponseSchema>;
+export { distributeResponseSchema, type DistributeResponse } from "@/lib/api-schemas";
 
 export async function POST(request: NextRequest) {
   const bodyResult = await parseRequestBody(request, distributeBodySchema);

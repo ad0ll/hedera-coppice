@@ -15,7 +15,7 @@ import { CheckIcon, AnimatedCheckIcon, XIcon, Spinner, WarningIcon } from "@/com
 import { TxLink, AddressLink } from "@/components/ui/hashscan-link";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { z } from "zod";
-import { onboardEventSchema, type OnboardEvent } from "@/app/api/onboard/route";
+import { onboardEventSchema, type OnboardEvent } from "@/lib/api-schemas";
 
 interface CheckResult {
   label: string;
