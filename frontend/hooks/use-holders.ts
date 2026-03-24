@@ -3,9 +3,9 @@
 import { ethers } from "ethers";
 import { useQuery } from "@tanstack/react-query";
 import { tokenAbi, identityRegistryAbi } from "@coppice/common";
-import { CONTRACT_ADDRESSES, CPC_TOKEN_ID } from "@/lib/constants";
+import { CONTRACT_ADDRESSES } from "@/lib/constants";
 import { getReadProvider } from "@/lib/provider";
-import { getTokenHolders, getEvmAddress } from "@/lib/mirror-node";
+import { getErc20Holders } from "@/lib/mirror-node";
 
 export interface HolderInfo {
   address: string;
@@ -19,27 +19,15 @@ async function fetchHolderData(): Promise<HolderInfo[]> {
   const tokenContract = new ethers.Contract(CONTRACT_ADDRESSES.token, tokenAbi, provider);
   const registryContract = new ethers.Contract(CONTRACT_ADDRESSES.identityRegistry, identityRegistryAbi, provider);
 
-  const allAddresses = new Set<string>();
+  let validAddresses: string[] = [];
   try {
-    if (CPC_TOKEN_ID) {
-      const holderAccountIds = await getTokenHolders(CPC_TOKEN_ID);
-      const evmPromises = holderAccountIds.map(async (accountId) => {
-        try {
-          return await getEvmAddress(accountId);
-        } catch {
-          return null;
-        }
-      });
-      const evmAddresses = await Promise.all(evmPromises);
-      for (const addr of evmAddresses) {
-        if (addr) allAddresses.add(addr.toLowerCase());
-      }
-    }
+    // ATS bonds are ERC-20 contracts, not HTS tokens — discover holders
+    // by scanning Transfer event logs from Mirror Node contract logs API.
+    const discovered = await getErc20Holders(CONTRACT_ADDRESSES.token);
+    validAddresses = discovered.filter((a) => ethers.isAddress(a));
   } catch {
     // Mirror Node unavailable
   }
-
-  const validAddresses = [...allAddresses].filter((a) => ethers.isAddress(a));
 
   const promises = validAddresses.map(async (address) => {
     try {
@@ -60,7 +48,7 @@ async function fetchHolderData(): Promise<HolderInfo[]> {
 }
 
 /**
- * Hook that discovers token holders from Mirror Node token balances API,
+ * Hook that discovers token holders from Mirror Node contract Transfer logs,
  * then reads on-chain data (balance, frozen, verified).
  */
 export function useHolders() {

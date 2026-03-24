@@ -21,6 +21,15 @@ const onboardBodySchema = z.object({
 
 // Claim topics: 1=KYC, 2=AML, 7=ACCREDITED
 const CLAIM_TOPICS = [BigInt(1), BigInt(2), BigInt(7)];
+
+// Hedera's JSON-RPC relay often fails eth_estimateGas for complex contract
+// deploys/calls, returning INSUFFICIENT_TX_FEE. Set explicit gas limits
+// based on observed usage from prior successful transactions on testnet.
+const GAS_LIMITS = {
+  deployIdentity: 1_500_000,
+  registerIdentity: 500_000,
+  addClaim: 500_000,
+};
 const CLAIM_TOPIC_NAMES: Record<string, string> = {
   "1": "claimKYC",
   "2": "claimAML",
@@ -126,7 +135,9 @@ export async function POST(request: NextRequest) {
           wallet,
         );
         const deployedContract = await withRetry(async () =>
-          identityFactory.deploy(implAuthorityAddress, deployerAddress),
+          identityFactory.deploy(implAuthorityAddress, deployerAddress, {
+            gasLimit: GAS_LIMITS.deployIdentity,
+          }),
         );
         const deployReceipt = await deployedContract.deploymentTransaction()?.wait();
         if (!deployReceipt || deployReceipt.status !== 1) {
@@ -145,7 +156,9 @@ export async function POST(request: NextRequest) {
           wallet,
         );
         const registerTx = await withRetry(async () =>
-          registryContract.registerIdentity(investor, identityAddress, country),
+          registryContract.registerIdentity(investor, identityAddress, country, {
+            gasLimit: GAS_LIMITS.registerIdentity,
+          }),
         );
         const registerReceipt = await registerTx.wait();
         if (!registerReceipt || registerReceipt.status !== 1) {
@@ -188,6 +201,7 @@ export async function POST(request: NextRequest) {
               claimSignature,
               claimData,
               "",
+              { gasLimit: GAS_LIMITS.addClaim },
             ),
           );
           const claimReceipt = await claimTx.wait();
@@ -205,8 +219,8 @@ export async function POST(request: NextRequest) {
           transactions,
         });
       } catch (err: unknown) {
-        const msg = getErrorMessage(err, 200, "Onboarding failed");
-        console.error("Onboard SSE error:", msg);
+        console.error("Onboard SSE error (full):", err);
+        const msg = getErrorMessage(err, 500, "Onboarding failed");
         send({ type: "error", error: msg });
       } finally {
         controller.close();

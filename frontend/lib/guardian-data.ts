@@ -132,10 +132,13 @@ export async function fetchGuardianData(): Promise<GuardianData | null> {
     };
   });
 
-  const totalAllocated = allocationResults.reduce(
-    (sum, a) => sum + (a.cs.AllocatedAmountEUSD ?? 0),
-    0,
-  );
+  // Only sum allocations that match a registered project. Guardian VCs are
+  // immutable on HCS so orphaned test allocations can't be deleted — filter
+  // them out here to keep the total consistent with the per-project breakdown.
+  const projectNames = new Set(projectResults.map((r) => r.cs.ProjectName));
+  const totalAllocated = allocationResults
+    .filter((a) => projectNames.has(a.cs.ProjectName))
+    .reduce((sum, a) => sum + (a.cs.AllocatedAmountEUSD ?? 0), 0);
   const totalVerifiedCO2e = verificationResults.reduce(
     (sum, v) => sum + (v.cs.VerifiedGHGReduced ?? 0),
     0,

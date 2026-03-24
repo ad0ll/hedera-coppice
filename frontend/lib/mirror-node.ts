@@ -53,41 +53,63 @@ export async function getHtsTokenBalance(
 }
 
 
-const mirrorTokenBalanceEntrySchema = z.object({
-  account: z.string(),
-  balance: z.number(),
+const contractLogSchema = z.object({
+  topics: z.array(z.string()),
+  transaction_hash: z.string().optional(),
+  data: z.string().optional(),
 });
 
-const mirrorTokenBalancesSchema = z.object({
-  balances: z.array(mirrorTokenBalanceEntrySchema).optional(),
+const contractLogsSchema = z.object({
+  logs: z.array(contractLogSchema).optional(),
   links: z.object({ next: z.string().nullish() }).optional(),
 });
 
-/** Get all accounts holding a specific token with non-zero balances. */
-export async function getTokenHolders(tokenId: string): Promise<string[]> {
-  const accounts: string[] = [];
-  let path: string | null = `/api/v1/tokens/${tokenId}/balances?account.balance=gt:0&limit=100`;
+const TRANSFER_TOPIC =
+  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const ZERO_ADDR = "0x" + "0".repeat(40);
+
+/**
+ * Discover all addresses that have ever sent or received an ERC-20 Transfer
+ * for a contract by scanning Mirror Node contract logs. Returns lowercase
+ * EVM addresses (no account-ID-to-EVM resolution needed).
+ */
+export async function getErc20Holders(contractAddress: string): Promise<string[]> {
+  const addresses = new Set<string>();
+  let path: string | null =
+    `/api/v1/contracts/${contractAddress}/results/logs?order=asc&limit=100`;
 
   while (path) {
-    const data: z.infer<typeof mirrorTokenBalancesSchema> = await fetchMirrorNode(path, mirrorTokenBalancesSchema);
-    for (const entry of data.balances ?? []) {
-      accounts.push(entry.account);
+    const data: z.infer<typeof contractLogsSchema> = await fetchMirrorNode(path, contractLogsSchema);
+    for (const log of data.logs ?? []) {
+      const topics = log.topics;
+      if (topics[0] !== TRANSFER_TOPIC || topics.length < 3) continue;
+      const from = "0x" + topics[1].slice(26);
+      const to = "0x" + topics[2].slice(26);
+      if (from !== ZERO_ADDR) addresses.add(from);
+      addresses.add(to);
     }
     path = data.links?.next ?? null;
   }
-  return accounts;
+  return [...addresses];
 }
 
-const mirrorAccountDetailSchema = z.object({
-  account: z.string(),
-  evm_address: z.string(),
-});
+/** Fetch all logs matching a specific topic0 from a contract (client-side filter). */
+export async function getContractLogsByTopic(
+  contractAddress: string,
+  topic0: string,
+): Promise<z.infer<typeof contractLogSchema>[]> {
+  const results: z.infer<typeof contractLogSchema>[] = [];
+  let path: string | null =
+    `/api/v1/contracts/${contractAddress}/results/logs?order=asc&limit=100`;
 
-/** Resolve a Hedera account ID to an EVM address via Mirror Node. */
-export async function getEvmAddress(accountId: string): Promise<string> {
-  const data = await fetchMirrorNode(
-    `/api/v1/accounts/${accountId}`,
-    mirrorAccountDetailSchema,
-  );
-  return data.evm_address;
+  while (path) {
+    const data: z.infer<typeof contractLogsSchema> = await fetchMirrorNode(path, contractLogsSchema);
+    for (const log of data.logs ?? []) {
+      if (log.topics[0] === topic0) {
+        results.push(log);
+      }
+    }
+    path = data.links?.next ?? null;
+  }
+  return results;
 }
