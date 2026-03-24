@@ -43,8 +43,9 @@ async function fetchHolderData(): Promise<HolderInfo[]> {
   });
 
   const results = await Promise.all(promises);
-  results.sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0));
-  return results;
+  return results
+    .filter((h) => h.balance > BigInt(0))
+    .sort((a, b) => (b.balance > a.balance ? 1 : b.balance < a.balance ? -1 : 0));
 }
 
 /**
