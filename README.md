@@ -118,56 +118,6 @@ graph TD
 
 Every action is a real Hedera testnet transaction. Every HashScan and IPFS link is clickable and verifiable.
 
-## Quick Start
-
-### Prerequisites
-- Node.js 20 or 22 LTS
-- MetaMask configured for [Hedera Testnet (Chain 296)](https://chainlist.org/chain/296)
-
-### Setup
-
-```bash
-# Clone and install
-git clone <repo-url>
-cd hedera-green-bonds
-npm install
-
-# Run smart contract tests (local Hardhat network)
-cd contracts && npx hardhat test
-
-# Run frontend unit tests
-cd ../frontend && npx vitest run
-
-# Start frontend dev server
-cd ../frontend && npm run dev
-
-# Run E2E tests (requires frontend running)
-cd ../e2e && npx playwright test
-```
-
-### Deploy to Hedera Testnet
-
-```bash
-# 1. Configure environment (each workspace has its own .env)
-cp contracts/.env.example contracts/.env    # Add deployer key
-cp scripts/.env.example scripts/.env        # Add Hedera operator
-cp scripts/guardian/.env.example scripts/guardian/.env  # Guardian credentials
-
-# 2. Deploy ATS bond + LifeCycleCashFlow
-cd scripts && npx tsx ats-setup.ts
-
-# 3. Create HCS topics and HTS eUSD stablecoin
-cd scripts && npx tsx hcs-setup.ts
-cd scripts && npx tsx hts-setup.ts
-
-# 4. Set up Guardian policy and populate demo data
-cd scripts/guardian && npx tsx guardian-setup.ts
-cd scripts/guardian && npx tsx guardian-populate.ts
-
-# 5. Start frontend
-cd frontend && npm run dev
-```
-
 ## On-Chain Identity & Compliance
 
 Bonds are regulated securities — securities law requires issuers to verify investor identity (KYC/AML) before allowing participation. ATS enforces this at the protocol level: identity, KYC, AML, accredited investor status, jurisdiction, and transfer eligibility are all checked in the token contract before any transfer executes.
@@ -318,6 +268,56 @@ E2E_BASE_URL=https://www.coppice.cc npx playwright test guardian-live impact-pag
 | **EU DLT Pilot Regime** | Apply under Reg. 2022/858 — bonds under EUR 1B qualify for DLT sandbox |
 | **Automated dMRV** | Integrate IoT/satellite data via Guardian — HYPHEN and B4E show this is production-ready on Hedera |
 | **Multi-bond Platform** | Multiple issuers, independent compliance rules, secondary market trading |
+
+## Quick Start
+
+### Prerequisites
+- Node.js 20 or 22 LTS
+- MetaMask configured for [Hedera Testnet (Chain 296)](https://chainlist.org/chain/296)
+
+### Setup
+
+```bash
+# Clone and install
+git clone <repo-url>
+cd hedera-green-bonds
+npm install
+
+# Run smart contract tests (local Hardhat network)
+cd contracts && npx hardhat test
+
+# Run frontend unit tests
+cd ../frontend && npx vitest run
+
+# Start frontend dev server
+cd ../frontend && npm run dev
+
+# Run E2E tests (requires frontend running)
+cd ../e2e && npx playwright test
+```
+
+### Deploy to Hedera Testnet
+
+```bash
+# 1. Configure environment (each workspace has its own .env)
+cp contracts/.env.example contracts/.env    # Add deployer key
+cp scripts/.env.example scripts/.env        # Add Hedera operator
+cp scripts/guardian/.env.example scripts/guardian/.env  # Guardian credentials
+
+# 2. Deploy ATS bond + LifeCycleCashFlow
+cd scripts && npx tsx ats-setup.ts
+
+# 3. Create HCS topics and HTS eUSD stablecoin
+cd scripts && npx tsx hcs-setup.ts
+cd scripts && npx tsx hts-setup.ts
+
+# 4. Set up Guardian policy and populate demo data
+cd scripts/guardian && npx tsx guardian-setup.ts
+cd scripts/guardian && npx tsx guardian-populate.ts
+
+# 5. Start frontend
+cd frontend && npm run dev
+```
 
 ## License
 
